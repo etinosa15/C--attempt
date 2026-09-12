@@ -14,6 +14,10 @@ npm start
 
 Then open http://localhost:4317 in a browser. Press Ctrl+C in the terminal to stop it. Use the same browser and URL to keep accessing your saved progress. If the port is occupied by another program, set `PORT` to another number before starting.
 
+### Opening with VS Code Live Server
+
+Live Server (usually port 5500) serves static files; it does not start Forge's Node.js server or C# compiler. The project-root `index.html` shows launch instructions and a link to the complete academy. Run `npm start` in the VS Code terminal, or double-click `Start Forge.cmd` in File Explorer, then use **http://localhost:4317**. You do not need Live Server to run Forge.
+
 ### Requirements
 
 - Node.js 20 or later.

@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "description": "An offline-first JavaScript and C# learning studio",
-  "scripts": { "start": "node server.mjs", "test": "node --test tests/*.test.mjs", "verify:curriculum": "node tests/verify-curriculum.mjs" },
-  "engines": { "node": ">=20" }
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "verify:curriculum": "node tests/verify-curriculum.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

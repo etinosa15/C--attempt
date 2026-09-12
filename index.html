@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7970c9" />
+    <title>Open Forge — Code Academy</title>
+    <link rel="icon" href="./public/favicon.svg" type="image/svg+xml" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #f7f6fb;
+        color: #302b3b;
+        font:
+          16px/1.7 "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: 100%;
+        max-width: 600px;
+        padding: clamp(26px, 6vw, 48px);
+        border: 1px solid #e5dfef;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 14px 50px #37214c08;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 29px;
+        font-weight: 750;
+        letter-spacing: -1px;
+      }
+      .brand img {
+        width: 39px;
+        height: 39px;
+      }
+      .eyebrow {
+        margin: 30px 0 10px;
+        color: #827294;
+        font-size: 11px;
+        letter-spacing: 1.7px;
+        font-weight: 600;
+      }
+      h1 {
+        margin: 0 0 17px;
+        font-size: clamp(27px, 5vw, 35px);
+        line-height: 1.25;
+        letter-spacing: -1px;
+      }
+      p {
+        color: #71677d;
+      }
+      ol {
+        margin: 24px 0;
+        padding-left: 23px;
+      }
+      li {
+        padding: 0 0 13px 5px;
+      }
+      code {
+        background: #f2eef8;
+        color: #70578b;
+        padding: 3px 7px;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 23px;
+        background: #7968bc;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .button:hover {
+        background: #6755a9;
+      }
+      a:focus-visible {
+        outline: 3px solid #b8a6e0;
+        outline-offset: 5px;
+      }
+      .note {
+        border-top: 1px solid #ece6f2;
+        padding-top: 20px;
+        margin: 25px 0 0;
+        font-size: 13px;
+      }
+      .url {
+        display: block;
+        margin-top: 11px;
+        font-size: 12px;
+        color: #81718e;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand"><img src="./public/favicon.svg" alt="" />forge</div>
+      <p class="eyebrow">YOUR LOCAL CODE ACADEMY</p>
+      <h1>Your academy has its own server.</h1>
+      <p>
+        Live Server serves static files. Forge also compiles and runs C#, so it
+        needs the included Node.js server to power the complete app.
+      </p>
+      <ol>
+        <li>
+          In this project folder, double-click
+          <strong>Start Forge.cmd</strong> in File Explorer, or run
+          <code>npm start</code> in the VS Code terminal.
+        </li>
+        <li>Keep that terminal window open, then open your academy below.</li>
+      </ol>
+      <a class="button" href="http://localhost:4317/"
+        >Open Forge Academy &nbsp; →</a
+      >
+      <span class="url">http://localhost:4317</span>
+      <p class="note">
+        If Forge is already running, just choose Open Forge Academy. If the
+        browser says it cannot connect, complete step 1 first. Use this same
+        academy address each time to keep your saved progress together.
+      </p>
+    </main>
+  </body>
+</html>
