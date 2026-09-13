@@ -5,11 +5,16 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { randomUUID, randomBytes } from "node:crypto";
 import { lessons } from "./public/curriculum.js";
+import { loadFeedbackKey, validateFeedback, deliverFeedback } from "./feedback.mjs";
+import { loadConfig } from "./config.mjs";
+import { createMembership, failure } from "./membership.mjs";
+import { createBilling } from "./billing.mjs";
+import { createOnlineRunner } from "./online-runner.mjs";
+import { curriculumFor } from "./content-access.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicRoot = path.join(root, "public");
 const runtimeRoot = path.join(root, ".runtime");
-const port = Number(process.env.PORT || 4317);
 const token = randomBytes(24).toString("hex");
 const marker = "__FORGE_RESULT__";
 let active = false;
@@ -208,39 +213,90 @@ const mime = {
   ".svg": "image/svg+xml",
   ".json": "application/json; charset=utf-8",
 };
-export async function startServer() {
-  dotnet = await findDotnet();
+export async function startServer(options = {}) {
+  const config = options.config || await loadConfig(root);
+  const { port, production, origin, env } = config;
+  const members = await createMembership(config, options.services);
+  const billing = createBilling(config, members, options.services);
+  const online = createOnlineRunner(env, options.services);
+  const enforcePlans = env.FORGE_ENFORCE_PLANS === "true";
+  if (enforcePlans && !billing.enabled) throw new Error("Plan enforcement requires configured billing. Leave FORGE_ENFORCE_PLANS=false for early access.");
+  dotnet = production || online.configured || options.skipDotnet ? null : await findDotnet();
+  const feedbackKey = await loadFeedbackKey(root);
+  let feedbackNextAllowed = 0;
   const server = http.createServer(async (req, res) => {
     const host = req.headers.host;
-    if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(host)) {
+    const actualPort = server.address()?.port || port;
+    if (!(production ? [new URL(origin).host] : [`127.0.0.1:${actualPort}`, `localhost:${actualPort}`]).includes(host)) {
       res.writeHead(403);
-      res.end("Local access only.");
+      res.end("Unrecognized host.");
       return;
     }
     const headers = {
       "X-Content-Type-Options": "nosniff",
       "Cache-Control": "no-store",
       "Referrer-Policy": "no-referrer",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      ...(production ? { "Strict-Transport-Security": "max-age=31536000" } : {}),
     };
     const json = (status, data) => {
       res.writeHead(status, { ...headers, "Content-Type": "application/json" });
       res.end(JSON.stringify(data));
     };
     try {
-      const url = new URL(req.url, `http://${host}`);
+      const url = new URL(req.url, production ? origin : `http://${host}`);
+      const guard = () => {
+        if (!["POST", "PUT"].includes(req.method) || req.headers.origin !== (production ? origin : `http://${host}`) || req.headers["x-forge-token"] !== token || req.headers["content-type"]?.split(";")[0] !== "application/json") throw failure(403, "Refresh Forge and try this action again.");
+      };
+      const readRaw = async (limit = 2200000) => {
+        const chunks = []; let size = 0;
+        for await (const chunk of req) { size += chunk.length; if (size > limit) throw failure(413, "This request is too large."); chunks.push(chunk); }
+        return Buffer.concat(chunks);
+      };
+      const readBody = async () => {
+        try { const data = JSON.parse(await readRaw()); if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(); return data; }
+        catch (error) { if (error.status) throw error; throw failure(400, "Invalid JSON request."); }
+      };
+      const context = { json, guard, readRaw, readBody };
       if (url.pathname === "/api/status" && req.method === "GET") {
-        json(200, { csharp: !!dotnet, sdk: dotnet?.sdk, token });
+        json(200, { csharp: online.configured || !!dotnet, runner: online.configured ? "online" : dotnet ? "local" : "unavailable", sdk: dotnet?.sdk, token, feedbackEnabled: !!feedbackKey,
+          publicDeployment: production, enforcePlans, billingEnabled: billing.enabled, billingMode: billing.mode, emailEnabled: members.emailEnabled,
+          operatorName: env.OPERATOR_NAME || "", supportEmail: env.SUPPORT_EMAIL || "", businessAddress: env.BUSINESS_ADDRESS || "", legalApproved: env.LEGAL_APPROVED === "true" });
+        return;
+      }
+      if (url.pathname === "/api/curriculum" && req.method === "GET") { json(200, curriculumFor(!enforcePlans || members.entitlement(members.current(req)))); return; }
+      if (await members.handle(req, res, url, context)) return;
+      if (await billing.handle(req, res, url, context)) return;
+      if (url.pathname === "/api/feedback" && req.method === "POST") {
+        guard();
+        const chunks = [];
+        let bytes = 0;
+        for await (const chunk of req) {
+          bytes += chunk.length;
+          if (bytes > 32768) { json(413,{success:false,error:"This feedback is too long. Keep the message under 5,000 characters."}); return; }
+          chunks.push(chunk);
+        }
+        let input;
+        try { input = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { json(400,{success:false,error:"Invalid feedback request."}); return; }
+        const validation = validateFeedback(input);
+        if (validation.error) { json(400,{success:false,error:validation.error}); return; }
+        if (!feedbackKey) { json(503,{success:false,error:"Feedback delivery is not connected yet. Please try again later."}); return; }
+        if (Date.now() < feedbackNextAllowed) {
+          res.setHeader("Retry-After", String(Math.ceil((feedbackNextAllowed-Date.now())/1000)));
+          json(429,{success:false,error:"Please wait 30 seconds between feedback submissions."});
+          return;
+        }
+        feedbackNextAllowed = Date.now() + 30000;
+        const result = await deliverFeedback(validation.value,feedbackKey);
+        json(result.status,result.body);
         return;
       }
       if (url.pathname === "/api/run" && req.method === "POST") {
-        if (
-          req.headers.origin !== `http://${host}` ||
-          req.headers["x-forge-token"] !== token ||
-          req.headers["content-type"] !== "application/json"
-        ) {
-          json(403, { error: "Open Forge locally to run code." });
-          return;
-        }
+        guard();
+        const user = members.current(req);
+        if (production && (!user || !user.verified)) { json(403, { error: "Sign in and verify your email to use online C#." }); return; }
+        members.rate(`run:${user?.id || req.socket.remoteAddress}`, 20, 60000);
+        if (!online.configured && production) { json(503, { error: "Online C# is not connected yet. JavaScript and lessons are available." }); return; }
         if (active) {
           json(429, {
             error: "A C# program is already running. Try again in a moment.",
@@ -273,11 +329,12 @@ export async function startServer() {
           json(400, { error: "Unknown C# exercise." });
           return;
         }
+        if (lesson && enforcePlans && lesson.module > 0 && !members.entitlement(user)) { json(403, { error: "This challenge is part of Premium. View the plans to continue." }); return; }
         active = true;
         try {
           json(
             200,
-            await executeCSharp(input.code, lesson?.challenge.tests || []),
+            online.configured ? await online.execute(input.code, lesson?.challenge.tests || []) : await executeCSharp(input.code, lesson?.challenge.tests || []),
           );
         } finally {
           active = false;
@@ -295,6 +352,7 @@ export async function startServer() {
         json(400, { error: "Invalid URL." });
         return;
       }
+      if (enforcePlans && ["/curriculum.js", "/js-lessons.js", "/cs-lessons.js"].includes(requested)) { json(404, { error: "Not found." }); return; }
       const file = path.resolve(
         publicRoot,
         "." + (requested === "/" ? "/index.html" : requested),
@@ -308,7 +366,7 @@ export async function startServer() {
       }
       const data = await readFile(file);
       const csp =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'";
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'";
       // Workers execute learner code but cannot make network connections.
       const domPolicy =
         "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'";
@@ -325,15 +383,17 @@ export async function startServer() {
       res.end(req.method === "HEAD" ? undefined : data);
     } catch (e) {
       if (!res.headersSent)
-        json(e.code === "ENOENT" ? 404 : 500, {
+        json(e.status || (e.code === "ENOENT" ? 404 : 500), {
           error:
-            e.code === "ENOENT"
+            e.status ? e.message : e.code === "ENOENT"
               ? "Not found."
-              : "The local server encountered an error.",
+              : "The server encountered an error.",
         });
       else res.end();
     }
   });
+  server.requestTimeout = 30000;
+  server.headersTimeout = 15000;
   server.on("error", (e) => {
     console.error(
       e.code === "EADDRINUSE"
@@ -344,10 +404,10 @@ export async function startServer() {
   });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(port, "127.0.0.1", resolve);
+    server.listen(port, production ? "0.0.0.0" : "127.0.0.1", resolve);
   });
   console.log(
-    `\nForge Code Academy\nhttp://localhost:${port}\nC# runtime: ${dotnet ? "SDK " + dotnet.sdk : "not installed"}\nKeep this window open. Ctrl+C stops the server.\n`,
+    `\nForge Code Academy\n${production ? origin : `http://localhost:${server.address().port}`}\nC# runtime: ${online.configured ? "online compiler" : dotnet ? "SDK " + dotnet.sdk : "not connected"}\nAccounts: enabled | Checkout: ${billing.enabled ? billing.mode : "not connected"}\nKeep this window open. Ctrl+C stops the server.\n`,
   );
   if (process.argv.includes("--open")) {
     if (process.platform === "win32")

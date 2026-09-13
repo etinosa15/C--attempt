@@ -1,6 +1,6 @@
 # Forge Code Academy
 
-A personal, local website for studying JavaScript and C# deeply. No npm dependencies, account, API key, or paid service is required.
+A personal, local website for studying JavaScript and C# deeply. Studying locally needs no npm dependencies, account, API key, or paid service. Optional feedback delivery uses a Web3Forms access key.
 
 ## Start
 
@@ -34,6 +34,27 @@ Live Server (usually port 5500) serves static files; it does not start Forge's N
 - **Six project briefs** with milestones, suggested starting ideas, official resources, and stretch goals. These are projects for you to implement, not generated completed applications.
 - **Notebook, draft autosave, focus timer, search, and progress export/import**.
 - **A separate isolated DOM lab** for browser events and HTML practice.
+- **Light, Dark, and System themes** with a quick switch in the header. Choose a preference under Settings & backups; it is saved per browser and applied before the page renders. System follows device theme changes.
+- **A Web3Forms feedback form** for general feedback, problems, feature ideas, and lesson feedback. Messages are submitted through the local server with input validation, a honeypot, and a short cooldown.
+- **A Premium plan preview** with monthly/yearly pricing, a plan comparison, an upgrade dialog, and study insights based on saved progress.
+
+### Premium plan preview
+
+Open **Premium** in the sidebar. The monthly plan is **₦3,000**. The yearly plan is **₦28,800**, a 20% discount against ₦36,000 for twelve monthly payments: **₦2,400/month equivalent**, saving **₦7,200/year**. Yearly billing means one annual payment, not twelve discounted monthly payments.
+
+Choose **Preview Premium**, review the summary, then **Start Premium preview** to explore study insights, path completion, upcoming lessons, and a daily study routine. Your preview choice persists in this browser. Use **Settings & backups → Your learning plan → Leave preview** to exit without changing lesson progress.
+
+This is the reviewable membership experience, not paid subscriptions. It collects no card details, sends no payment request, creates no renewal, and leaves current course access available. The Free/Premium feature table describes the planned access split at launch. Preview status in localStorage is for demonstration only; it is not authentication or payment authorization. A paid launch still needs accounts, verified payment events, server-side access enforcement, and billing/cancellation policies.
+
+Pricing and study calculations live in `public/plans.js`; the plan interface is in `public/premium.js` and `public/premium.css`. The preview uses a separate storage key from learning progress and theme preferences.
+
+### Feedback delivery
+
+Feedback requires an internet connection and a Web3Forms inbox access key. Copy `.env.example` to `.env`, set `WEB3FORMS_ACCESS_KEY`, and restart `npm start`. An existing `WEB3FORMS_ACCESS_KEY` environment variable takes precedence. The key stays on the server; `.env` is excluded from Git and is not served to browsers.
+
+The Feedback page sends the learner's name, email, category, optional lesson, and message to Web3Forms for delivery to the key's associated inbox. Failed or unconfirmed submissions retain the draft in tab memory. Draft feedback is not written to localStorage. Theme preferences are stored separately from learning progress, so importing a progress backup does not change the device's theme preference.
+
+For a production launch, configure Web3Forms domain restrictions and spam protection appropriate to your public deployment. The existing Forge server remains a localhost development server.
 
 ## Suggested study routine
 
@@ -50,7 +71,7 @@ Lesson timings are estimates and exclude extended project work. Completion is a 
 
 The server binds only to 127.0.0.1, checks the Host and Origin headers, and requires a same-origin token for C# execution. It serves only the `public` folder. C# runs as your current OS user and is **not an operating-system sandbox**. Run your own trusted code; do not expose this service on the public internet. C# compilation and execution have time/output limits. JavaScript workers have a 4-second timeout and no network access. The DOM iframe has a separate sandbox and no access to academy storage; unlike a worker, synchronous DOM code can still make its frame unresponsive.
 
-Progress is stored in browser localStorage. Export a backup from **Settings & backups**, especially before clearing browser data or changing browsers. Import deliberately replaces current progress after confirmation. Notes and code are not sent to an external service. Optional official documentation links require internet access.
+Progress is stored in browser localStorage. Export a backup from **Settings & backups**, especially before clearing browser data or changing browsers. Import deliberately replaces current progress after confirmation. Notes and code are not sent to an external service. Submitting feedback and opening official documentation links require internet access.
 
 Console exercises use one file. ES module imports and ASP.NET server examples are explained as multi-file/project examples rather than executed in that console. Use the DOM lab for `document` and event handlers. Await asynchronous work in the JavaScript console so it completes before the runner ends.
 

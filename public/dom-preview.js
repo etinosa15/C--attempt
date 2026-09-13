@@ -1,5 +1,10 @@
 window.addEventListener("message", (event) => {
-  if (event.source !== parent || event.data?.type !== "forge-dom") return;
+  if (event.source !== parent) return;
+  if (event.data?.type === "forge-theme") {
+    if (["dark", "light"].includes(event.data.theme)) document.documentElement.dataset.theme = event.data.theme;
+    return;
+  }
+  if (event.data?.type !== "forge-dom") return;
   const report = (message) =>
     parent.postMessage({ type: "forge-dom-output", message }, "*");
   try {

@@ -21,3 +21,11 @@ output {
 h2 {
   font-size: 21px;
 }
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="dark"] body { background: #1c1926; color: #e8e1f3; }
+:root[data-theme="dark"] button { background: #a796e2; color: #191320; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) { color-scheme: dark; }
+  :root:not([data-theme]) body { background: #1c1926; color: #e8e1f3; }
+}

@@ -1,0 +1,44 @@
+.feedback-layout { display:grid; grid-template-columns:minmax(0,1fr) 275px; gap:27px; align-items:start; }
+.feedback-form-panel { padding:30px; }
+.feedback-intro { display:flex; gap:15px; align-items:center; margin-bottom:28px; }
+.feedback-emblem { display:grid; place-items:center; width:47px; height:47px; background:var(--purple-soft); color:var(--purple-dark); border-radius:12px; flex-shrink:0; }
+.feedback-intro h2 { font-size:21px; margin:0 0 5px; }
+.feedback-intro p { font-size:12px; color:var(--text-secondary); margin:0; }
+.feedback-form-panel fieldset { margin:0; border:0; padding:0; min-width:0; }
+.feedback-field-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.feedback-field { margin-bottom:23px; min-width:0; }
+.feedback-field label { display:block; font-size:12px; font-weight:600; margin-bottom:9px; color:var(--ink); }
+.feedback-field label span { color:var(--text-subtle); font-size:10px; font-weight:400; margin-left:5px; }
+.feedback-field :is(input,select,textarea) { display:block; width:100%; background:var(--field-bg); color:var(--ink); border:1px solid var(--field-border); border-radius:7px; padding:12px 13px; font:13px/1.65 "Segoe UI",sans-serif; }
+.feedback-field input::placeholder,.feedback-field textarea::placeholder { color:var(--text-subtle); }
+.feedback-field textarea { min-height:170px; resize:vertical; }
+.feedback-field input:user-invalid,.feedback-field textarea:user-invalid { border-color:var(--error-text); }
+.feedback-field small { display:block; color:var(--text-secondary); font-size:10px; line-height:1.7; margin-top:7px; }
+.feedback-message-meta { display:flex; justify-content:space-between; gap:15px; }
+#feedback-count { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.feedback-submit-row { display:flex; align-items:center; justify-content:space-between; gap:24px; border-top:1px solid var(--line); padding-top:21px; }
+.feedback-submit-row p { color:var(--text-secondary); font-size:10px; max-width:300px; line-height:1.9; margin:0; }
+.feedback-submit-row a { color:var(--purple-dark); text-decoration:underline; text-underline-offset:3px; }
+.feedback-submit-row .button { flex-shrink:0; }
+.feedback-honeypot { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.feedback-availability { background:var(--surface-raised); border:1px solid var(--line); padding:14px 16px; border-radius:7px; margin-bottom:23px; color:var(--text-secondary); font-size:12px; line-height:1.8; }
+.feedback-result { display:flex; align-items:flex-start; gap:13px; padding:23px; border-radius:9px; margin-bottom:24px; overflow-wrap:anywhere; }
+.feedback-result.success { background:var(--success-bg); color:var(--success-text); }
+.feedback-result.error { background:var(--error-bg); color:var(--error-text); }
+.feedback-result > span { flex-shrink:0; }
+.feedback-result h3 { font-size:17px; margin-bottom:8px; color:inherit !important; }
+.feedback-result p { font-size:12px; line-height:1.85; color:inherit !important; margin:0; }
+.feedback-result .button { margin-top:18px; }
+.feedback-form-panel [hidden] { display:none !important; }
+.feedback-tips { padding:27px; }
+.feedback-tips h2 { font-size:25px; line-height:1.35; margin:15px 0 26px; }
+.feedback-tips > div { border-top:1px solid var(--line); padding-top:18px; margin-top:18px; }
+.feedback-tips h3 { display:flex; align-items:center; gap:8px; font-size:13px; letter-spacing:0; }
+.feedback-tips h3 svg { color:var(--purple-dark); }
+.feedback-tips p { font-size:12px; line-height:1.9; color:var(--text-secondary); margin:0; }
+.feedback-small-note { display:flex; gap:10px; color:var(--text-subtle); padding:22px 8px; }
+.feedback-small-note svg { flex-shrink:0; margin-top:3px; }
+.feedback-small-note p { font-size:11px; margin:0; line-height:1.9; }
+@media(max-width:1200px) { .feedback-layout{grid-template-columns:minmax(0,1fr) 225px;gap:22px} .feedback-form-panel{padding:24px} .feedback-submit-row{flex-wrap:wrap;gap:15px} .feedback-tips{padding:23px} }
+@media(max-width:1000px) { .feedback-layout{grid-template-columns:1fr} .feedback-aside{max-width:none} }
+@media(max-width:720px) { .feedback-field-row{grid-template-columns:1fr;gap:0} .feedback-form-panel{padding:23px 18px} .feedback-intro h2{font-size:19px} .feedback-message-meta{gap:10px} .feedback-message-meta small{font-size:9px} .feedback-submit-row .button{width:100%} .feedback-field :is(input,select,textarea){font-size:16px} }

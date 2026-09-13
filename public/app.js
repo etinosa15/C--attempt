@@ -1,4 +1,8 @@
-import { lessons, tracks, modules, bridges, projects } from "./curriculum.js";
+import { lessons, tracks, modules, bridges, projects, refreshCurriculum } from "./curriculum-client.js";
+import { renderFeedbackPage, updateFeedbackStatus } from "./feedback-ui.js";
+import { initPremium, isPremiumPreview, attachPremiumShell, renderPremiumPage, renderInsightsPage, planSettingsPanel } from "./premium.js";
+import { initMember, memberUser, memberService, hasPremium, saveMemberProgress, accountPanel, attachMemberShell, renderAccount, renderCheckout, renderBillingReturn } from "./member.js";
+import { publicRoutes, renderPublic, renderOnboarding, renderStudyPlan, resetOnboarding, studyPlanCard } from "./pages.js";
 import {
   freshState,
   sanitizeState,
@@ -12,6 +16,10 @@ import {
 
 const $ = (s) => document.querySelector(s);
 const icons = {
+  sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5",
+  moon: "M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z",
+  monitor: "M3 4h18v13H3zM8 21h8m-4-4v4",
+  message: "M4 4h16v12H9l-5 4zM8 8h8m-8 4h5",
   grid: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
   path: "M4 5h6M4 12h10M4 19h16M17 3v4M14 5h6",
   code: "m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18",
@@ -66,11 +74,8 @@ let searchQuery = "",
   pathFilter = "all",
   projectFilter = "all";
 function save() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    storageOK = true;
-  } catch {
-    storageOK = false;
+  storageOK = saveMemberProgress();
+  if (!storageOK) {
     toast("Progress could not be saved. Export a backup in Settings.");
   }
 }
@@ -104,7 +109,7 @@ const resumeLesson = () =>
 const dueCards = () =>
   lessons.filter(
     (l) =>
-      (reviewAll || state.completed.includes(l.id)) &&
+      !l.locked && (reviewAll || state.completed.includes(l.id)) &&
       (!state.reviews[l.id] || Number(state.reviews[l.id].due) <= Date.now()),
   );
 const codeBlock = (code, label = "Example") =>
@@ -120,9 +125,43 @@ const xp = () =>
   state.solved.length * 40 +
   Object.values(state.quizzes).filter(Boolean).length * 10;
 
+function themeToggle() {
+  const next = window.ForgeTheme.getResolved() === "dark" ? "light" : "dark";
+  return `<button class="icon-button theme-toggle" data-action="toggle-theme" aria-label="Switch to ${next} mode" title="Switch to ${next} mode">${icon(next === "dark" ? "moon" : "sun", 19)}</button>`;
+}
+function appearancePanel() {
+  const selected = window.ForgeTheme.getPreference();
+  return `<section class="panel settings-panel appearance-panel"><div class="settings-icon">${icon("sun",24)}</div><h2>A space that feels like you</h2><p>Choose a brighter workspace, a softer evening view, or let Forge follow your device.</p><div class="theme-options" role="group" aria-label="Color theme">${[["light","sun","Light"],["dark","moon","Dark"],["system","monitor","System"]].map(([value, glyph, label])=>`<button data-theme-choice="${value}" aria-pressed="${selected===value}"><span class="theme-preview preview-${value}" aria-hidden="true"><span></span><i></i><b></b></span><span class="theme-option-label">${icon(glyph,16)} ${label} <i>${icon("check",14)}</i></span></button>`).join("")}</div><p id="theme-description" class="theme-description"></p></section>`;
+}
+function syncPreviewTheme() {
+  $("#dom-preview")?.contentWindow?.postMessage({type:"forge-theme",theme:window.ForgeTheme.getResolved()}, "*");
+}
+function syncThemeControls() {
+  const resolved = window.ForgeTheme.getResolved();
+  const next = resolved === "dark" ? "light" : "dark";
+  document.querySelectorAll('[data-action="toggle-theme"]').forEach((button) => {
+    button.setAttribute("aria-label", `Switch to ${next} mode`);
+    button.title = `Switch to ${next} mode`;
+    button.innerHTML = icon(next === "dark" ? "moon" : "sun", 19);
+  });
+  const preference = window.ForgeTheme.getPreference();
+  document.querySelectorAll("[data-theme-choice]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.themeChoice === preference)));
+  if ($("#theme-description")) $("#theme-description").textContent = preference === "system"
+    ? `Following your device: ${resolved} mode. Changes automatically with your device settings.`
+    : `${preference === "dark" ? "Dark" : "Light"} mode. Your choice is remembered on this browser.`;
+  syncPreviewTheme();
+}
+function setTheme(value) {
+  if (!window.ForgeTheme.setPreference(value)) toast("Theme changed for this session. Your browser could not save the preference.");
+}
+
 function shell() {
-  const parts = location.hash.slice(1).split("/");
-  route = parts[0] || "overview";
+  const parts = location.hash.slice(1).split("?")[0].split("/");
+  route = parts[0] || (memberUser() || state.lastLesson ? "overview" : "home");
+  if (publicRoutes.includes(route)) {
+    renderPublic($("#app"), route, { icon, themeToggle });
+    syncThemeControls(); window.scrollTo(0, 0); return;
+  }
   const titles = {
     overview: "Overview",
     paths: "Learning paths",
@@ -133,6 +172,11 @@ function shell() {
     project: "Projects",
     notebook: "Notebook",
     settings: "Settings",
+    feedback: "Feedback",
+    premium: "Premium plan",
+    insights: "Study insights",
+    account: "Your account", signup: "Create account", "forgot-password": "Account recovery", "reset-password": "Reset password", "verify-email": "Verify email",
+    onboarding: "Learning setup", "study-plan": "Your study plan", checkout: "Checkout", "billing-return": "Payment status",
   };
   const nav = [
     ["overview", "grid", "Overview"],
@@ -141,6 +185,10 @@ function shell() {
     ["review", "cards", "Review deck"],
     ["projects", "folder", "Projects"],
     ["notebook", "note", "Notebook"],
+    ...(isPremiumPreview() ? [["insights", "bolt", "Study insights"]] : []),
+    ["premium", "star", "Premium"],
+    ["feedback", "message", "Feedback"],
+    ["account", "settings", memberUser() ? "My account" : "Sign in"],
   ];
   $("#app").innerHTML =
     `<aside class="sidebar"><a href="#overview" class="brand"><span class="brand-mark">f<span>↗</span></span><span>forge<span class="brand-sub">CODE ACADEMY</span></span></a><div class="workspace-label">YOUR LEARNING SPACE</div><nav aria-label="Main navigation">${nav.map(([id, ico, label]) => `<a href="#${id}" class="nav-item ${route === id || (route === "lesson" && id === "paths") || (route === "project" && id === "projects") ? "active" : ""}">${icon(ico)}<span>${label}</span>${id === "review" && dueCards().length ? `<span class="nav-count">${dueCards().length}</span>` : ""}${id === "playground" ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><div class="sidebar-tip"><span class="little-spark">✳</span><strong>Small steps. Real skills.</strong><p>A little focused practice today<br>goes a long way tomorrow.</p><a href="#settings">Your daily goal <span>${state.goal} min ${icon("chevron", 12)}</span></a></div><a class="nav-item settings-link ${route === "settings" ? "active" : ""}" href="#settings">${icon("settings")}<span>Settings & backups</span></a><div class="profile"><div class="avatar">Y</div><div><strong>Your personal academy</strong><small><i class="status-dot"></i> ${storageOK ? "Progress saved on this device" : "Storage unavailable"}</small></div></div></div></aside><div class="main-shell"><header class="topbar"><button class="icon-button mobile-menu" aria-label="Toggle navigation" data-action="menu">${icon("menu")}</button><div class="breadcrumbs">Your workspace <span>/</span> <strong>${titles[route] || "Overview"}</strong></div><div class="topbar-right"><button class="search-trigger" data-action="search">${icon("search", 17)}<span>Find a lesson</span><kbd>Ctrl K</kbd></button><div class="streak">${icon("flame", 18)}<strong>${streak(state.activity)}</strong><span>day streak</span></div><div class="top-avatar">Y</div></div></header><main id="main" tabindex="-1"></main><footer class="page-footer"><span>Made for the way you learn. Built for what comes next.</span><span>JAVASCRIPT <i>×</i> C#</span></footer></div>`;
@@ -152,7 +200,22 @@ function shell() {
   else if (route === "project") renderProject(parts[1]);
   else if (route === "notebook") renderNotebook();
   else if (route === "settings") renderSettings();
+  else if (route === "feedback") renderFeedback();
+  else if (route === "premium") renderPremiumPage($("#main"));
+  else if (route === "insights") renderInsightsPage($("#main"));
+  else if (["account", "signup", "forgot-password", "reset-password", "verify-email"].includes(route)) renderAccount($("#main"), route);
+  else if (route === "onboarding") renderOnboarding($("#main"), { lessons, icon, toast, refresh: shell });
+  else if (route === "study-plan") renderStudyPlan($("#main"), { lessons, icon });
+  else if (route === "checkout") renderCheckout($("#main"), parts[1]);
+  else if (route === "billing-return") renderBillingReturn($("#main"));
   else renderOverview();
+  $(".topbar-right").insertAdjacentHTML("afterbegin", themeToggle());
+  $(".search-trigger").setAttribute("aria-label", "Find a lesson");
+  attachPremiumShell();
+  attachMemberShell();
+  $(".page-footer").insertAdjacentHTML("beforeend", '<nav class="workspace-footer-links" aria-label="Information"><a href="#home">Home</a><a href="#about">About</a><a href="#faq">FAQs</a><a href="#support">Support</a><a href="#privacy">Privacy</a><a href="#terms">Terms</a></nav>');
+  if (route === "overview") $("#main").insertAdjacentHTML("afterbegin", studyPlanCard(lessons));
+  syncThemeControls();
   window.scrollTo(0, 0);
 }
 
@@ -233,6 +296,7 @@ function renderLesson(id) {
       '<div class="empty-state"><h1>Lesson not found</h1><a href="#paths">Browse learning paths</a></div>';
     return;
   }
+  if (l.locked) { renderLocked(l.title); return; }
   state.lastLesson = id;
   save();
   const list = tracks[l.lang].lessons,
@@ -242,6 +306,9 @@ function renderLesson(id) {
   $("#main").innerHTML =
     `<a href="#paths/${l.lang}" class="back-link">← ${tracks[l.lang].name} learning path</a><div class="lesson-heading"><div class="eyebrow">${modules[l.module].toUpperCase()} <span>·</span> LESSON ${String(index + 1).padStart(2, "0")} OF 20</div><h1>${l.title}</h1><p>${l.lead}</p><div class="lesson-meta">${badge(l.lang)}<span>${icon("clock", 15)} ${l.minutes} min</span><span>${icon("bolt", 15)} Up to 150 XP</span>${done ? '<span class="success-text">✓ Completed</span>' : ""}</div></div><div class="lesson-layout"><article class="lesson-content"><section id="understand"><div class="lesson-section-heading"><span>01</span><h2>Build your mental model</h2></div>${l.sections.map(([h, p]) => `<section class="prose-section"><h3>${h}</h3><p>${e(p)}</p></section>`).join("")}${codeBlock(l.example, tracks[l.lang].name + " · worked example")}<p class="example-explanation">${e(l.explanation)}</p><div class="callout"><span>${icon("bolt", 19)}</span><div><strong>Watch for this</strong><p>${e(l.trap)}</p></div></div></section><section id="predict" class="lesson-section"><div class="lesson-section-heading"><span>02</span><h2>Pause. Predict. Then check.</h2></div><div class="quiz panel"><div class="eyebrow">CHECK YOUR UNDERSTANDING</div><h3>${e(l.quiz.question)}</h3><form id="quiz-form" data-lesson="${id}"><fieldset><legend class="sr-only">Choose an answer</legend>${l.quiz.choices.map((choice, i) => `<label class="quiz-choice"><input type="radio" name="answer" value="${i}" required><span class="choice-letter">${String.fromCharCode(65 + i)}</span><span>${e(choice)}</span></label>`).join("")}</fieldset><button type="submit" class="button secondary">Check answer ${icon("arrow", 16)}</button></form><div id="quiz-feedback" role="status">${state.quizzes[id] ? `<div class="feedback success">${icon("check")}<p><strong>Concept checked.</strong> ${e(l.quiz.why)}</p></div>` : ""}</div></div></section><section id="practice" class="lesson-section"><div class="lesson-section-heading"><span>03</span><h2>Make the code yours</h2></div><p class="challenge-prompt">${e(l.challenge.prompt)}</p>${editor(l.lang, id, l.challenge.starter, true)}<div class="hint-actions"><details><summary>A nudge in the right direction</summary><p>${e(l.sections[l.sections.length - 1][1])}</p><p>Start with the normal case, then trace the empty input or boundary cases shown in the tests.</p></details><details><summary>Study the solution</summary><p>Try it yourself first. After reading, close this and rebuild the solution from memory.</p>${codeBlock(l.challenge.solution, "One possible solution")}</details></div></section><section id="reflect" class="lesson-section"><div class="lesson-section-heading"><span>04</span><h2>Explain it in your own words</h2></div><p>${e(l.recall.question)}</p><label class="sr-only" for="lesson-notes">Your notes for this lesson</label><textarea id="lesson-notes" class="notes-input" data-note="${id}" placeholder="What clicked? What would you explain to a friend? Write it here…">${e(state.notes[id] || "")}</textarea><div class="notes-caption">${icon("note", 14)} Saved automatically to your notebook.</div><div class="completion-panel"><div><h3>${done ? "One more concept, made yours." : "Ready to make it stick?"}</h3><p id="completion-hint">${completionHint(l)}</p></div><button class="button primary" data-complete="${id}" ${!canComplete(l) || done ? "disabled" : ""}>${done ? "Lesson complete" : "Complete lesson"} ${icon("check", 17)}</button></div>${done && next ? linkButton("#lesson/" + next.id, "Next: " + next.title) : ""}</section></article><aside class="lesson-aside"><div class="lesson-toc panel"><div class="eyebrow">THIS SESSION</div><button data-scroll="understand"><span>01</span> Understand the concept</button><button data-scroll="predict"><span>02</span> Check your intuition <i id="quiz-status">${state.quizzes[id] ? "✓" : ""}</i></button><button data-scroll="practice"><span>03</span> Write real code <i id="code-status">${state.solved.includes(id) ? "✓" : ""}</i></button><button data-scroll="reflect"><span>04</span> Reflect & remember</button><div class="toc-bottom">Learning happens when<br>you do the thinking.</div></div><div class="source-card">${icon("book", 22)}<h3>Go to the source</h3><p>Explore the language reference when you want to go deeper.</p><a href="${l.docs}" target="_blank" rel="noopener noreferrer">${l.lang === "js" ? "MDN Web Docs" : "Microsoft Learn"} ${icon("external", 14)}</a></div><div class="lesson-next"><small>${next ? "UP NEXT" : "PATH FINALE"}</small><strong>${next ? next.title : "Build your capstone project"}</strong><a href="${next ? "#lesson/" + next.id : "#projects"}">${next ? "Preview lesson" : "Explore projects"} ${icon("arrow", 14)}</a></div></aside></div>`;
   bindEditor();
+}
+function renderLocked(title) {
+  $("#main").innerHTML = `<section class="panel locked-content">${icon("star", 35)}<div class="eyebrow">PART OF FORGE PREMIUM</div><h1>${e(title)}</h1><p>Continue beyond the foundations with the complete learning path, challenges, projects, and study insights.</p><a href="#premium" class="button primary">Explore Premium ${icon("arrow", 16)}</a><a href="#paths">Return to learning paths</a></section>`;
 }
 function canComplete(l) {
   return !!state.quizzes[l.id] && state.solved.includes(l.id);
@@ -271,7 +338,7 @@ function editor(lang, key, starter, challenge = false) {
     .map((_, i) => i + 1)
     .join(
       "\n",
-    )}</div><label class="sr-only" for="code-editor">${tracks[lang].name} code editor</label><textarea id="code-editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off">${e(draft)}</textarea></div><div class="editor-bottom"><span><i class="status-dot"></i> ${lang === "js" ? "Runs in an isolated worker" : "Runs locally on your computer · use code you trust"}</span><div><button class="button editor-run" data-action="run-code" ${runBusy ? "disabled" : ""}>${icon("play", 14)} Run code</button>${challenge ? `<button class="button primary" data-action="test-code" ${runBusy ? "disabled" : ""}>${icon("check", 16)} Check solution</button>` : ""}</div></div><div class="output-panel"><div class="output-heading"><span>${icon("terminal", 15)} OUTPUT ${challenge ? "<i>& TEST RESULTS</i>" : ""}</span><button data-action="clear-output" aria-label="Clear output">Clear</button></div><div id="code-output" role="status" aria-live="polite">${same ? outputMarkup(output) : '<div class="output-empty">Your next discovery starts with a run.<span>Write some code, then see what happens.</span></div>'}</div></div></div>`;
+    )}</div><label class="sr-only" for="code-editor">${tracks[lang].name} code editor</label><textarea id="code-editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off">${e(draft)}</textarea></div><div class="editor-bottom"><span><i class="status-dot"></i> ${lang === "js" ? "Runs in an isolated worker" : status.runner === "online" ? "Online compiler · do not include private code" : status.runner === "local" ? "Runs locally on your computer · use code you trust" : "Online compiler awaiting setup"}</span><div><button class="button editor-run" data-action="run-code" ${runBusy ? "disabled" : ""}>${icon("play", 14)} Run code</button>${challenge ? `<button class="button primary" data-action="test-code" ${runBusy ? "disabled" : ""}>${icon("check", 16)} Check solution</button>` : ""}</div></div><div class="output-panel"><div class="output-heading"><span>${icon("terminal", 15)} OUTPUT ${challenge ? "<i>& TEST RESULTS</i>" : ""}</span><button data-action="clear-output" aria-label="Clear output">Clear</button></div><div id="code-output" role="status" aria-live="polite">${same ? outputMarkup(output) : '<div class="output-empty">Your next discovery starts with a run.<span>Write some code, then see what happens.</span></div>'}</div></div></div>`;
 }
 function bindEditor() {
   const ed = $("#code-editor");
@@ -366,7 +433,7 @@ async function runCode(check = false) {
   } catch (err) {
     result = {
       error:
-        "Could not reach the local runner. Keep the Forge server window open. " +
+        "Could not reach the code runner. Check your connection and try again. " +
         err.message,
     };
   }
@@ -398,7 +465,7 @@ async function runCode(check = false) {
 }
 const playgroundStarters = {
   js: '// Your space to experiment. Change something. Run it again.\nconst skills = ["curiosity", "practice", "persistence"];\n\nfunction buildSomething(ingredients) {\n  return ingredients.map(skill => skill.toUpperCase());\n}\n\nconsole.log("Hello, possibility.");\nconsole.log(buildSomething(skills));\n',
-  cs: '// Real C#, compiled and run with your local .NET SDK.\nvar skills = new[] { "curiosity", "practice", "persistence" };\n\nConsole.WriteLine("Hello, possibility.");\nforeach (var skill in skills)\n{\n    Console.WriteLine(skill.ToUpperInvariant());\n}\n',
+  cs: '// Write C# and run it with the connected compiler.\nvar skills = new[] { "curiosity", "practice", "persistence" };\n\nConsole.WriteLine("Hello, possibility.");\nforeach (var skill in skills)\n{\n    Console.WriteLine(skill.ToUpperInvariant());\n}\n',
 };
 function renderPlayground() {
   const p = new URLSearchParams(location.hash.split("?")[1]);
@@ -409,8 +476,10 @@ function renderPlayground() {
       "A blank canvas. A working mind.",
       "Try an idea, break something, follow your curiosity. Your drafts stay right here.",
     ) +
-    `<div class="playground-layout"><section><div class="playground-controls"><div class="tabs"><button data-play-lang="js" class="${playLang === "js" ? "selected" : ""}">JavaScript</button><button data-play-lang="cs" class="${playLang === "cs" ? "selected" : ""}">C# / .NET</button></div><span class="runtime-label">${icon("check", 14)} ${playLang === "js" ? "Browser runtime" : status.csharp ? "Real .NET compiler" : "SDK not available"}</span></div>${editor(playLang, "play-" + playLang, playgroundStarters[playLang])}<div class="playground-note">${icon("help", 18)}<p>${playLang === "js" ? "This is a JavaScript console, without a DOM. Top-level await is supported. Await asynchronous work before the run ends. For DOM practice, use the browser lab below." : "Write a complete console program. Common System namespaces are imported for you. Put top-level statements before class and record declarations. ASP.NET projects belong in their own project folder."}</p></div>${playLang === "js" ? `<section class="dom-lab panel"><div class="section-title"><h2>A little browser lab</h2><span class="pill">DOM + EVENTS</span></div><p>Connect an actual button to the page. This preview is isolated from your learning data.</p><label for="dom-html">HTML</label><textarea class="mini-editor" id="dom-html" spellcheck="false">${e(state.drafts["dom-html"] ?? "<h2>Make something happen.</h2>\n<button>Say hello</button>\n<output></output>")}</textarea><label for="dom-js">JavaScript</label><textarea class="mini-editor" id="dom-js" spellcheck="false">${e(state.drafts["dom-js"] ?? 'document.querySelector("button").addEventListener("click", () => {\n  document.querySelector("output").textContent = "Hello, developer!";\n});')}</textarea><button class="button primary" data-action="dom-run">${icon("play", 15)} Update preview</button><iframe title="Isolated DOM practice preview" id="dom-preview" src="/dom-preview.html" sandbox="allow-scripts"></iframe><pre id="dom-output" role="status"></pre></section>` : ""}</section><aside><div class="focus-card panel"><span class="focus-icon">${icon("coffee", 23)}</span><div class="eyebrow">ONE THING AT A TIME</div><h3>A little focus goes far.</h3><div id="focus-time" class="focus-time">${formatTime(focusRemaining)}</div><p>25 minutes to get into the flow.<br>Then give your mind a break.</p><button class="button primary" data-action="focus">${focusRunning ? "Pause session" : "Start focus session"} ${icon("play", 15)}</button><button class="text-button" data-action="focus-reset">Reset timer</button></div><div class="panel prompts-card"><h3>Follow a small question.</h3><p>What happens if the input is empty?</p><p>Can I explain each line out loud?</p><p>What is the simplest version that works?</p><p>How would I test this behavior?</p></div><a class="play-project-link" href="#projects">Ready for something bigger? ${icon("arrow", 17)}<strong>Pick a project.</strong></a></aside></div>`;
+    `<div class="playground-layout"><section><div class="playground-controls"><div class="tabs"><button data-play-lang="js" class="${playLang === "js" ? "selected" : ""}">JavaScript</button><button data-play-lang="cs" class="${playLang === "cs" ? "selected" : ""}">C# / .NET</button></div><span class="runtime-label">${icon("check", 14)} ${playLang === "js" ? "Browser runtime" : status.csharp ? "Real .NET compiler" : "Compiler not connected"}</span></div>${editor(playLang, "play-" + playLang, playgroundStarters[playLang])}<div class="playground-note">${icon("help", 18)}<p>${playLang === "js" ? "This is a JavaScript console, without a DOM. Top-level await is supported. Await asynchronous work before the run ends. For DOM practice, use the browser lab below." : "Write a complete console program. Common System namespaces are imported for you. Put top-level statements before class and record declarations. ASP.NET projects belong in their own project folder."}</p></div>${playLang === "js" ? `<section class="dom-lab panel"><div class="section-title"><h2>A little browser lab</h2><span class="pill">DOM + EVENTS</span></div><p>Connect an actual button to the page. This preview is isolated from your learning data.</p><label for="dom-html">HTML</label><textarea class="mini-editor" id="dom-html" spellcheck="false">${e(state.drafts["dom-html"] ?? "<h2>Make something happen.</h2>\n<button>Say hello</button>\n<output></output>")}</textarea><label for="dom-js">JavaScript</label><textarea class="mini-editor" id="dom-js" spellcheck="false">${e(state.drafts["dom-js"] ?? 'document.querySelector("button").addEventListener("click", () => {\n  document.querySelector("output").textContent = "Hello, developer!";\n});')}</textarea><button class="button primary" data-action="dom-run">${icon("play", 15)} Update preview</button><iframe title="Isolated DOM practice preview" id="dom-preview" src="/dom-preview.html" sandbox="allow-scripts"></iframe><pre id="dom-output" role="status"></pre></section>` : ""}</section><aside><div class="focus-card panel"><span class="focus-icon">${icon("coffee", 23)}</span><div class="eyebrow">ONE THING AT A TIME</div><h3>A little focus goes far.</h3><div id="focus-time" class="focus-time">${formatTime(focusRemaining)}</div><p>25 minutes to get into the flow.<br>Then give your mind a break.</p><button class="button primary" data-action="focus">${focusRunning ? "Pause session" : "Start focus session"} ${icon("play", 15)}</button><button class="text-button" data-action="focus-reset">Reset timer</button></div><div class="panel prompts-card"><h3>Follow a small question.</h3><p>What happens if the input is empty?</p><p>Can I explain each line out loud?</p><p>What is the simplest version that works?</p><p>How would I test this behavior?</p></div><a class="play-project-link" href="#projects">Ready for something bigger? ${icon("arrow", 17)}<strong>Pick a project.</strong></a></aside></div>`;
   bindEditor();
+  $("#dom-preview")?.addEventListener("load", syncPreviewTheme);
+  syncPreviewTheme();
   for (const id of ["dom-html", "dom-js"])
     $("#" + id)?.addEventListener("input", (ev) => {
       state.drafts[id] = ev.target.value;
@@ -460,6 +529,7 @@ function toggleFocus() {
 }
 
 function renderReview() {
+  if (status.enforcePlans && !hasPremium()) { renderLocked("Your spaced review deck"); return; }
   let cards = dueCards();
   if (!cards.some((l) => l.id === selectedReview?.id))
     selectedReview = cards[0];
@@ -484,7 +554,7 @@ function renderProjects() {
     `<div class="tabs"><button data-project-filter="all" class="${projectFilter === "all" ? "selected" : ""}">All projects</button><button data-project-filter="js" class="${projectFilter === "js" ? "selected" : ""}">JavaScript</button><button data-project-filter="cs" class="${projectFilter === "cs" ? "selected" : ""}">C# & full stack</button></div><div class="projects-grid">${filtered
       .map((p, i) => {
         const checks = state.projectChecks[p.id] || [];
-        return `<a href="#project/${p.id}" class="project-card panel"><div class="project-art project-art-${projects.indexOf(p) % 3}"><span class="project-art-code">${["{ habits }", "₦ 12,500", "fetch( )", "/api/books", "recall( )", "JS ⇄ C#"][projects.indexOf(p)]}</span><span class="project-level">${p.level}</span></div><div class="project-body"><div class="project-meta">${badge(p.lang)}<span>${p.time}</span></div><h2>${p.title}</h2><p>${p.summary}</p><div class="skill-tags">${p.skills.map((s) => `<span>${s}</span>`).join("")}</div><div class="project-link"><span>${checks.length ? checks.length + " / " + p.steps.length + " milestones" : "Open project brief"}</span>${icon("arrow", 18)}</div></div></a>`;
+        return `<a href="#project/${p.id}" class="project-card panel"><div class="project-art project-art-${projects.indexOf(p) % 3}"><span class="project-art-code">${["{ habits }", "₦ 12,500", "fetch( )", "/api/books", "recall( )", "JS ⇄ C#"][projects.indexOf(p)]}</span><span class="project-level">${p.level}</span></div><div class="project-body"><div class="project-meta">${badge(p.lang)}<span>${p.time}</span></div><h2>${p.title}</h2><p>${p.summary}</p><div class="skill-tags">${p.skills.map((s) => `<span>${s}</span>`).join("")}</div><div class="project-link"><span>${checks.length ? checks.length + " / " + (p.steps?.length || 6) + " milestones" : "Open project brief"}</span>${icon("arrow", 18)}</div></div></a>`;
       })
       .join("")}</div>`;
 }
@@ -494,6 +564,7 @@ function renderProject(id) {
     renderProjects();
     return;
   }
+  if (p.locked) { renderLocked(p.title); return; }
   const checks = state.projectChecks[id] || [];
   $("#main").innerHTML =
     `<a class="back-link" href="#projects">← All projects</a>` +
@@ -525,13 +596,18 @@ function renderNotebook() {
     }</section></div>`;
 }
 function renderSettings() {
+  queueMicrotask(syncThemeControls);
   $("#main").innerHTML =
     sectionHead(
       "MAKE THIS SPACE YOURS",
       "A little setup. A steady rhythm.",
-      "Your learning stays on this device. Keep a backup when you want to take it elsewhere.",
+      "Manage your workspace, keep your progress in sync, and export a backup when you need one.",
     ) +
-    `<div class="settings-grid"><section class="panel settings-panel"><div class="settings-icon">${icon("clock", 24)}</div><h2>Set your daily intention</h2><p>Choose a realistic amount of focused practice. Consistency matters more than a heroic first day.</p><div class="goal-options">${[15, 30, 60, 90].map((g) => `<button data-goal="${g}" class="${state.goal === g ? "selected" : ""}">${g}<small>min / day</small></button>`).join("")}</div><p class="muted">Use the 25-minute timer in the playground to track focused practice.</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("download", 24)}</div><h2>Your progress, portable</h2><p>Back up completed lessons, quiz results, notes, code drafts, project milestones, and review schedules.</p><div class="settings-actions"><button class="button primary" data-action="export">${icon("download", 16)} Export progress</button><button class="button secondary" data-action="import">Import backup</button><input type="file" id="import-file" accept="application/json,.json" hidden></div><p class="muted">Import replaces current progress. Export first if you want to preserve it.</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("terminal", 24)}</div><h2>Your local learning studio</h2><div class="runtime-info"><span>JavaScript</span><strong>Ready · isolated worker</strong><span>C# compiler</span><strong>${status.csharp ? "Ready · .NET SDK " + e(status.sdk) : "Not available — install .NET SDK"}</strong><span>Account required</span><strong>No</strong><span>Internet required</span><strong>No, except reference links</strong><span>Progress storage</span><strong>${storageOK ? "This browser · localStorage" : "Unavailable · export a backup"}</strong></div><p class="muted">C# runs with your local user’s permissions. Use code you trust. This app is designed for personal use on localhost.</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("path", 24)}</div><h2>A study rhythm that works</h2><ol class="study-rhythm"><li><strong>5 minutes</strong> Recall a previous concept before rereading.</li><li><strong>10–20 minutes</strong> Read and trace one worked example.</li><li><strong>15–30 minutes</strong> Solve a challenge without copying.</li><li><strong>5 minutes</strong> Explain what changed in your understanding.</li></ol><p class="muted">Lesson timings are estimates. Slow down when a concept deserves another pass.</p></section></div>`;
+    `<div class="settings-grid">${appearancePanel()}${accountPanel()}${planSettingsPanel()}<section class="panel settings-panel"><div class="settings-icon">${icon("clock", 24)}</div><h2>Set your daily intention</h2><p>Choose a realistic amount of focused practice. Consistency matters more than a heroic first day.</p><div class="goal-options">${[15, 30, 60, 90].map((g) => `<button data-goal="${g}" class="${state.goal === g ? "selected" : ""}">${g}<small>min / day</small></button>`).join("")}</div><p class="muted">Use the 25-minute timer in the playground to track focused practice.</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("download", 24)}</div><h2>Your progress, portable</h2><p>Back up completed lessons, quiz results, notes, code drafts, project milestones, and review schedules.</p><div class="settings-actions"><button class="button primary" data-action="export">${icon("download", 16)} Export progress</button><button class="button secondary" data-action="import">Import backup</button><input type="file" id="import-file" accept="application/json,.json" hidden></div><p class="muted">Import replaces current progress. Export first if you want to preserve it.</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("terminal", 24)}</div><h2>Your learning studio</h2><div class="runtime-info"><span>JavaScript</span><strong>Ready · isolated worker</strong><span>C# compiler</span><strong>${status.runner === "online" ? "Online compiler connected" : status.csharp ? "Ready · .NET SDK " + e(status.sdk) : "Online compiler awaiting setup"}</strong><span>Account</span><strong>${memberUser() ? e(memberUser().email) : "Guest learning"}</strong><span>Connectivity</span><strong>Required for sync, feedback, billing, and online C#</strong><span>Progress storage</span><strong>${memberUser() ? "Account + this browser" : storageOK ? "This browser" : "Unavailable · export a backup"}</strong></div><p class="muted">${status.runner === "local" ? "This local C# runner uses your computer’s permissions. Run code you trust." : "Online C# sends submitted code to the configured isolated compiler. Keep secrets and private code out of the playground."}</p></section><section class="panel settings-panel"><div class="settings-icon">${icon("path", 24)}</div><h2>A study rhythm that works</h2><ol class="study-rhythm"><li><strong>5 minutes</strong> Recall a previous concept before rereading.</li><li><strong>10–20 minutes</strong> Read and trace one worked example.</li><li><strong>15–30 minutes</strong> Solve a challenge without copying.</li><li><strong>5 minutes</strong> Explain what changed in your understanding.</li></ol><p class="muted">Lesson timings are estimates. Slow down when a concept deserves another pass.</p></section></div>`;
+}
+
+function renderFeedback() {
+  renderFeedbackPage($("#main"), {e,icon,lessons,getStatus:()=>status});
 }
 
 function openSearch() {
@@ -591,6 +667,8 @@ document.addEventListener("click", async (ev) => {
   }
   if (button.closest("#search-results")) $("#search-dialog").close();
   const a = button.dataset.action;
+  if (a === "toggle-theme") setTheme(window.ForgeTheme.getResolved() === "dark" ? "light" : "dark");
+  if (button.dataset.themeChoice) setTheme(button.dataset.themeChoice);
   if (a === "menu") $(".sidebar").classList.toggle("mobile-open");
   if (a === "search") openSearch();
   if (a === "close-search") $("#search-dialog")?.close();
@@ -797,6 +875,7 @@ document.addEventListener("keydown", (ev) => {
     renderReview();
   }
 });
+window.addEventListener("forge:themechange", syncThemeControls);
 window.addEventListener("message", (ev) => {
   if (
     ev.source !== $("#dom-preview")?.contentWindow ||
@@ -810,11 +889,7 @@ window.addEventListener("hashchange", () => {
   shell();
 });
 window.addEventListener("beforeunload", () => save());
+initPremium({icon,e,get lessons(){return lessons;},get projects(){return projects;},getState:()=>state,toast,refresh:shell,setGoal:(goal)=>{state.goal=goal;save();}});
+status = await initMember({icon,getState:()=>state,setState:(next)=>{state=sanitizeState(next);},setGoal:(goal)=>{state.goal=goal;save();},toast,refresh:shell,onAccountChange:async()=>{resetOnboarding();selectedReview=null;output=null;outputContext=null;await refreshCurriculum();}});
 shell();
-fetch("/api/status")
-  .then((r) => r.json())
-  .then((data) => {
-    status = data;
-    if (route === "settings") renderSettings();
-  })
-  .catch(() => {});
+updateFeedbackStatus(status);
