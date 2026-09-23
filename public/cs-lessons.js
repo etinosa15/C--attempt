@@ -19,6 +19,7 @@ function add(
   solution,
   tests,
   recall,
+  hints = [],
 ) {
   lessons.push({
     id: "cs-" + id,
@@ -34,6 +35,7 @@ function add(
     quiz: { question, choices, answer, why },
     challenge: { prompt, starter, solution, tests },
     recall: { question: recall[0], answer: recall[1] },
+    hints,
     docs: "https://learn.microsoft.com/en-us/dotnet/csharp/",
   });
 }

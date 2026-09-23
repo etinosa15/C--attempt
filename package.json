@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "An offline-first JavaScript and C# learning studio",
+  "description": "A local-first JavaScript and C# learning studio: progress stays in your browser, and the local edition runs without a network",
   "scripts": {
     "start": "node server.mjs",
+    "sync": "node sync-server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "verify:curriculum": "node tests/verify-curriculum.mjs"
+    "verify:curriculum": "node tests/verify-curriculum.mjs",
+    "verify:server": "node tests/verify-server.mjs",
+    "build": "node scripts/build-hosted.mjs",
+    "preview:hosted": "node server.mjs --hosted-preview"
   },
   "engines": {
     "node": ">=20"

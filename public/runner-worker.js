@@ -38,7 +38,10 @@ self.onmessage = async ({ data }) => {
         )
         .join(",") +
       "]);";
-    const results = await new AsyncFunction("console", body)(proxy);
+    const returned = await new AsyncFunction("console", body)(proxy);
+    if (checks.length && (!Array.isArray(returned) || returned.length !== checks.length))
+      throw new Error("Your program returned before all checks completed. Define the requested function without returning from the whole program.");
+    const results = checks.length ? returned : [];
     self.postMessage({
       logs,
       results: results.map((r, i) => ({
@@ -51,6 +54,6 @@ self.onmessage = async ({ data }) => {
       })),
     });
   } catch (e) {
-    self.postMessage({ logs, error: e.name + ": " + e.message });
+    self.postMessage({ logs, error: e && typeof e.message === "string" ? (e.name || "Error") + ": " + e.message : "Thrown value: " + format(e) });
   }
 };

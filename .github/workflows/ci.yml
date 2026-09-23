@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Show toolchain
+        run: |
+          node --version
+          dotnet --list-sdks
+
+      - name: Behavioral tests
+        run: npm test
+
+      - name: Curriculum verification (real C#)
+        run: npm run verify:curriculum
+
+      - name: Server integration verification
+        run: npm run verify:server
+
+      - name: Hosted build
+        run: npm run build

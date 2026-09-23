@@ -1,3 +1,37 @@
+/* ============================================================================
+   Forge Code Academy — stylesheet
+   ----------------------------------------------------------------------------
+   One file, loaded by a single <link> in index.html. Source order is
+   LOAD-BEARING: several equal-specificity rules and the appended accessibility
+   pass (section 20) win only because they come later. Do not reorder rules to
+   "tidy" the file — add to the right section instead. These headers are
+   navigation only; search a number (e.g. "11 ·") to jump.
+
+   Table of contents
+     01 · Design tokens & base reset
+     02 · Storage warning & daily-focus summary
+     03 · Accessibility primitives (sr-only, skip-link, focus-visible)
+     04 · Sidebar & navigation
+     05 · Top bar, breadcrumbs, resume & streak
+     06 · Overview, hero & dashboard
+     07 · Course cards & daily card
+     08 · Learning paths & lesson pages
+     09 · Code blocks & language comparison
+     10 · Editor: shell, toolbar, line numbers
+     11 · Feedback & check result
+     12 · Animations
+     13 · Completion & next step
+     14 · Playground, review, projects, notebook
+     15 · Backup / export nudge
+     16 · Dialogs & responsive layout
+     17 · Responsive breakpoints
+     18 · Reduced motion
+     19 · Accessibility & readability refinements (appended — order matters)
+   ============================================================================ */
+
+/* ============================================================
+   01 · Design tokens & base reset
+   ============================================================ */
 :root {
   --bg: #f8f9fb;
   --panel: #fff;
@@ -23,6 +57,56 @@ body {
   margin: 0;
   background: var(--bg);
 }
+/* ============================================================
+   02 · Storage warning & daily-focus summary
+   ============================================================ */
+.storage-warning:not([hidden]) {
+  position: fixed;
+  z-index: 1000;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 780px;
+  margin: auto;
+  padding: 16px;
+  background: #fff5d6;
+  color: #55421b;
+  border: 1px solid #dfc887;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px #0002;
+}
+.storage-warning > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.daily-focus-progress {
+  width: 100%;
+  margin: 18px 0;
+}
+.daily-focus-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.daily-focus-summary span {
+  font-variant-numeric: tabular-nums;
+}
+.daily-focus-progress progress {
+  display: block;
+  width: 100%;
+  height: 9px;
+  margin: 10px 0;
+  accent-color: var(--purple);
+}
+.daily-focus-progress p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
 button,
 input,
 textarea,
@@ -46,6 +130,10 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
+button[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.5;
+}
 a {
   color: inherit;
   text-decoration: none;
@@ -65,6 +153,26 @@ textarea:focus-visible,
 summary:focus-visible {
   outline: 3px solid #a499db;
   outline-offset: 4px;
+}
+[tabindex="-1"]:focus-visible {
+  outline: 3px solid #a499db;
+  outline-offset: 4px;
+}
+.sidebar-close {
+  display: none;
+}
+.editor-keyboard-help {
+  padding: 10px 16px;
+  margin: 0;
+  color: #e1dce9;
+  background: #302b3b;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.editor-keyboard-help kbd {
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
 }
 button svg,
 a svg {
@@ -96,6 +204,9 @@ button {
 svg {
   vertical-align: middle;
 }
+/* ============================================================
+   03 · Accessibility primitives (sr-only, skip-link, focus-visible)
+   ============================================================ */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -117,6 +228,9 @@ svg {
 .skip-link:focus {
   top: 15px;
 }
+/* ============================================================
+   04 · Sidebar & navigation
+   ============================================================ */
 .sidebar {
   position: fixed;
   top: 0;
@@ -310,6 +424,9 @@ svg {
   border-radius: 50%;
   background: #83a994;
 }
+/* ============================================================
+   05 · Top bar, breadcrumbs, resume & streak
+   ============================================================ */
 .main-shell {
   margin-left: var(--sidebar);
 }
@@ -359,6 +476,35 @@ svg {
   margin-left: 18px;
   color: #a6a6ae;
 }
+.resume-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 330px;
+  padding: 9px 14px;
+  border: 1px solid #ded6f2;
+  border-radius: 7px;
+  background: #f7f4fd;
+  color: #55418f;
+  font-weight: 600;
+}
+.resume-link:hover {
+  background: #f0eafb;
+  border-color: #c8bce4;
+}
+.resume-link > svg {
+  color: #6f5aab;
+  flex-shrink: 0;
+}
+.resume-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 450;
+  color: #6a6280;
+}
 .streak {
   display: flex;
   gap: 6px;
@@ -381,6 +527,9 @@ svg {
 .mobile-menu {
   display: none !important;
 }
+/* ============================================================
+   06 · Overview, hero & dashboard
+   ============================================================ */
 main {
   padding: 38px 42px 45px;
   max-width: 1600px;
@@ -426,6 +575,104 @@ main {
   white-space: nowrap;
   color: #9d9ba8;
   align-self: center;
+}
+/* First visit: the panel a learner sees before anything else. */
+.welcome-panel {
+  position: relative;
+  border: 1px solid #ded6f2;
+  border-radius: 13px;
+  background: #fbfaff;
+  padding: 27px 29px 24px;
+  margin: 0 0 22px;
+}
+.welcome-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 7px;
+  background: transparent;
+  color: #6d6480;
+}
+.welcome-close:hover {
+  background: #efeafa;
+  color: #55418f;
+}
+.welcome-panel h2 {
+  font-size: 20px;
+  line-height: 1.45;
+  letter-spacing: -0.5px;
+  margin: 0 46px 21px 0;
+  max-width: 30em;
+}
+.welcome-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  list-style: none;
+  margin: 0 0 23px;
+  padding: 0;
+}
+.welcome-steps li {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 17px 15px 15px;
+}
+.welcome-number {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #8d85a1;
+}
+.welcome-steps li > svg {
+  display: block;
+  color: #6f5aab;
+  margin-bottom: 13px;
+}
+.welcome-steps div strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+.welcome-steps div span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #625b70;
+}
+.welcome-choice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  padding-top: 21px;
+  border-top: 1px solid #ece7f6;
+}
+.welcome-choice > p {
+  margin: 0;
+}
+.welcome-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+.welcome-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 19px 0 0;
+}
+.welcome-note > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #6f5aab;
 }
 .hero {
   display: flex;
@@ -518,6 +765,16 @@ main {
 }
 .secondary:hover {
   background: #f5f2fc;
+}
+/* A button that names its destination: label on the first line, lesson title
+   underneath, as .course-link already does. */
+.button > span {
+  text-align: left;
+}
+.button small {
+  display: block;
+  font-weight: 450;
+  margin-top: 3px;
 }
 .hero-art {
   position: relative;
@@ -699,6 +956,9 @@ main {
   color: #9b99a6;
   margin-top: 6px;
 }
+/* ============================================================
+   07 · Course cards & daily card
+   ============================================================ */
 .dashboard-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 248px;
@@ -1133,6 +1393,9 @@ main {
   color: #c9c0d4;
   padding: 0 6px;
 }
+/* ============================================================
+   08 · Learning paths & lesson pages
+   ============================================================ */
 /* Learning paths and shared pages */
 .page-heading {
   margin: 4px 0 30px;
@@ -1387,6 +1650,9 @@ main {
   margin-bottom: 21px;
   max-width: 75ch;
 }
+/* ============================================================
+   09 · Code blocks & language comparison
+   ============================================================ */
 .code-block {
   border: 1px solid #393341;
   background: #2e2b36;
@@ -1625,6 +1891,9 @@ main {
   color: #8b7d97;
   line-height: 1.9;
 }
+/* ============================================================
+   10 · Editor: shell, toolbar, line numbers
+   ============================================================ */
 .editor-shell {
   border: 1px solid #39303f;
   background: #2a2531;
@@ -1681,28 +1950,57 @@ main {
   padding: 20px 11px 20px 0;
   text-align: right;
   white-space: pre;
-  font: 12px/1.8 var(--mono);
-  color: #675775;
+  /* Must match #code-editor exactly, or the numbers drift from their lines. */
+  font: 13px/1.8 var(--mono);
+  color: #a294b6;
   overflow: hidden;
   user-select: none;
 }
 #code-editor {
+  position: relative;
+  z-index: 1;
   resize: vertical;
   min-height: 200px;
   width: 100%;
   height: 100%;
   border: 0;
   background: transparent;
-  color: #e1d5ee;
+  /* Text is transparent so only the colored overlay shows; the caret stays
+     visible via caret-color. The overlay <pre> mirrors this box exactly. */
+  color: transparent;
   padding: 20px 18px 20px 0;
   white-space: pre;
   overflow: auto;
-  font: 12px/1.8 var(--mono);
+  font: 13px/1.8 var(--mono);
   tab-size: 2;
   outline-offset: -3px;
   caret-color: #e5d0ff;
   border-radius: 0;
   resize: none;
+}
+/* Live syntax layer painted behind the transparent textarea. Every metric here
+   MUST match #code-editor (font, padding, tab-size, white-space) or the colored
+   text drifts from the caret. left:45px clears the line-number gutter; scroll is
+   synced programmatically in bindEditor(). */
+.editor-highlight {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 45px;
+  z-index: 0;
+  margin: 0;
+  padding: 20px 18px 20px 0;
+  font: 13px/1.8 var(--mono);
+  white-space: pre;
+  tab-size: 2;
+  overflow: hidden;
+  pointer-events: none;
+  color: #e1d5ee;
+}
+.editor-highlight code {
+  font: inherit;
+  display: block;
 }
 .editor-bottom {
   display: flex;
@@ -1790,6 +2088,10 @@ main {
   margin: 0 0 7px;
   color: #d6c6e2;
 }
+#dom-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .run-error {
   color: #e4aeb5;
   font-size: 10px;
@@ -1824,6 +2126,10 @@ main {
 .test-result > span {
   font-size: 12px;
 }
+.test-result > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .test-result.pass > span {
   color: #8ab39b;
 }
@@ -1839,6 +2145,39 @@ main {
   color: #ba8b9f;
   font-size: 9px;
   margin-top: 5px;
+}
+/* ============================================================
+   11 · Feedback & check result
+   ============================================================ */
+/* The check the learner should read first. */
+.test-result.leading-fail {
+  margin-left: -12px;
+  padding-left: 10px;
+  border-left: 2px solid #cf8b9c;
+  background: #ffffff06;
+}
+.test-result small code {
+  font-family: var(--mono);
+  background: #ffffff12;
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: pre-wrap;
+}
+.run-error > strong {
+  display: block;
+  margin-bottom: 7px;
+}
+.run-error code {
+  font-family: var(--mono);
+  background: #ffffff12;
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.run-error details {
+  margin-top: 4px;
+}
+.run-error summary {
+  cursor: pointer;
 }
 .compiler-warnings {
   font-size: 9px;
@@ -1864,6 +2203,9 @@ main {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+/* ============================================================
+   12 · Animations
+   ============================================================ */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1891,6 +2233,54 @@ main {
   color: #a092ad;
   line-height: 1.9;
   margin: 15px 0 3px;
+}
+.hint-lead {
+  margin: 0 0 3px !important;
+}
+.hint-tier {
+  border: 1px solid #e7dfef;
+  background: #fff;
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.hint-tier-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #7a5f95;
+  font-size: 11px;
+}
+.hint-tier-head strong {
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+.hint-tier > p {
+  margin: 9px 0 0 !important;
+}
+.hint-solution {
+  border: 1px solid #e0d4ec;
+  background: #faf8fd;
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.hint-solution summary {
+  cursor: pointer;
+  color: #7a5f95;
+  font-size: 11px;
+  font-weight: 600;
+}
+.hint-solution p {
+  margin: 12px 0 !important;
+}
+.hint-reveal {
+  justify-self: start;
+  background: #f3eefb;
+  color: #6f5b93;
+  border-color: #e2d6f0;
+  font-size: 10px;
+}
+.hint-reveal:hover {
+  background: #ece3f8;
 }
 .notes-input {
   display: block;
@@ -1935,11 +2325,91 @@ main {
   margin: 0;
   max-width: 390px;
 }
+/* ============================================================
+   13 · Completion & next step
+   ============================================================ */
+/* What happened, and what to do next. Shown once a lesson is complete. */
+.next-step-panel {
+  margin-top: 4px;
+  padding-top: 24px;
+  border-top: 1px solid #e9e0ef;
+}
+.next-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.next-step-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #e6f0ea;
+  color: #3f6b52;
+}
+.next-step-head strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.next-step-head p {
+  margin: 0;
+  max-width: 62ch;
+}
+.next-step-head svg {
+  vertical-align: -2px;
+}
+.next-step-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 12px;
+  margin-top: 19px;
+}
+.next-step-card {
+  position: relative;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  padding: 17px 44px 16px 17px;
+}
+.next-step-card:hover {
+  border-color: #c8bce4;
+  background: #fbfaff;
+}
+.next-step-card small {
+  display: block;
+  letter-spacing: 1.3px;
+  margin-bottom: 9px;
+}
+.next-step-card strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 5px;
+}
+.next-step-card > span {
+  display: block;
+  font-size: 12px;
+  color: #625b70;
+}
+.next-step-card > svg {
+  position: absolute;
+  right: 17px;
+  top: 50%;
+  margin-top: -8px;
+  color: #6f5aab;
+}
 .lesson-section > p {
   font-size: 13px;
   line-height: 1.9;
   color: #8b7d98;
 }
+/* ============================================================
+   14 · Playground, review, projects, notebook
+   ============================================================ */
 /* Playground, review, projects, notebook */
 .playground-layout {
   display: grid;
@@ -2500,6 +2970,91 @@ main {
   margin: 0;
   padding: 0;
 }
+/* The intro line is not a criterion row, so it should not carry the row border. */
+.project-rubric > p {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.rubric-criteria {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.rubric-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid #efe6f5;
+  background: #fff;
+  border-radius: 7px;
+  padding: 13px 15px;
+  cursor: pointer;
+}
+.rubric-item:hover {
+  border-color: #e2d3ee;
+}
+.rubric-item input {
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
+.rubric-item span {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8a7898;
+}
+.rubric-item small {
+  display: block;
+  margin-top: 5px;
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  color: #b39ec2;
+  text-transform: uppercase;
+}
+.rubric-score {
+  border-top: 1px solid #f0e5f6;
+  padding-top: 16px;
+}
+.rubric-bar {
+  height: 9px;
+  border-radius: 6px;
+  background: #efe6f5;
+  overflow: hidden;
+}
+.rubric-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: #c6a9df;
+  transition: width 0.28s ease;
+}
+.rubric-bar span.passed {
+  background: var(--green);
+}
+.rubric-score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 11px;
+}
+.rubric-score-line strong {
+  font-size: 20px;
+  color: #6f5b93;
+}
+.rubric-score-line span {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+.rubric-pass {
+  color: var(--green);
+}
+.rubric-keep {
+  color: #ae8dba;
+}
 .notebook-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2532,6 +3087,7 @@ main {
 }
 .saved-note {
   display: block;
+  overflow-wrap: anywhere;
   padding: 23px;
   margin-bottom: 15px;
 }
@@ -2611,6 +3167,12 @@ main {
   margin-top: 7px;
   color: #b093c0;
 }
+/* Appearance buttons carry a word, not a big number — size the label to read. */
+.theme-options button {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 14px 8px;
+}
 .settings-actions {
   display: flex;
   gap: 11px;
@@ -2618,6 +3180,45 @@ main {
 }
 .settings-actions .button {
   font-size: 10px;
+}
+/* Account sign-in/sign-up form: label stacked above its field. Inputs already
+   inherit the global input rules, including :focus-visible, so this only sets
+   the label/field flow. */
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 20px 0 8px;
+}
+.account-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.account-form .settings-actions {
+  margin: 6px 0 0;
+}
+/* ============================================================
+   15 · Backup / export nudge
+   ============================================================ */
+/* Browser storage is not a backup. Say so when a backup is overdue. */
+.export-nudge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 15px;
+  padding: 14px 16px;
+  border: 1px solid #dfc9a2;
+  border-radius: 8px;
+  background: #fdf8ec;
+}
+.export-nudge > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #7d6224;
 }
 .muted {
   color: #b4a0bf !important;
@@ -2652,6 +3253,9 @@ main {
   color: #9471a5;
   font-weight: 600;
 }
+/* ============================================================
+   16 · Dialogs & responsive layout
+   ============================================================ */
 /* Dialogs and responsive layout */
 #toast {
   position: fixed;
@@ -2759,6 +3363,9 @@ dialog::backdrop {
 .search-dialog-foot kbd {
   font: 9px inherit;
 }
+/* ============================================================
+   17 · Responsive breakpoints (widest first; order is load-bearing)
+   ============================================================ */
 @media (min-width: 1500px) {
   :root {
     --sidebar: 260px;
@@ -2874,6 +3481,12 @@ dialog::backdrop {
   }
   .hero-actions > span {
     display: none;
+  }
+  .welcome-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .resume-link {
+    max-width: 245px;
   }
   .dashboard-columns {
     grid-template-columns: minmax(0, 1fr) 215px;
@@ -3061,8 +3674,29 @@ dialog::backdrop {
   .search-trigger kbd {
     display: none;
   }
-  .streak span {
+  .resume-title {
     display: none;
+  }
+  .resume-link {
+    padding: 9px 12px;
+  }
+  .welcome-panel {
+    padding: 23px 21px 21px;
+  }
+  .welcome-panel h2 {
+    font-size: 18px;
+  }
+  /* Hidden from sight, not from a screen reader: display:none would leave the
+     count announced as a bare number. */
+  .streak span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .hero-art {
     min-width: 200px;
@@ -3246,6 +3880,17 @@ dialog::backdrop {
   .sidebar.mobile-open {
     transform: translateX(0);
   }
+  .sidebar-close {
+    display: inline-flex;
+    align-self: flex-end;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  .sidebar {
+    overflow-y: auto;
+  }
   .sidebar .brand {
     font-size: 31px;
   }
@@ -3294,6 +3939,31 @@ dialog::backdrop {
   }
   .search-trigger {
     padding: 8px;
+  }
+  .resume-verb {
+    display: none;
+  }
+  .resume-link {
+    padding: 0 11px;
+    justify-content: center;
+  }
+  .welcome-steps {
+    gap: 9px;
+  }
+  .welcome-steps li {
+    padding: 15px 13px 13px;
+  }
+  .welcome-choice {
+    display: block;
+  }
+  .welcome-buttons {
+    margin-top: 14px;
+  }
+  .welcome-buttons .button {
+    flex: 1 1 auto;
+  }
+  .next-step-cards {
+    grid-template-columns: 1fr;
   }
   .streak {
     font-size: 10px;
@@ -3558,10 +4228,14 @@ dialog::backdrop {
   }
   .line-numbers {
     width: 35px;
-    font-size: 11px;
+    font-size: 12px;
   }
   #code-editor {
-    font-size: 11px;
+    font-size: 12px;
+  }
+  .editor-highlight {
+    left: 35px;
+    font-size: 12px;
   }
   .lesson-section {
     margin-top: 34px;
@@ -3742,6 +4416,18 @@ dialog::backdrop {
   .method-row {
     grid-template-columns: 1fr;
   }
+  .welcome-steps {
+    grid-template-columns: 1fr;
+  }
+  .welcome-steps li {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    column-gap: 11px;
+    padding-right: 44px;
+  }
+  .welcome-steps li > svg {
+    margin-bottom: 0;
+  }
   .method-card {
     display: grid;
     grid-template-columns: 25px 1fr;
@@ -3778,6 +4464,14 @@ dialog::backdrop {
     font-size: 23px;
   }
 }
+/* ============================================================
+   19 · Accessibility & readability refinements
+   ----------------------------------------------------------------------------
+   Appended on purpose. These rules override earlier tokens and breakpoints
+   (note the second :root and the second max-width:720px block below) precisely
+   because they come last in source order. Keep them here — moving them earlier
+   would stop them winning. See the inline notes for the per-rule reasoning.
+   ============================================================ */
 /* Keep long-form learning content comfortably readable. */
 .prose-section p,
 .lesson-section > p,
@@ -3818,6 +4512,9 @@ dialog::backdrop {
 .nav-item {
   color: #797482;
 }
+/* ============================================================
+   18 · Reduced motion
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
@@ -3827,3 +4524,397 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep supporting text readable at every breakpoint, including narrow panels. */
+:root { --purple: #6954b0; --purple-dark: #56418f; --muted: #625b70; }
+#app p { font-size: 14px; line-height: 1.75; color: #625b70; }
+#app small { font-size: 11px; color: #625b70; }
+#app :is(.brand-sub, .workspace-label, .eyebrow, .date-label, .breadcrumbs,
+  .breadcrumbs span, .search-trigger, .search-trigger kbd, .streak span,
+  .hero-kicker, .hero-actions > span, .course-level, .course-meta, .course-meta span,
+  .course-progress-label, .course-progress-label strong, .course-link small,
+  .method-number, .welcome-number, .pill, .page-footer, .page-footer span, .page-footer i,
+  .section-title > a, .section-title h2 > span, .sidebar-tip a, .sidebar-tip a span,
+  .lesson-meta, .notes-caption, .project-meta, .skill-tags span, .project-link,
+  .lesson-row small, .module-title small, .review-toolbar > span,
+  .daily-focus-summary span, .daily-goal a, .toc-bottom, .lesson-next small) {
+  color: #625b70;
+  font-size: 11px;
+}
+#app :is(.button, .tabs button, .course-link, .review-card > a,
+  .play-project-link, .text-button, .lesson-toc button, .search-result strong) { font-size: 13px; }
+/* Split in two on purpose. :is() takes the specificity of its most specific
+   argument, so any list holding `.tabs button` outranks the single-class mobile
+   rules at the end of this file and would pin these controls to 36px on phones. */
+#app :is(.button, .tabs button) { min-height: 36px; }
+#app :is(.icon-button, .search-trigger, .text-button) { min-height: 36px; }
+#app :is(.nav-item, .lesson-row) { min-height: 44px; }
+/* WCAG 2.5.8 puts the floor at 24px even for a mouse. These live in header rows
+   and toolbars where the label is small, so the box has to be grown on purpose.
+   The phone block at the end of this file raises the same controls to 44px; it
+   matches this specificity and comes later, so it wins there. */
+#app :is(.back-link, .editor-reset, .output-heading button, .footer-links a, .section-title > a) {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+/* Already flex and full width — these only need the height floor. */
+#app :is(.review-card > a, .daily-goal a, .source-card a, .lesson-next a) { min-height: 24px; align-items: center; }
+#app .nav-item.active { color: #594497; }
+#app :is(.course-link, .review-card > a, .bridge-symbol, .bridge-symbol i,
+  .avatar, .top-avatar) { color: #624987; }
+#app .stat small, #app .stat strong span { color: #625b70; font-size: 12px; }
+#app .language-badge.js { color: #67511b; }
+#app .language-badge.cs { color: #61438a; }
+#app .hero p { max-width: 38em; }
+#app .daily-card :is(p, .daily-label, .mini-tag, .daily-bottom span) { color: #d9cde6; font-size: 12px; }
+#app .daily-button { background: #d7c5ef; color: #362545; font-size: 13px; min-height: 40px; }
+#app .daily-button:hover { background: #e6d9f6; }
+#app .editor-bottom > span, #app .editor-toolbar, #app .output-heading { font-size: 11px; }
+#app .editor-keyboard-help { color: #e1dce9; font-size: 12px; }
+#app .test-result small { color: #e2b7c3; }
+#app .code-label, #app .code-label > span { font-size: 11px; color: #cfc4de; }
+#app .output-empty, #app .output-empty span { color: #c2b4d1; }
+#app .editor-status { color: #c2b4d1; }
+.runtime-notice { padding: 20px; margin: 0 0 18px; background: #efedf9; border: 1px solid #b8a8d0; border-radius: 12px; }
+.runtime-notice h3 { margin-top: 0; }
+.info-page { max-width: 850px; padding: 28px; overflow-wrap: anywhere; }
+.info-page h2 { margin-top: 28px; font-size: 22px; }
+.info-page h2:first-child { margin-top: 0; }
+.info-page li { margin: 12px 0; line-height: 1.75; }
+.info-page a:not(.button), .settings-panel p a { color: #594497; text-decoration: underline; text-underline-offset: 3px; }
+.standalone-page { max-width: 760px; margin: 10vh auto; padding: 24px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 12px; }
+.footer-links a { text-decoration: underline; text-underline-offset: 3px; }
+#app :is(.tabs button, .tabs button span, .path-heading > span, .module-title > span,
+  .lesson-order, .back-link, .lesson-heading .eyebrow span, .lesson-section-heading > span,
+  .choice-letter, .hint-actions summary, .runtime-label, .dom-lab label, .mini-editor,
+  .text-button, .play-project-link, .play-project-link strong, .project-meta span,
+  .milestones label, .project-launch > a, .lesson-notes-list .section-title > span,
+  .empty-note, .goal-options button, .runtime-info span, .runtime-info strong,
+  .study-rhythm li, .study-rhythm strong, .callout strong) { color: #625b70; }
+#app :is(.muted, .example-explanation) { color: #625b70 !important; }
+/* .muted carries whole sentences of guidance — including how C# runs and how
+   backups move between editions — so it is secondary, not fine print. */
+#app .muted { font-size: 13px !important; line-height: 1.7; }
+#app :is(.project-art-code, .project-level) { color: #594565; }
+#app :is(.editor-toolbar kbd, .editor-bottom > span, .output-heading span,
+  .output-heading i, .output-heading button, .tok-comment) { color: #c2b4d1; }
+#app .daily-label span { color: #d9cde6; }
+#app .daily-goal > .daily-focus-progress { display: block; }
+#search-dialog { color: #625b70; }
+#search-dialog :is(.search-result strong, .search-result small, .empty-note, .search-dialog-foot) { color: #625b70; font-size: 13px; }
+#search-dialog .search-dialog-foot { font-size: 12px; }
+#search-dialog .icon-button { min-height: 40px; min-width: 40px; }
+/* Onboarding, resume and feedback text. The rules above set a single readable
+   colour for light panels; these are the places that sit on a dark or coloured
+   background and need their own. */
+#app .resume-link { font-size: 13px; min-height: 40px; }
+#app .welcome-panel h2 { color: #3f3853; }
+#app :is(.welcome-steps div strong, .next-step-head strong, .next-step-card strong) { color: #453e58; }
+#app .welcome-choice > p { font-size: 13px; }
+#app .welcome-note, #app .export-nudge { font-size: 13px; line-height: 1.7; }
+#app .export-nudge { color: #6b5626; }
+#app :is(.welcome-note a, .next-step-head a) { color: #594497; text-decoration: underline; text-underline-offset: 3px; }
+#app .button.primary small { color: #f0eafc; }
+#app .next-step-card small { color: #5d4b8c; font-size: 11px; }
+#app .next-step-card > span { font-size: 12px; }
+#app .run-error { font-size: 12px; }
+#app .run-error > strong { color: #f4d2d7; font-size: 13px; }
+#app .run-error p { color: #e7c4ca; font-size: 12px; }
+#app .run-error summary { color: #d6b3bd; font-size: 12px; }
+/* The check results carry the point of the exercise, so they are read closely
+   rather than glanced at. The base rules set them in 10px mono. */
+#app .test-summary { font-size: 13px; }
+#app .test-result { font-size: 12px; }
+#app .test-result > span { font-size: 13px; }
+#app .test-result small { font-size: 12px; }
+#app .test-result small b { color: #edc79b; font-weight: 500; }
+#app .test-result small code { color: #eccfd8; }
+@media (max-width: 720px) {
+  #app .tabs { flex-wrap: wrap; }
+  /* A finger is not a mouse pointer. Every control that is not a link inside a
+     sentence gets a 44px side here, which is why several of these also need
+     align-items: center — their box grows, their text should not move. */
+  #app :is(.button, .daily-button, .tabs button, .text-button) { min-height: 44px; }
+  #app :is(.icon-button, .search-trigger, .welcome-close, .resume-link) { min-height: 44px; min-width: 44px; }
+  /* Search is appended to <body>, outside #app, so none of the rules above reach
+     its close button. */
+  #search-dialog .icon-button { min-height: 44px; min-width: 44px; }
+  #app :is(.sidebar-close, .sidebar-tip a, .section-title a, .review-card a,
+    .daily-goal a, .footer-links a, .source-card a, .lesson-next a) { min-height: 44px; align-items: center; }
+  #app .footer-links a { display: flex; }
+  /* Standalone controls that are deliberately small on desktop. Grow the box and
+     centre the label, so only the hit area changes. */
+  #app :is(.back-link, .editor-reset, .output-heading button) {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  #app :is(.editor-reset, .output-heading button) { min-width: 44px; justify-content: center; }
+  .skip-link { min-height: 44px; box-sizing: border-box; }
+  #app .course-level { font-size: 10px; letter-spacing: .04em; }
+  .info-page { padding: 20px; }
+}
+/* ============================================================
+   20 · Dark theme (appended — order matters)
+   ----------------------------------------------------------------------------
+   A pragmatic override layer, NOT a full tokenization. The design tokens are
+   barely referenced (see the note at section 01), so a genuinely dark UI has to
+   recolor the real inline-hex surfaces directly and re-point the hardcoded text
+   colors from section 19. Keyed on [data-theme="dark"] and appended last so it
+   wins by specificity AND source order. Minor tint imperfections in low-traffic
+   areas are accepted here and slated for the later UI/UX redesign. The code
+   editor and code blocks are already dark, so they are left untouched.
+   Theme is a device-local preference (localStorage "forge.academy.theme"); the
+   boot guard in index.html sets data-theme before first paint to avoid a flash.
+   ============================================================ */
+:root[data-theme="dark"] {
+  --bg: #141019;
+  --panel: #1e1a26;
+  --ink: #e8e3f0;
+  --muted: #a99fb8;
+  --line: #322b3f;
+  --purple: #b9a0e9;
+  --purple-dark: #a689df;
+  --purple-soft: #2a2338;
+  --green: #7bb298;
+}
+html[data-theme="dark"] body { background: #141019; }
+html[data-theme="dark"] .sidebar { background: #191521; border-right-color: #2c2638; }
+html[data-theme="dark"] .topbar { background: rgba(20, 16, 25, 0.72); border-bottom-color: #2c2638; }
+html[data-theme="dark"] .panel { background: #1e1a26; border-color: #322b3f; }
+html[data-theme="dark"] .course-card { background: #1e1a26; border-color: #322b3f; }
+html[data-theme="dark"] .hero { background: linear-gradient(110deg, #221c30 0%, #26203440 55%, #1d1828 100%); border-color: #352d47; }
+html[data-theme="dark"] .callout { background: #241f31; border-color: #352d47; }
+html[data-theme="dark"] .feedback.success { background: #182620; color: #9fcbb2; }
+html[data-theme="dark"] .feedback.retry { background: #2a2416; color: #d8c088; }
+html[data-theme="dark"] :is(.completion-panel, .next-step-panel) { border-top-color: #322b3f; }
+html[data-theme="dark"] .next-step-mark { background: #1c3126; color: #9fcbb2; }
+html[data-theme="dark"] dialog { background: #1c1826; border-color: #352d47; }
+html[data-theme="dark"] .search-dialog-top { border-bottom-color: #2f2840; }
+html[data-theme="dark"] .search-result:hover { background: #26203380; }
+html[data-theme="dark"] .quiz-choice { border-color: #322b3f; }
+html[data-theme="dark"] .quiz-choice:hover { background: #241f31; }
+html[data-theme="dark"] .quiz-choice:has(input:checked) { border-color: #6a568f; background: #2a2338; }
+/* New learner UI (hints, rubric, appearance) recolored for dark. */
+html[data-theme="dark"] :is(.hint-tier, .hint-actions details) { background: #1e1a26; border-color: #322b3f; }
+html[data-theme="dark"] .hint-solution { background: #241f31; border-color: #352d47; }
+html[data-theme="dark"] .hint-reveal { background: #2a2338; color: #cdbceb; border-color: #43395a; }
+html[data-theme="dark"] .hint-reveal:hover { background: #322a45; }
+html[data-theme="dark"] .rubric-item { background: #1e1a26; border-color: #322b3f; }
+html[data-theme="dark"] .rubric-item:hover { border-color: #43395a; }
+html[data-theme="dark"] :is(.rubric-score, .project-rubric > p) { border-top-color: #322b3f; }
+html[data-theme="dark"] :is(.rubric-bar, .goal-options button, .theme-options button) { background: #241f31; }
+html[data-theme="dark"] .goal-options button { border-color: #3a324c; }
+html[data-theme="dark"] :is(.goal-options button.selected, .theme-options button.selected) { background: #2f2745; border-color: #6a568f; }
+html[data-theme="dark"] .rubric-bar span { background: #8f6fc4; }
+html[data-theme="dark"] .rubric-bar span.passed { background: #7bb298; }
+/* Supporting surfaces. */
+html[data-theme="dark"] .runtime-notice { background: #221c30; border-color: #4a3d68; }
+html[data-theme="dark"] .search-dialog-top input { color: #d3c6e2; }
+html[data-theme="dark"] .search-dialog-top input::placeholder { color: #8a7da2; }
+/* Text re-point: section 19 pins secondary text to mid-greys (#625b70 etc.)
+   that are readable on light panels but far too dark on #1e1a26. These mirror
+   those selectors with the dark prefix so they win by specificity + order. */
+html[data-theme="dark"] #app { color: #dcd6e6; }
+html[data-theme="dark"] #app p { color: #b3a9c4; }
+html[data-theme="dark"] #app small { color: #a99fb8; }
+html[data-theme="dark"] #app :is(.brand-sub, .workspace-label, .eyebrow, .date-label, .breadcrumbs,
+  .breadcrumbs span, .search-trigger, .search-trigger kbd, .streak span,
+  .hero-kicker, .hero-actions > span, .course-level, .course-meta, .course-meta span,
+  .course-progress-label, .course-progress-label strong, .course-link small,
+  .method-number, .welcome-number, .pill, .page-footer, .page-footer span, .page-footer i,
+  .section-title > a, .section-title h2 > span, .sidebar-tip a, .sidebar-tip a span,
+  .lesson-meta, .notes-caption, .project-meta, .skill-tags span, .project-link,
+  .lesson-row small, .module-title small, .review-toolbar > span,
+  .daily-focus-summary span, .daily-goal a, .toc-bottom, .lesson-next small) {
+  color: #a99fb8;
+}
+html[data-theme="dark"] #app :is(.tabs button, .tabs button span, .path-heading > span, .module-title > span,
+  .lesson-order, .back-link, .lesson-heading .eyebrow span, .lesson-section-heading > span,
+  .choice-letter, .hint-actions summary, .runtime-label, .dom-lab label, .mini-editor,
+  .text-button, .play-project-link, .play-project-link strong, .project-meta span,
+  .milestones label, .project-launch > a, .lesson-notes-list .section-title > span,
+  .empty-note, .goal-options button, .runtime-info span, .runtime-info strong,
+  .study-rhythm li, .study-rhythm strong, .callout strong) { color: #b3a9c4; }
+html[data-theme="dark"] #app :is(.muted, .example-explanation) { color: #a99fb8 !important; }
+html[data-theme="dark"] #app :is(.nav-item, .quiz-choice) { color: #b3a9c4; }
+html[data-theme="dark"] #app .nav-item.active { color: #cdbceb; }
+html[data-theme="dark"] #app .nav-item:hover { background: #241f31; }
+html[data-theme="dark"] #app :is(.notes-input, .recall-answer) { color: #c6bad6; background: #1a1622; border-color: #322b3f; }
+html[data-theme="dark"] #app .notes-input::placeholder { color: #6f6580; }
+html[data-theme="dark"] #app .challenge-prompt { color: #b3a9c4; }
+html[data-theme="dark"] #app .breadcrumbs strong { color: #cdc4dc; }
+html[data-theme="dark"] #app .stat small, html[data-theme="dark"] #app .stat strong span { color: #a99fb8; }
+html[data-theme="dark"] #app :is(.prose-section p, .lesson-section > p) { color: #b8aeca; }
+html[data-theme="dark"] #app :is(.page-heading > p, .lesson-heading > p, .course-card > p, .overview-heading p, .hero p) { color: #b3a9c4; }
+html[data-theme="dark"] #app :is(.callout p, .hint-actions p, .project-brief > p, .milestones label,
+  .review-explainer p, .review-explainer li, .settings-panel > p, .saved-note p,
+  .project-body p, .playground-note p, .dom-lab > p) { color: #b3a9c4; }
+html[data-theme="dark"] #app :is(.callout strong, .completion-panel h3, .quiz h3) { color: #d6cee4; }
+html[data-theme="dark"] #app :is(.info-page a:not(.button), .settings-panel p a, .welcome-note a, .next-step-head a) { color: #c3ade8; }
+/* Headings/labels that carry explicit dark or dim colors on now-dark panels. */
+html[data-theme="dark"] #app :is(.settings-panel h2, .project-rubric h3, .project-launch h3,
+  .saved-note h3, .search-result strong, .completion-panel p, .next-step-head strong,
+  .welcome-steps div strong, .next-step-card strong) { color: #d6cee4; }
+html[data-theme="dark"] #app .welcome-panel h2 { color: #ece6f5; }
+html[data-theme="dark"] #app :is(.project-rubric p, .saved-note p, .search-result small,
+  .next-step-card small, .next-step-card > span, .completion-panel p) { color: #a99fb8; }
+html[data-theme="dark"] #app :is(.quiz .eyebrow, .choice-letter) { color: #b39ecb; }
+html[data-theme="dark"] #app :is(.project-art-code, .project-level) { color: #b7a2d0; }
+html[data-theme="dark"] #app .export-nudge { color: #d8c088; }
+html[data-theme="dark"] #app .language-badge.js { color: #e8d79a; }
+html[data-theme="dark"] #app .language-badge.cs { color: #cbb0e8; }
+html[data-theme="dark"] #app :is(.course-link, .review-card > a, .bridge-symbol, .bridge-symbol i,
+  .avatar, .top-avatar) { color: #c3ade8; }
+html[data-theme="dark"] #search-dialog { color: #cdc4dc; }
+html[data-theme="dark"] #search-dialog :is(.search-result strong, .search-result small, .empty-note, .search-dialog-foot) { color: #b3a9c4; }
+
+/* Study buddy — a body-level mascot that survives #app re-renders. Fixed to the
+   corner, above the toast, never covering the main scroll. */
+.buddy {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+.buddy[hidden] { display: none; }
+.buddy > * { pointer-events: auto; }
+.buddy-sprite {
+  border: 0;
+  background: radial-gradient(circle at 50% 38%, #fff2d8, #f6d68a);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 10px 26px #b9891f45;
+  display: grid;
+  place-items: center;
+  transition: transform 0.18s ease;
+}
+.buddy-sprite:hover { transform: translateY(-2px); }
+.buddy-sprite:focus-visible { outline: 3px solid var(--accent, #6954b0); outline-offset: 3px; }
+.buddy-flame { fill: #ef8a2b; }
+.buddy-glow { fill: #ffd98a; opacity: 0.85; }
+.buddy-eye { fill: #3a2410; }
+.buddy-mouth { fill: none; stroke: #3a2410; stroke-width: 1.6; stroke-linecap: round; }
+.buddy[data-mood="think"] .buddy-mouth { d: path("M20 34h8"); }
+.buddy[data-mood="rest"] .buddy-glow { opacity: 0.5; }
+.buddy[data-mood="cheer"] .buddy-flame { fill: #ff7a1a; }
+@keyframes buddy-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+.buddy-pop { animation: buddy-pop 0.42s ease; }
+
+.buddy-bubble {
+  position: relative;
+  max-width: 260px;
+  background: #fff;
+  border: 1px solid #ece0d0;
+  border-radius: 14px;
+  padding: 12px 34px 12px 14px;
+  box-shadow: 0 12px 34px #6a4a1a2a;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.buddy-bubble[hidden] { display: none; }
+.buddy-text { margin: 0; }
+.buddy-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+  padding: 4px;
+}
+.buddy-close:focus-visible { outline: 2px solid var(--accent, #6954b0); outline-offset: 2px; }
+html[data-theme="dark"] .buddy-bubble { background: #241d30; border-color: #3a2f4c; }
+html[data-theme="dark"] .buddy-sprite { box-shadow: 0 10px 26px #00000055; }
+
+/* Study-buddy controls inside the appearance settings panel. */
+.buddy-setting { margin-top: 14px; border-top: 1px solid #ece3f2; padding-top: 14px; }
+.buddy-setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.buddy-setting-row p { margin: 2px 0 0; font-size: 12.5px; }
+.buddy-name { margin-top: 10px; }
+.buddy-name-row { display: flex; gap: 8px; }
+.buddy-name-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ded0ec;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+html[data-theme="dark"] .buddy-setting { border-top-color: #3a2f4c; }
+html[data-theme="dark"] .buddy-name-row input { background: #1d1728; border-color: #3a2f4c; }
+
+.buddy--reduced .buddy-sprite { transition: none; }
+.buddy--reduced .buddy-pop { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .buddy-sprite { transition: none; }
+  .buddy-pop { animation: none; }
+}
+
+/* Per-track certificate dialog. Reuses the base <dialog> frame; the SVG is the
+   artwork, actions reuse .button. .path-cert is the roadmap CTA. */
+.path-cert { margin-left: 10px; }
+#certificate-dialog { width: 640px; padding: 22px; }
+.certificate-frame {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 26px #2c241a22;
+}
+.certificate-frame svg { display: block; width: 100%; height: auto; }
+.certificate-name { margin: 16px 0 0; }
+.certificate-name label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+.certificate-name-row { display: flex; gap: 8px; }
+.certificate-name-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ded0ec;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+.certificate-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+.certificate-note { margin: 14px 0 0; font-size: 12px; }
+html[data-theme="dark"] .certificate-name-row input { background: #1d1728; border-color: #3a2f4c; }
+
+@media print {
+  body > *:not(#certificate-dialog) { display: none !important; }
+  #certificate-dialog {
+    position: static;
+    box-shadow: none;
+    border: 0;
+    width: auto;
+    padding: 0;
+  }
+  #certificate-dialog::backdrop { display: none; }
+  .certificate-name, .certificate-actions, .certificate-note { display: none !important; }
+  .certificate-frame { box-shadow: none; }
+}
+
+
+
+
+
+
+

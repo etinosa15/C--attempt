@@ -87,10 +87,34 @@ export const projects = [
     ],
     stretch:
       "Add import/export, an undo action for deletion, and tests for date boundaries.",
+    pitfalls: [
+      {
+        trap: "Reading state back out of the DOM.",
+        fix: "Keep your saved habits as the single source of truth and rebuild the display from that state. When the DOM and your data disagree, the DOM is the copy that lies.",
+      },
+      {
+        trap: "Keying habits by their display name.",
+        fix: "Give each habit a stable ID. Two habits can share a name, and renaming one should not silently move its history to another.",
+      },
+      {
+        trap: "Storing \"done today\" as a boolean.",
+        fix: "Record the calendar day a habit was completed. A boolean is still true tomorrow, so completion rots at midnight instead of rolling over.",
+      },
+    ],
     starter:
       '// Start with the pure rule, then connect it to your DOM.\nfunction toggleDay(habit, day) {\n  const days = new Set(habit.days);\n  days.has(day) ? days.delete(day) : days.add(day);\n  return {...habit, days: [...days]};\n}\nconsole.log(toggleDay({id: "1", name: "Read", days: []}, "2026-09-12"));',
     resources:
       "https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "Saved state is the single source of truth; the display is rebuilt from it, never read back out of the DOM.", weight: 25 },
+        { label: "Habits are keyed by a stable ID, so duplicate names and renames never move history to the wrong habit.", weight: 20 },
+        { label: "Completion is recorded per calendar day, not as a boolean that stays true tomorrow.", weight: 20 },
+        { label: "State persists as versioned JSON and recovers gracefully from invalid saved data.", weight: 20 },
+        { label: "Empty state, a seven-day history, and full keyboard navigation all work.", weight: 15 },
+      ],
+    },
   },
   {
     id: "expense",
@@ -112,10 +136,34 @@ export const projects = [
     ],
     stretch:
       "Add CSV export and an edit command. Make file saving resilient to an interrupted write.",
+    pitfalls: [
+      {
+        trap: "Using double for money.",
+        fix: "Use decimal and decide a rounding policy up front. Binary floating point cannot represent 0.10 exactly, so sums of double drift by a cent and never quite reconcile.",
+      },
+      {
+        trap: "Parsing input with Parse.",
+        fix: "Use TryParse and reject what fails. Parse throws a FormatException on the first stray character, which crashes the whole app over one mistyped amount.",
+      },
+      {
+        trap: "Saving by overwriting the file in place.",
+        fix: "Write to a temporary file, then replace the original. A crash midway through an in-place write leaves the ledger half-written and unreadable.",
+      },
+    ],
     starter:
       "record Expense(decimal Amount, string Category);\n// Put top-level statements before record declarations.\n// Start by testing a pure total function in the playground.",
     resources:
       "https://learn.microsoft.com/en-us/dotnet/core/tutorials/with-visual-studio-code",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "Money uses decimal with an explicit, deliberate rounding policy — never double.", weight: 25 },
+        { label: "Input is parsed with TryParse; negative amounts and empty categories are rejected.", weight: 20 },
+        { label: "Add, list, category totals, and monthly totals all produce correct results.", weight: 20 },
+        { label: "Data saves to JSON and missing or malformed files fail with a useful message, not a crash.", weight: 20 },
+        { label: "Commands are separated from calculations, so the rules could power an API unchanged.", weight: 15 },
+      ],
+    },
   },
   {
     id: "explorer",
@@ -137,10 +185,34 @@ export const projects = [
     ],
     stretch:
       "Add caching with an expiry policy and a retry action with a capped backoff.",
+    pitfalls: [
+      {
+        trap: "Letting a slow response overwrite a newer one.",
+        fix: "Cancel superseded requests or ignore out-of-order responses. Type quickly and an earlier, slower search can land last and paint stale results over the ones the user actually wanted.",
+      },
+      {
+        trap: "Calling fetch directly inside your logic.",
+        fix: "Inject the fetch function so tests can supply offline responses. Hard-wired network calls make the interesting cases — errors, timeouts, empty results — impossible to test.",
+      },
+      {
+        trap: "Treating every response as success.",
+        fix: "Check response.ok before reading the body. fetch does not reject on a 404 or 500, so a failed request quietly becomes a confusing JSON parse error further down.",
+      },
+    ],
     starter:
       'async function fetchData(fetcher) {\n  const response = await fetcher();\n  if (!response.ok) throw new Error(`HTTP ${response.status}`);\n  return response.json();\n}\nconsole.log(await fetchData(async () => ({ok:true, json:async()=>[{name:"Ada"}]})));',
     resources:
       "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "The fetch function is injected, so tests can supply offline responses.", weight: 20 },
+        { label: "Loading, empty results, HTTP errors, network failures, and invalid JSON each have a clear state.", weight: 25 },
+        { label: "Superseded requests are cancelled or stale responses ignored, so old results never overwrite newer ones.", weight: 25 },
+        { label: "response.ok is checked before the body is read.", weight: 15 },
+        { label: "Search state lives in the URL and sorting works.", weight: 15 },
+      ],
+    },
   },
   {
     id: "library",
@@ -162,10 +234,34 @@ export const projects = [
     ],
     stretch:
       "Add a database, transactions for loan creation, authentication, and per-resource authorization.",
+    pitfalls: [
+      {
+        trap: "Mixing HTTP and JSON into the domain rules.",
+        fix: "Keep the lending rules behind a small interface that knows nothing about requests. Rules tangled with the web layer cannot be tested or reused without spinning up a server.",
+      },
+      {
+        trap: "Deleting a loan when a book is returned.",
+        fix: "Mark the loan returned and keep its history. Deleting it erases the record of who borrowed what, which is exactly the question a lending system exists to answer.",
+      },
+      {
+        trap: "Calling DateTime.Now inside the service.",
+        fix: "Inject a clock. Reading the real time deep in your logic makes due-date and overdue rules impossible to test without waiting for the calendar to catch up.",
+      },
+    ],
     starter:
       "static bool CanBorrow(bool exists, bool alreadyLoaned)\n{\n    return exists && !alreadyLoaned;\n}\nConsole.WriteLine(CanBorrow(true, false));",
     resources:
       "https://learn.microsoft.com/en-us/aspnet/core/tutorials/min-web-api",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "Lending rules live behind a small interface that knows nothing about HTTP or JSON.", weight: 25 },
+        { label: "A book cannot be loaned twice concurrently.", weight: 20 },
+        { label: "A returned loan is marked returned and keeps its history rather than being deleted.", weight: 20 },
+        { label: "Unknown books and invalid members are rejected with deliberate status codes.", weight: 20 },
+        { label: "A clock and a repository interface are injected, and the domain rules are tested.", weight: 15 },
+      ],
+    },
   },
   {
     id: "study",
@@ -187,9 +283,33 @@ export const projects = [
     ],
     stretch:
       "Support separate decks, editing cards, and search without exposing answers before recall.",
+    pitfalls: [
+      {
+        trap: "Reading Date.now() inside the scheduler.",
+        fix: "Pass the current time in as an argument. A scheduler that reads the clock itself produces due-boundary tests that pass in the morning and fail at night.",
+      },
+      {
+        trap: "Putting the answer in the DOM before recall.",
+        fix: "Reveal the back of the card only after the learner commits. If the answer is already in the page — even hidden with CSS — the recall practice that makes flashcards work never happens.",
+      },
+      {
+        trap: "Trusting imported JSON.",
+        fix: "Validate an imported deck against your version and shape before using it. One malformed field from an old or hand-edited file can corrupt the whole review schedule.",
+      },
+    ],
     starter:
       "function nextReview(now, intervalDays) {\n  return now + intervalDays * 24 * 60 * 60 * 1000;\n}\nconsole.log(nextReview(0, 1));",
     resources: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "Scheduling is a pure function that takes the current time as an argument.", weight: 25 },
+        { label: "The answer is revealed only after the learner commits to a recall attempt.", weight: 20 },
+        { label: "Versioned cards and review history support validated JSON export and import.", weight: 20 },
+        { label: "Reveal and grade actions are fully keyboard-accessible.", weight: 20 },
+        { label: "Only due cards are shown, with an honest all-done state.", weight: 15 },
+      ],
+    },
   },
   {
     id: "fullstack",
@@ -211,8 +331,32 @@ export const projects = [
     ],
     stretch:
       "Add accounts and ownership checks, then deploy only after reviewing configuration and secret handling.",
+    pitfalls: [
+      {
+        trap: "Building the UI before the API contract.",
+        fix: "Agree the request and response shapes — including error shapes — first. A frontend written against a guessed contract has to be rebuilt once the real endpoints disagree with it.",
+      },
+      {
+        trap: "Letting the last write win.",
+        fix: "Carry a version or concurrency token on updates. Without one, two edits to the same task silently overwrite each other and the earlier change simply vanishes.",
+      },
+      {
+        trap: "Coding only the happy path on the client.",
+        fix: "Give the UI explicit loading and error states. A client that assumes every request succeeds freezes with no explanation the moment the network or the server has a bad day.",
+      },
+    ],
     starter:
       'static string? ValidateTask(string? title)\n{\n    return string.IsNullOrWhiteSpace(title) ? "Title is required" : null;\n}\nConsole.WriteLine(ValidateTask("Build something"));',
     resources: "https://learn.microsoft.com/en-us/aspnet/core/fundamentals/",
+    rubric: {
+      pass: 80,
+      criteria: [
+        { label: "The API contract — including error shapes — is defined before the UI is built.", weight: 20 },
+        { label: "The frontend has explicit loading and error states, not just a happy path.", weight: 20 },
+        { label: "Endpoints validate input and delegate to an isolated task service.", weight: 20 },
+        { label: "Stale updates are handled with a version or concurrency token.", weight: 20 },
+        { label: "One complete create-and-list journey works end to end across both languages.", weight: 20 },
+      ],
+    },
   },
 ];

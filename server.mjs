@@ -5,11 +5,13 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { randomUUID, randomBytes } from "node:crypto";
 import { lessons } from "./public/curriculum.js";
+import { baseHeaders, policyFor } from "./security-policy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const publicRoot = path.join(root, "public");
+const hostedPreview = process.argv.includes("--hosted-preview");
+const publicRoot = path.join(root, hostedPreview ? "dist" : "public");
 const runtimeRoot = path.join(root, ".runtime");
-const port = Number(process.env.PORT || 4317);
+const port = Number(process.env.PORT || (hostedPreview ? 4331 : 4317));
 const token = randomBytes(24).toString("hex");
 const marker = "__FORGE_RESULT__";
 let active = false;
@@ -50,8 +52,8 @@ export function runProcess(
         child.kill();
       }
     };
-    child.stdout.on("data", collect);
-    child.stderr.on("data", collect);
+    child.stdout.setEncoding("utf8").on("data", collect);
+    child.stderr.setEncoding("utf8").on("data", collect);
     child.on("error", (e) => finish(-1, e.message));
     child.on("close", (code) => finish(code));
   });
@@ -121,7 +123,7 @@ export async function executeCSharp(code, tests = [], sdk = dotnet) {
       path.join(dir, "Program.cs"),
       defaultUsings +
         imports.join("\n") +
-        "\n" +
+        "\nConsole.OutputEncoding = new UTF8Encoding(false);\n" +
         harness +
         '\n#line 1 "YourCode.cs"\n' +
         body,
@@ -207,9 +209,11 @@ const mime = {
   ".js": "text/javascript; charset=utf-8",
   ".svg": "image/svg+xml",
   ".json": "application/json; charset=utf-8",
+  ".zip": "application/zip",
+  ".txt": "text/plain; charset=utf-8",
 };
 export async function startServer() {
-  dotnet = await findDotnet();
+  dotnet = hostedPreview ? null : await findDotnet();
   const server = http.createServer(async (req, res) => {
     const host = req.headers.host;
     if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(host)) {
@@ -218,16 +222,40 @@ export async function startServer() {
       return;
     }
     const headers = {
-      "X-Content-Type-Options": "nosniff",
+      ...baseHeaders,
       "Cache-Control": "no-store",
-      "Referrer-Policy": "no-referrer",
     };
     const json = (status, data) => {
       res.writeHead(status, { ...headers, "Content-Type": "application/json" });
       res.end(JSON.stringify(data));
     };
+    // Netlify serves 404.html for an unmatched path. The preview does the same, so a
+    // release check exercises the page visitors actually get instead of a JSON body
+    // the host never sends. The local edition keeps the JSON reply.
+    const missing = async () => {
+      if (hostedPreview) {
+        const page = path.join(publicRoot, "404.html");
+        try {
+          const body = await readFile(page);
+          res.writeHead(404, {
+            ...headers,
+            "Content-Type": mime[".html"],
+            "Content-Security-Policy": policyFor(page),
+          });
+          res.end(req.method === "HEAD" ? undefined : body);
+          return;
+        } catch {
+          // Fall through to the JSON reply below.
+        }
+      }
+      json(404, { error: "Not found." });
+    };
     try {
       const url = new URL(req.url, `http://${host}`);
+      if (hostedPreview && url.pathname.startsWith("/api/")) {
+        json(404, { error: "The hosted edition has no compiler API." });
+        return;
+      }
       if (url.pathname === "/api/status" && req.method === "GET") {
         json(200, { csharp: !!dotnet, sdk: dotnet?.sdk, token });
         return;
@@ -241,28 +269,24 @@ export async function startServer() {
           json(403, { error: "Open Forge locally to run code." });
           return;
         }
-        if (active) {
-          json(429, {
-            error: "A C# program is already running. Try again in a moment.",
-          });
-          return;
-        }
-        let body = "";
+        const chunks = [];
+        let bytes = 0;
         for await (const chunk of req) {
-          body += chunk;
-          if (body.length > 100000) {
+          bytes += chunk.length;
+          if (bytes > 100000) {
             json(413, { error: "Code is too large (100 KB limit)." });
             return;
           }
+          chunks.push(chunk);
         }
         let input;
         try {
-          input = JSON.parse(body);
+          input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
         } catch {
           json(400, { error: "Invalid JSON request." });
           return;
         }
-        if (typeof input.code !== "string") {
+        if (!input || Array.isArray(input) || typeof input.code !== "string") {
           json(400, { error: "Code must be text." });
           return;
         }
@@ -271,6 +295,14 @@ export async function startServer() {
           : null;
         if (input.lessonId && !lesson) {
           json(400, { error: "Unknown C# exercise." });
+          return;
+        }
+        // Reading a request body yields to other requests. Check and reserve
+        // the runner together, after that asynchronous work has finished.
+        if (active) {
+          json(429, {
+            error: "A C# program is already running. Try again in a moment.",
+          });
           return;
         }
         active = true;
@@ -303,35 +335,20 @@ export async function startServer() {
         !file.startsWith(publicRoot + path.sep) ||
         !mime[path.extname(file)]
       ) {
-        json(404, { error: "Not found." });
+        await missing();
         return;
       }
       const data = await readFile(file);
-      const csp =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'";
-      // Workers execute learner code but cannot make network connections.
-      const domPolicy =
-        "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'";
-      const policy = file.endsWith("runner-worker.js")
-        ? "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'"
-        : file.endsWith("dom-preview.html")
-          ? domPolicy
-          : csp;
       res.writeHead(200, {
         ...headers,
         "Content-Type": mime[path.extname(file)],
-        "Content-Security-Policy": policy,
+        "Content-Security-Policy": policyFor(file),
       });
       res.end(req.method === "HEAD" ? undefined : data);
     } catch (e) {
-      if (!res.headersSent)
-        json(e.code === "ENOENT" ? 404 : 500, {
-          error:
-            e.code === "ENOENT"
-              ? "Not found."
-              : "The local server encountered an error.",
-        });
-      else res.end();
+      if (res.headersSent) res.end();
+      else if (e.code === "ENOENT") await missing();
+      else json(500, { error: "The local server encountered an error." });
     }
   });
   server.on("error", (e) => {

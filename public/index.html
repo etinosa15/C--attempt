@@ -10,12 +10,40 @@
     />
     <title>Forge — Code Academy</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      /* Resolve the appearance preference before the stylesheet paints, so a
+         dark-mode learner never sees a flash of the light theme. Kept tiny and
+         inline on purpose; the app (app.js) manages the same key afterwards.
+         "forge.academy.theme" is device-local and deliberately outside progress
+         state, so backups and future cloud sync never carry appearance. */
+      (function () {
+        try {
+          var pref = localStorage.getItem("forge.academy.theme");
+          if (pref !== "dark" && pref !== "light") pref = "system";
+          var dark =
+            pref === "dark" ||
+            (pref === "system" &&
+              matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <noscript><main class="standalone-page"><h1>Forge needs JavaScript</h1><p>Enable JavaScript in your browser to use lessons, code practice, and saved progress.</p></main></noscript>
     <a class="skip-link" href="#main">Skip to content</a>
     <div id="app"></div>
+    <div id="storage-warning" class="storage-warning" role="status" hidden>
+      <span id="storage-message"></span>
+      <div>
+        <button class="button secondary" data-action="export">Export progress</button>
+        <button class="button secondary" data-action="retry-save">Retry saving</button>
+        <a class="button secondary" href="#settings">Settings &amp; backups</a>
+      </div>
+    </div>
     <div id="toast" role="status" aria-live="polite"></div>
+    <div id="buddy" hidden></div>
     <script type="module" src="/app.js"></script>
   </body>
 </html>
