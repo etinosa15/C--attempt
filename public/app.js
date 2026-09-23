@@ -4,8 +4,8 @@ import { createProgressStore, progressChanges, applyProgressChanges, BEFORE_SYNC
 import { createSyncClient } from "./sync-client.js";
 import { dailyFocus } from "./focus.js";
 import { createBuddy } from "./buddy.js";
-import { createTutor } from "./tutor.js";
-import { hosted, syncOrigin } from "./deployment.js";
+import { createTutor, heuristicProvider, createRemoteProvider } from "./tutor.js";
+import { hosted, syncOrigin, tutorOrigin } from "./deployment.js";
 import {
   validateProgress,
   dayKey,
@@ -63,7 +63,14 @@ const buddy = createBuddy({
   root: document.getElementById("buddy"),
   reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
 });
-const tutor = createTutor();
+// The tutor is the offline heuristic by default. When a build sets tutorOrigin,
+// hosted hints upgrade the message through the proxy, falling back to the same
+// heuristic on any failure — so the nudge is never worse than the offline one.
+const tutor = createTutor({
+  provider: tutorOrigin
+    ? createRemoteProvider({ origin: tutorOrigin, fallback: heuristicProvider })
+    : heuristicProvider,
+});
 function focusTarget(target) {
   if (!target) return;
   if (!target.matches("a[href], button, input, textarea, select, summary")) target.tabIndex = -1;
@@ -686,6 +693,7 @@ async function runCode(check = false) {
       results: result.results || [],
       error: result.error,
       tier: current,
+      code,
     });
     const target = advice
       ? Math.min(Math.max(current + 1, advice.suggestedTier || 0), total)
@@ -936,8 +944,13 @@ function renderPrivacy() {
   const accountSection = sync.enabled
     ? `<h2>If you create an account</h2><p>Signing in is optional and only happens when you ask. An account stores your email address, a securely hashed password (scrypt — the password itself is never stored), and the same progress record described above, on this project’s own self-hosted sync service. It is used to back up your progress and merge it across your devices. Your appearance theme stays on each device and is never uploaded. There is no password reset yet, so keep your password safe. Logging out removes this account’s copy of your progress from the device.</p>`
     : "";
+  // Only shown on a build wired to the hosted tutor. The offline heuristic tutor,
+  // the default, sends nothing — so this disclosure appears exactly when it is true.
+  const tutorSection = tutorOrigin
+    ? `<h2>The AI tutor</h2><p>When a check does not pass, Forge asks a hosted AI tutor for a hint. To write one it sends the failing lesson’s code and the failing check to this project’s own tutor service, which relays it to an AI model. Passing runs send nothing, and the offline tutor always provides the hint if the service cannot be reached. Your notes, other lessons, and any account details are never sent. Do not paste anything private into code you run while the tutor is enabled.</p>`
+    : "";
   $("#main").innerHTML = sectionHead("YOUR LEARNING DATA", "Privacy & storage.", "Know where your code, notes, and progress live.") +
-    `<article class="info-page panel"><h2>Saved in this browser</h2><p>Forge stores completed lessons, quiz results, code drafts, notes, review schedules, project milestones, focus time, and any name you set on a completion certificate in browser storage. ${accountLine}</p>${accountSection}<h2>Where code runs</h2><p>JavaScript runs in a browser worker. The DOM lab uses an isolated preview frame. On the hosted site, C# code is not submitted to a server; use the local edition to compile it on your computer.</p><h2>Backups and deletion</h2><p>Exported backups contain your notes and code as readable JSON. Keep them somewhere you trust. Clearing this site’s data in your browser deletes its progress and recovery copies. Export a backup first if you want to keep your work.</p><h2>Site requests</h2><p>Forge includes no analytics scripts, advertising trackers, or third-party fonts. Your hosting provider may retain ordinary access logs when serving the site. Official reference links open external websites with their own privacy policies.</p><h2>Addresses have separate storage</h2><p>Each domain, browser, and local port has its own save. Private browsing and browser cleanup can remove saves. Use <a href="#settings">Settings &amp; backups</a> when moving between the website and the local edition.</p></article>`;
+    `<article class="info-page panel"><h2>Saved in this browser</h2><p>Forge stores completed lessons, quiz results, code drafts, notes, review schedules, project milestones, focus time, and any name you set on a completion certificate in browser storage. ${accountLine}</p>${accountSection}${tutorSection}<h2>Where code runs</h2><p>JavaScript runs in a browser worker. The DOM lab uses an isolated preview frame. On the hosted site, C# code is not submitted to a server; use the local edition to compile it on your computer.</p><h2>Backups and deletion</h2><p>Exported backups contain your notes and code as readable JSON. Keep them somewhere you trust. Clearing this site’s data in your browser deletes its progress and recovery copies. Export a backup first if you want to keep your work.</p><h2>Site requests</h2><p>Forge includes no analytics scripts, advertising trackers, or third-party fonts. Your hosting provider may retain ordinary access logs when serving the site. Official reference links open external websites with their own privacy policies.</p><h2>Addresses have separate storage</h2><p>Each domain, browser, and local port has its own save. Private browsing and browser cleanup can remove saves. Use <a href="#settings">Settings &amp; backups</a> when moving between the website and the local edition.</p></article>`;
 }
 
 function openSearch() {

@@ -117,6 +117,38 @@ theirs safe and export a backup from **Settings & backups**. Appearance theme is
 device-local and is never uploaded. A name you set on a completion certificate is part
 of your progress record, so it is included in backups and, if you sign in, synced.
 
+## Tutor service (optional AI hints)
+
+The built-in tutor is offline and deterministic by default — no key, no network,
+nothing uploaded. A deployment can optionally add a **hosted AI tutor** that writes
+a richer hint when a check fails. Like accounts, it is off by default and is a
+**separate program** from the local C# compiler in `server.mjs`; that compiler
+stays loopback-only and is never merged with the tutor API.
+
+The tutor proxy (`npm run tutor`, which starts `tutor-server.mjs`) holds the
+Anthropic API key **server-side** so the browser never sees it, restricts callers
+to an allow-list of site origins, and returns only a plain hint string. When it is
+unreachable, slow, or misbehaving, the browser silently falls back to the offline
+heuristic — a hosted tutor can only ever make a hint better, never remove it. Only
+the failing lesson's code and the failing check are sent; notes, other lessons and
+account details are not. It is internet-facing and **must sit behind a
+TLS-terminating reverse proxy**.
+
+| Variable | Purpose |
+|---|---|
+| `FORGE_ORIGINS` | **Required.** Comma-separated allow-list of site origins permitted to call the API (CORS + Origin check), e.g. `https://forge.example`. |
+| `ANTHROPIC_API_KEY` | **Required.** The key the proxy uses to reach the model. Held server-side only; never sent to the browser. |
+| `FORGE_TUTOR_MODEL` | Model id. Default `claude-haiku-4-5-20251001` — fast and inexpensive, which suits short hints. Set a stronger model here if you prefer. |
+| `FORGE_TRUST_PROXY` | Set when behind a reverse proxy so the client IP is read from `X-Forwarded-For` for rate limiting. |
+| `PORT` | Port the service listens on. Default `4319`. |
+
+The site build learns the tutor origin from `FORGE_TUTOR_ORIGIN` at **build time**,
+exactly like the sync origin: `FORGE_TUTOR_ORIGIN=https://tutor.example npm run
+build` writes that origin into the hosted `deployment.js` and the `_headers`
+`connect-src`, from the one validated value in `security-policy.mjs`. Left unset,
+the build ships the offline tutor only. When the hosted tutor is enabled, the
+in-app **Privacy & storage** page discloses what is sent.
+
 ## What is included
 
 - **40 substantial lessons**: 20 JavaScript and 20 C#, from foundations to engineering practice. Every lesson has mental models, worked code, common mistakes, a prediction question, an executable challenge, notes, and an official reference link.
@@ -128,7 +160,7 @@ of your progress record, so it is included in backups and, if you sign in, synce
 - **Notebook, draft autosave, focus timer, search, and progress export/import**.
 - **Daily focus goals**: choose 15, 30, 60, or 90 minutes and see today's accumulated time, remaining time, and goal completion in Overview, Playground, and Settings. Focus time is tracked by local calendar day, separately from the lifetime total.
 - **A study buddy**: a small mascot that reacts to what you do and, when a check fails, points you at the first failing case. It runs entirely in your browser and its name and hidden/shown state are device-local — never uploaded or included in a backup.
-- **A built-in tutor**: offline and deterministic, it names the first failing check (and what it expected) and unlocks staged hints as your checks keep coming up short — escalating to the worked solution only after repeated attempts. No network, no API key, nothing uploaded.
+- **A built-in tutor**: offline and deterministic, it names the first failing check (and what it expected) and unlocks staged hints as your checks keep coming up short — escalating to the worked solution only after repeated attempts. No network, no API key, nothing uploaded. A deployment can optionally add a hosted AI tutor for richer hints (see [Tutor service](#tutor-service-optional-ai-hints)); it always falls back to this offline one.
 - **Per-track certificates**: complete every lesson in a track (all 20 JavaScript or all 20 C#) and earn a printable, downloadable record of practice. It is framed honestly as a record of practice, not a professional credential.
 - **A separate isolated DOM lab** for browser events and HTML practice.
 

@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, rm, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { staticHeaders, syncOrigin } from "../security-policy.mjs";
+import { staticHeaders, syncOrigin, tutorOrigin } from "../security-policy.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const destination = path.join(root, "dist");
@@ -65,10 +65,12 @@ if (existing) await rm(destination, { recursive: true, force: true });
 await mkdir(path.join(destination, "downloads"), { recursive: true });
 for (const [name, data] of entries.filter(([name]) => name.startsWith("public/")))
   await writeFile(path.join(destination, name.slice(7)), data);
-// syncOrigin is the already-validated bare origin from security-policy.mjs, so the
-// client config and the CSP connect-src come from one source. Empty ships local-only.
+// syncOrigin and tutorOrigin are already-validated bare origins from
+// security-policy.mjs, so the client config and the CSP connect-src come from one
+// source. Empty ships local-only, with the offline heuristic tutor.
 await writeFile(path.join(destination, "deployment.js"),
-  `export const hosted = true;\nexport const syncOrigin = ${JSON.stringify(syncOrigin)};\n`);
+  `export const hosted = true;\nexport const syncOrigin = ${JSON.stringify(syncOrigin)};\n` +
+  `export const tutorOrigin = ${JSON.stringify(tutorOrigin)};\n`);
 await writeFile(path.join(destination, "_headers"), staticHeaders());
 await writeFile(path.join(destination, "robots.txt"), "User-agent: *\nAllow: /\nDisallow: /downloads/\n");
 await writeFile(path.join(destination, "downloads", "forge-local.zip"), zip(entries));

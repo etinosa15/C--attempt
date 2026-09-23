@@ -4,3 +4,7 @@ export const hosted = false;
 // app stays exactly as local-first as it was, with no network calls and no UI
 // asking anyone to sign in. Set FORGE_SYNC_ORIGIN at build time to enable it.
 export const syncOrigin = "";
+// Origin of the optional AI tutor proxy (tutor-server.mjs). Empty keeps the
+// offline heuristic tutor as the only provider — no network, no key, nothing
+// uploaded. Set FORGE_TUTOR_ORIGIN at build time to enable hosted hints.
+export const tutorOrigin = "";

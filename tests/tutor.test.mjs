@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { heuristicProvider, firstFailure, createTutor } from "../public/tutor.js";
+import { heuristicProvider, firstFailure, createTutor, createRemoteProvider } from "../public/tutor.js";
 
 const lesson = {
   lang: "js",
@@ -66,4 +66,66 @@ test("createTutor delegates to its provider", async () => {
   assert.equal(tutor.provider, heuristicProvider);
   const advice = await tutor.respond({ lesson, results: [{ passed: true }, { passed: true }] });
   assert.equal(advice, null);
+});
+
+test("a remote provider with no origin is just the offline fallback", () => {
+  assert.equal(createRemoteProvider({ origin: "" }), heuristicProvider);
+});
+
+const failing = { lesson, results: [{ passed: true }, { passed: false }], tier: 0 };
+
+test("the remote provider upgrades the message but keeps the heuristic's ladder", async () => {
+  let sent;
+  const provider = createRemoteProvider({
+    origin: "https://tutor.example",
+    fetchImpl: async (url, init) => {
+      sent = { url, init };
+      return { ok: true, json: async () => ({ message: "Trace greet(\"\") and see what your guard returns." }) };
+    },
+  });
+  const advice = await provider.respond(failing);
+  assert.equal(sent.url, "https://tutor.example/api/tutor");
+  assert.equal(sent.init.headers["X-Forge-Tutor"], "1");
+  assert.match(advice.message, /Trace greet/);
+  // Ladder decisions stay deterministic: same tier/solution flags as the heuristic.
+  const base = await heuristicProvider.respond(failing);
+  assert.equal(advice.suggestedTier, base.suggestedTier);
+  assert.equal(advice.offerSolution, base.offerSolution);
+  assert.equal(advice.kind, base.kind);
+});
+
+test("the remote provider sends the learner's code but never the solution", async () => {
+  let body;
+  const provider = createRemoteProvider({
+    origin: "https://tutor.example",
+    fetchImpl: async (_url, init) => { body = JSON.parse(init.body); return { ok: true, json: async () => ({ message: "hi" }) }; },
+  });
+  await provider.respond({ ...failing, code: "function greet(n){ return n; }" });
+  assert.match(body.code, /function greet/);
+  assert.equal("solution" in body, false);
+  assert.equal(JSON.stringify(body).includes(lesson.challenge.solution), false);
+});
+
+test("the remote provider stays silent when every check passes — no request", async () => {
+  let called = false;
+  const provider = createRemoteProvider({
+    origin: "https://tutor.example",
+    fetchImpl: async () => { called = true; return { ok: true, json: async () => ({ message: "x" }) }; },
+  });
+  const advice = await provider.respond({ lesson, results: [{ passed: true }, { passed: true }] });
+  assert.equal(advice, null);
+  assert.equal(called, false, "a passing run must not reach the network");
+});
+
+test("the remote provider falls back to the heuristic on any failure", async () => {
+  const base = await heuristicProvider.respond(failing);
+  for (const fetchImpl of [
+    async () => { throw new Error("network down"); },
+    async () => ({ ok: false, json: async () => ({}) }),
+    async () => ({ ok: true, json: async () => ({ message: "" }) }),
+    async () => ({ ok: true, json: async () => { throw new Error("bad json"); } }),
+  ]) {
+    const advice = await createRemoteProvider({ origin: "https://tutor.example", fetchImpl }).respond(failing);
+    assert.deepEqual(advice, base);
+  }
 });

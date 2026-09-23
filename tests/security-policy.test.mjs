@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readSyncOrigin, appPolicy, policyFor, staticHeaders, bootScriptHash } from "../security-policy.mjs";
+import { readSyncOrigin, readOrigin, appPolicy, policyFor, staticHeaders, bootScriptHash } from "../security-policy.mjs";
 
 test("a configured sync origin is reduced to a bare scheme, host and port", () => {
   assert.equal(readSyncOrigin("https://api.forge.example"), "https://api.forge.example");
@@ -26,6 +26,12 @@ test("anything that is not a bare origin is refused rather than written into a h
     "'self' 'unsafe-inline'",
   ])
     assert.equal(readSyncOrigin(bad), "", `expected ${String(bad)} to be refused`);
+});
+
+test("readOrigin is the shared validator the sync alias points at", () => {
+  assert.equal(readOrigin, readSyncOrigin);
+  assert.equal(readOrigin("https://tutor.forge.example/"), "https://tutor.forge.example");
+  assert.equal(readOrigin("https://tutor.forge.example; script-src 'unsafe-inline'"), "");
 });
 
 test("with no sync origin configured the policy is exactly as strict as before accounts", () => {

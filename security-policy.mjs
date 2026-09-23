@@ -4,13 +4,14 @@
 // regenerate this hash.
 export const bootScriptHash = "'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='";
 
-// Cloud sync lives on its own origin, so the page has to be allowed to reach it.
-// The value is interpolated straight into a header, so it is validated down to a
-// bare scheme://host:port — anything else could close the directive and append
-// its own (a value ending "; script-src 'unsafe-inline'" would undo the policy).
-// Empty is the default and the safe one: no origin configured, no sync, and the
-// policy stays exactly as strict as it was before accounts existed.
-export function readSyncOrigin(value) {
+// The optional sync and tutor services each live on their own origin, so the
+// page has to be allowed to reach them. Each value is interpolated straight into
+// a header, so it is validated down to a bare scheme://host:port — anything else
+// could close the directive and append its own (a value ending
+// "; script-src 'unsafe-inline'" would undo the policy). Empty is the default and
+// the safe one: no origin configured, no requests, and the policy stays exactly
+// as strict as it was before these services existed.
+export function readOrigin(value) {
   const raw = String(value ?? "").trim().replace(/\/+$/, "");
   if (!raw) return "";
   let url;
@@ -22,8 +23,13 @@ export function readSyncOrigin(value) {
   if (url.protocol === "http:" && !["localhost", "127.0.0.1"].includes(url.hostname)) return "";
   return url.origin;
 }
-export const syncOrigin = readSyncOrigin(globalThis.process?.env?.FORGE_SYNC_ORIGIN);
-const connectSrc = ["'self'", syncOrigin].filter(Boolean).join(" ");
+// Kept under its original name: the sync service and its tests refer to it.
+export const readSyncOrigin = readOrigin;
+export const syncOrigin = readOrigin(globalThis.process?.env?.FORGE_SYNC_ORIGIN);
+// The AI tutor proxy (tutor-server.mjs). Empty leaves the offline heuristic tutor
+// as the only provider, so Forge's no-network promise is unchanged by default.
+export const tutorOrigin = readOrigin(globalThis.process?.env?.FORGE_TUTOR_ORIGIN);
+const connectSrc = ["'self'", syncOrigin, tutorOrigin].filter(Boolean).join(" ");
 export const appPolicy = `default-src 'self'; script-src 'self' ${bootScriptHash}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`;
 export const workerPolicy = "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'";
 export const domPolicy = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
