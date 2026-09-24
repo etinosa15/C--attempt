@@ -1,8 +1,14 @@
-# Render Blueprint for the hosted (static reading) edition of Forge Code Academy.
+# Render Blueprint for Forge Code Academy.
 #
-# This deploys the SAME static `dist/` that `npm run build` produces. C# is
-# read-only on any static host (the .NET compiler in server.mjs is loopback-only
-# and never deployed). Do NOT deploy server.mjs as a Render Web Service.
+# Three services from one repo:
+#   * forge-code-academy  — the static reading edition (the SAME `dist/` that
+#                            `npm run build` produces). C# is read-only here.
+#   * forge-sync          — optional accounts/progress-sync Node service.
+#   * forge-tutor         — optional AI-hint proxy (holds the Anthropic key
+#                            server-side; the browser never sees it).
+#
+# The local C# compiler in server.mjs is loopback-only and is NEVER deployed
+# here — it is a separate program from the sync and tutor services.
 #
 # Render does NOT read the Netlify-style `dist/_headers` file, so the security
 # headers are declared here instead. The values below mirror `dist/_headers`,
@@ -10,9 +16,17 @@
 # The Content-Security-Policy is per-document: the app, the DOM lab, and the
 # runner worker each get their own policy.
 #
-# DRIFT WARNING: the app CSP pins a sha256 hash of the inline bootstrap script in
-# index.html. If you change that inline script, run `npm run build` and copy the
-# new hash from `dist/_headers` into the three app-CSP entries below.
+# DRIFT WARNING (two things to keep in sync with the build):
+#  1. The app CSP pins a sha256 hash of the inline bootstrap script in
+#     index.html. If you change that inline script, run `npm run build` and
+#     copy the new hash from `dist/_headers` into the three app-CSP entries.
+#  2. The app CSP `connect-src` must list the sync and tutor origins so the
+#     browser may call them. They are hardcoded below AND passed to the static
+#     build as FORGE_SYNC_ORIGIN / FORGE_TUTOR_ORIGIN so `deployment.js` shows
+#     the account/tutor UI. If Render assigns the sync/tutor services a
+#     different hostname (e.g. the name was taken and got a suffix), update the
+#     three app-CSP `connect-src` entries, both FORGE_*_ORIGIN values here, and
+#     each service's FORGE_ORIGINS to match the real URLs.
 services:
   - type: web
     runtime: static
@@ -22,6 +36,12 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Build-time origins: written into dist/deployment.js and the generated
+      # connect-src so the hosted app enables the account + tutor features.
+      - key: FORGE_SYNC_ORIGIN
+        value: https://forge-sync.onrender.com
+      - key: FORGE_TUTOR_ORIGIN
+        value: https://forge-tutor.onrender.com
     headers:
       # Applied to every response (matches the `/*` block in dist/_headers).
       - path: /*
@@ -36,17 +56,16 @@ services:
       - path: /*
         name: Cache-Control
         value: "public, max-age=0, must-revalidate"
-      # App documents: full policy (connect-src 'self' — no sync/tutor on a
-      # static deploy; img-src allows the jsdelivr devicon logos only).
+      # App documents: connect-src allows self + the sync and tutor origins.
       - path: /
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /index.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /404.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       # DOM lab: stricter sandbox policy.
       - path: /dom-preview.html
         name: Content-Security-Policy
@@ -55,3 +74,50 @@ services:
       - path: /runner-worker.js
         name: Content-Security-Policy
         value: "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'"
+
+  # ---------------------------------------------------------------------------
+  # Optional accounts / progress-sync service.
+  # Free plan: filesystem is EPHEMERAL — accounts reset on every restart/deploy
+  # and on cold-start spin-up. Fine for testing; add a paid persistent disk and
+  # point FORGE_DATA at it for durable accounts.
+  # onrender.com is a public suffix, so the site and this service are cross-site
+  # → FORGE_CROSS_SITE=1 issues the session cookie SameSite=None; Secure.
+  - type: web
+    runtime: node
+    name: forge-sync
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run sync
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: FORGE_ORIGINS
+        value: https://forge-code-academy.onrender.com
+      - key: FORGE_CROSS_SITE
+        value: "1"
+      - key: FORGE_TRUST_PROXY
+        value: "1"
+
+  # ---------------------------------------------------------------------------
+  # Optional AI-tutor proxy. Holds the Anthropic key server-side.
+  # ANTHROPIC_API_KEY is `sync: false` — a secret you paste into the Render
+  # dashboard for this service; it is never stored in the repo.
+  - type: web
+    runtime: node
+    name: forge-tutor
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run tutor
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: FORGE_ORIGINS
+        value: https://forge-code-academy.onrender.com
+      - key: FORGE_TRUST_PROXY
+        value: "1"
+      - key: FORGE_TUTOR_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: ANTHROPIC_API_KEY
+        sync: false
