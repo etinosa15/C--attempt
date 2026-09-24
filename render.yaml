@@ -84,8 +84,19 @@ services:
   # ---------------------------------------------------------------------------
   # Optional accounts / progress-sync service.
   # Free plan: filesystem is EPHEMERAL — accounts reset on every restart/deploy
-  # and on cold-start spin-up. Fine for testing; add a paid persistent disk and
-  # point FORGE_DATA at it for durable accounts.
+  # and on cold-start spin-up. Fine for testing.
+  #
+  # DURABLE ACCOUNTS (opt-in, paid): a persistent disk survives restarts and
+  # deploys. Render disks are NOT offered on the free plan, so enabling this is a
+  # deliberate cost decision. To turn it on, three coordinated edits below:
+  #   1. change `plan: free` → `plan: starter` (the smallest plan that allows a
+  #      disk; billed monthly),
+  #   2. uncomment the `disk:` block, and
+  #   3. uncomment the `FORGE_DATA` env var so the store writes to the mount.
+  # sync-server.mjs reads FORGE_DATA (default "./data"), so the mount path and the
+  # env var must match. Leaving all three commented keeps the free, ephemeral
+  # behaviour unchanged.
+  #
   # onrender.com is a public suffix, so the site and this service are cross-site
   # → FORGE_CROSS_SITE=1 issues the session cookie SameSite=None; Secure.
   - type: web
@@ -95,6 +106,12 @@ services:
     buildCommand: npm install
     startCommand: npm run sync
     healthCheckPath: /api/health
+    # Uncomment together with `FORGE_DATA` and a paid `plan:` to keep accounts
+    # across restarts and deploys.
+    # disk:
+    #   name: forge-sync-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -104,6 +121,10 @@ services:
         value: "1"
       - key: FORGE_TRUST_PROXY
         value: "1"
+      # Durable store location; must equal the disk mountPath above. Uncomment
+      # only when the disk and a paid plan are enabled.
+      # - key: FORGE_DATA
+      #   value: /var/data
 
   # ---------------------------------------------------------------------------
   # Optional AI-tutor proxy. Holds the Anthropic key server-side.
