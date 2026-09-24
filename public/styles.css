@@ -681,6 +681,12 @@ html[data-theme="dark"] .topbar.scrolled {
 .mobile-menu {
   display: none !important;
 }
+/* Streak lives in the top bar on desktop; on a phone that pill is dropped (see
+   the max-width:720px block) and this copy inside the slide-out menu takes over,
+   so the streak stays reachable without crowding the bar. Hidden by default. */
+.sidebar-streak {
+  display: none;
+}
 /* ============================================================
    06 · Overview, hero & dashboard
    ============================================================ */
@@ -4269,10 +4275,49 @@ button.search-result {
     display: none;
   }
   .topbar-right {
-    gap: 15px;
+    gap: 12px;
+    min-width: 0;
   }
   .top-avatar {
     display: none;
+  }
+  /* The XP and streak pills overflow the bar on a phone (and only ever showed a
+     glanceable "0" here). XP stays on the Overview stats row; the streak moves
+     into the slide-out menu via .sidebar-streak below. Dropping them here stops
+     the bar — and the fixed Ember anchored to the page's right edge — from being
+     pushed past the viewport. */
+  .topbar .xp-pill,
+  .topbar .streak {
+    display: none;
+  }
+  .sidebar-streak {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 15px;
+    padding: 11px 14px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+  }
+  .sidebar-streak > svg {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .sidebar-streak strong {
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--text);
+    line-height: 1;
+  }
+  .sidebar-streak span {
+    display: block;
+    margin-top: 3px;
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .search-trigger {
     padding: 8px;
