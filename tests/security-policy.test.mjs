@@ -78,12 +78,12 @@ test("the pinned boot-script hash matches the inline script in index.html", () =
 
 // Drift guard #2: Render ignores dist/_headers, so render.yaml restates the
 // policy by hand. Assert it still equals the single source of truth, computed
-// with the Render sync/tutor origins the blueprint deploys.
+// with the Render sync origin the blueprint deploys.
 test("render.yaml headers match the policy module", () => {
   const yaml = readFileSync(join(root, "render.yaml"), "utf8");
-  const renderConnect = "connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com";
+  const renderConnect = "connect-src 'self' https://forge-sync.onrender.com";
   // appPolicy loads with no origins configured (connect-src 'self'); splice in
-  // the two Render origins to get the exact string the blueprint should carry.
+  // the Render sync origin to get the exact string the blueprint should carry.
   const expectedApp = appPolicy.replace("connect-src 'self'", renderConnect);
   const cspValues = [...yaml.matchAll(/name: Content-Security-Policy\s*\n\s*value: "([^"]*)"/g)].map((m) => m[1]);
   const appEntries = cspValues.filter((v) => v.startsWith("default-src 'self'"));

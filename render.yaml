@@ -1,14 +1,12 @@
 # Render Blueprint for Forge Code Academy.
 #
-# Three services from one repo:
+# Two services from one repo:
 #   * forge-code-academy  — the static reading edition (the SAME `dist/` that
 #                            `npm run build` produces). C# is read-only here.
 #   * forge-sync          — optional accounts/progress-sync Node service.
-#   * forge-tutor         — optional AI-hint proxy (holds the Anthropic key
-#                            server-side; the browser never sees it).
 #
 # The local C# compiler in server.mjs is loopback-only and is NEVER deployed
-# here — it is a separate program from the sync and tutor services.
+# here — it is a separate program from the sync service.
 #
 # Render does NOT read the Netlify-style `dist/_headers` file, so the security
 # headers are declared here instead. The values below mirror `dist/_headers`,
@@ -20,13 +18,13 @@
 #  1. The app CSP pins a sha256 hash of the inline bootstrap script in
 #     index.html. If you change that inline script, run `npm run build` and
 #     copy the new hash from `dist/_headers` into the three app-CSP entries.
-#  2. The app CSP `connect-src` must list the sync and tutor origins so the
-#     browser may call them. They are hardcoded below AND passed to the static
-#     build as FORGE_SYNC_ORIGIN / FORGE_TUTOR_ORIGIN so `deployment.js` shows
-#     the account/tutor UI. If Render assigns the sync/tutor services a
-#     different hostname (e.g. the name was taken and got a suffix), update the
-#     three app-CSP `connect-src` entries, both FORGE_*_ORIGIN values here, and
-#     each service's FORGE_ORIGINS to match the real URLs.
+#  2. The app CSP `connect-src` must list the sync origin so the browser may
+#     call it. It is hardcoded below AND passed to the static build as
+#     FORGE_SYNC_ORIGIN so `deployment.js` shows the account UI. If Render
+#     assigns the sync service a different hostname (e.g. the name was taken
+#     and got a suffix), update the three app-CSP `connect-src` entries, the
+#     FORGE_SYNC_ORIGIN value here, and the sync service's FORGE_ORIGINS to
+#     match the real URLs.
 services:
   - type: web
     runtime: static
@@ -36,12 +34,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # Build-time origins: written into dist/deployment.js and the generated
-      # connect-src so the hosted app enables the account + tutor features.
+      # Build-time origin: written into dist/deployment.js and the generated
+      # connect-src so the hosted app enables the account features.
       - key: FORGE_SYNC_ORIGIN
         value: https://forge-sync.onrender.com
-      - key: FORGE_TUTOR_ORIGIN
-        value: https://forge-tutor.onrender.com
     headers:
       # Applied to every response (matches the `/*` block in dist/_headers).
       - path: /*
@@ -62,16 +58,16 @@ services:
       - path: /*
         name: Cache-Control
         value: "public, max-age=0, must-revalidate"
-      # App documents: connect-src allows self + the sync and tutor origins.
+      # App documents: connect-src allows self + the sync origin.
       - path: /
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /index.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /404.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       # DOM lab: stricter sandbox policy.
       - path: /dom-preview.html
         name: Content-Security-Policy
@@ -126,30 +122,3 @@ services:
       # - key: FORGE_DATA
       #   value: /var/data
 
-  # ---------------------------------------------------------------------------
-  # Optional AI-tutor proxy. Holds the Anthropic key server-side.
-  # ANTHROPIC_API_KEY is `sync: false` — a secret you paste into the Render
-  # dashboard for this service; it is never stored in the repo.
-  - type: web
-    runtime: node
-    name: forge-tutor
-    plan: free
-    buildCommand: npm install
-    startCommand: npm run tutor
-    healthCheckPath: /api/health
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: FORGE_ORIGINS
-        value: https://forge-code-academy.onrender.com
-      - key: FORGE_TRUST_PROXY
-        value: "1"
-      # The tutor answers only signed-in learners: it validates the presented
-      # sync session server-to-server against this origin's /api/me. Without it
-      # the tutor refuses to start rather than run open.
-      - key: FORGE_SYNC_ORIGIN
-        value: https://forge-sync.onrender.com
-      - key: FORGE_TUTOR_MODEL
-        value: claude-haiku-4-5-20251001
-      - key: ANTHROPIC_API_KEY
-        sync: false
