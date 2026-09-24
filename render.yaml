@@ -1,0 +1,57 @@
+# Render Blueprint for the hosted (static reading) edition of Forge Code Academy.
+#
+# This deploys the SAME static `dist/` that `npm run build` produces. C# is
+# read-only on any static host (the .NET compiler in server.mjs is loopback-only
+# and never deployed). Do NOT deploy server.mjs as a Render Web Service.
+#
+# Render does NOT read the Netlify-style `dist/_headers` file, so the security
+# headers are declared here instead. The values below mirror `dist/_headers`,
+# which is generated from `security-policy.mjs` (the single source of truth).
+# The Content-Security-Policy is per-document: the app, the DOM lab, and the
+# runner worker each get their own policy.
+#
+# DRIFT WARNING: the app CSP pins a sha256 hash of the inline bootstrap script in
+# index.html. If you change that inline script, run `npm run build` and copy the
+# new hash from `dist/_headers` into the three app-CSP entries below.
+services:
+  - type: web
+    runtime: static
+    name: forge-code-academy
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    headers:
+      # Applied to every response (matches the `/*` block in dist/_headers).
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: no-referrer
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=()"
+      - path: /*
+        name: Cache-Control
+        value: "public, max-age=0, must-revalidate"
+      # App documents: full policy (connect-src 'self' — no sync/tutor on a
+      # static deploy; img-src allows the jsdelivr devicon logos only).
+      - path: /
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+      - path: /index.html
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+      - path: /404.html
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+      # DOM lab: stricter sandbox policy.
+      - path: /dom-preview.html
+        name: Content-Security-Policy
+        value: "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+      # JavaScript runner worker: no network, eval only.
+      - path: /runner-worker.js
+        name: Content-Security-Policy
+        value: "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'"
