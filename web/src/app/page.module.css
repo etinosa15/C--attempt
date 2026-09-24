@@ -1,0 +1,74 @@
+.main {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.hero {
+  max-width: 40rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tagline {
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+.card {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.primary,
+.secondary,
+.danger {
+  padding: 0.6rem 1rem;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.primary {
+  background: #c8971f;
+  color: #14110b;
+}
+
+.secondary {
+  background: transparent;
+  color: inherit;
+  border-color: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.danger {
+  background: transparent;
+  color: #d9534f;
+  border-color: color-mix(in srgb, #d9534f 45%, transparent);
+}
+
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

@@ -1,0 +1,85 @@
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.input {
+  padding: 0.6rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.input:focus-visible {
+  outline: 2px solid #c8971f;
+  outline-offset: 1px;
+}
+
+.primary {
+  margin-top: 0.25rem;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 9px;
+  background: #c8971f;
+  color: #14110b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:disabled { opacity: 0.6; cursor: default; }
+
+.oauth { display: flex; gap: 0.6rem; }
+
+.oauthBtn {
+  flex: 1;
+  padding: 0.55rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  color: #d9534f;
+  font-size: 0.85rem;
+}
+
+.links {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
