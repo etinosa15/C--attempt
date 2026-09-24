@@ -54,6 +54,9 @@ services:
         name: Permissions-Policy
         value: "camera=(), microphone=(), geolocation=()"
       - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=63072000"
+      - path: /*
         name: Cache-Control
         value: "public, max-age=0, must-revalidate"
       # App documents: connect-src allows self + the sync and tutor origins.
@@ -117,6 +120,11 @@ services:
         value: https://forge-code-academy.onrender.com
       - key: FORGE_TRUST_PROXY
         value: "1"
+      # The tutor answers only signed-in learners: it validates the presented
+      # sync session server-to-server against this origin's /api/me. Without it
+      # the tutor refuses to start rather than run open.
+      - key: FORGE_SYNC_ORIGIN
+        value: https://forge-sync.onrender.com
       - key: FORGE_TUTOR_MODEL
         value: claude-haiku-4-5-20251001
       - key: ANTHROPIC_API_KEY

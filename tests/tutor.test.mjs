@@ -78,6 +78,7 @@ test("the remote provider upgrades the message but keeps the heuristic's ladder"
   let sent;
   const provider = createRemoteProvider({
     origin: "https://tutor.example",
+    getAuth: () => "session-token",
     fetchImpl: async (url, init) => {
       sent = { url, init };
       return { ok: true, json: async () => ({ message: "Trace greet(\"\") and see what your guard returns." }) };
@@ -86,6 +87,7 @@ test("the remote provider upgrades the message but keeps the heuristic's ladder"
   const advice = await provider.respond(failing);
   assert.equal(sent.url, "https://tutor.example/api/tutor");
   assert.equal(sent.init.headers["X-Forge-Tutor"], "1");
+  assert.equal(sent.init.headers.Authorization, "Bearer session-token");
   assert.match(advice.message, /Trace greet/);
   // Ladder decisions stay deterministic: same tier/solution flags as the heuristic.
   const base = await heuristicProvider.respond(failing);
@@ -98,6 +100,7 @@ test("the remote provider sends the learner's code but never the solution", asyn
   let body;
   const provider = createRemoteProvider({
     origin: "https://tutor.example",
+    getAuth: () => "tok",
     fetchImpl: async (_url, init) => { body = JSON.parse(init.body); return { ok: true, json: async () => ({ message: "hi" }) }; },
   });
   await provider.respond({ ...failing, code: "function greet(n){ return n; }" });
@@ -106,10 +109,26 @@ test("the remote provider sends the learner's code but never the solution", asyn
   assert.equal(JSON.stringify(body).includes(lesson.challenge.solution), false);
 });
 
+test("a signed-out learner keeps the offline hint and never reaches the network", async () => {
+  let called = false;
+  const base = await heuristicProvider.respond(failing);
+  for (const getAuth of [() => "", () => null, () => { throw new Error("no session"); }]) {
+    const provider = createRemoteProvider({
+      origin: "https://tutor.example",
+      getAuth,
+      fetchImpl: async () => { called = true; return { ok: true, json: async () => ({ message: "x" }) }; },
+    });
+    const advice = await provider.respond(failing);
+    assert.deepEqual(advice, base);
+  }
+  assert.equal(called, false, "without a session token the tutor must not be called");
+});
+
 test("the remote provider stays silent when every check passes — no request", async () => {
   let called = false;
   const provider = createRemoteProvider({
     origin: "https://tutor.example",
+    getAuth: () => "tok",
     fetchImpl: async () => { called = true; return { ok: true, json: async () => ({ message: "x" }) }; },
   });
   const advice = await provider.respond({ lesson, results: [{ passed: true }, { passed: true }] });
@@ -125,7 +144,7 @@ test("the remote provider falls back to the heuristic on any failure", async () 
     async () => ({ ok: true, json: async () => ({ message: "" }) }),
     async () => ({ ok: true, json: async () => { throw new Error("bad json"); } }),
   ]) {
-    const advice = await createRemoteProvider({ origin: "https://tutor.example", fetchImpl }).respond(failing);
+    const advice = await createRemoteProvider({ origin: "https://tutor.example", getAuth: () => "tok", fetchImpl }).respond(failing);
     assert.deepEqual(advice, base);
   }
 });

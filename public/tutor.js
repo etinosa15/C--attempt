@@ -113,6 +113,10 @@ export function createRemoteProvider({
   fetchImpl = (...args) => fetch(...args),
   fallback = heuristicProvider,
   timeoutMs = REQUEST_MS,
+  // How to read the learner's current sync session bearer. The hosted tutor
+  // answers only signed-in learners (validated server-to-server against sync),
+  // so without a token we never call it — the offline nudge stands in.
+  getAuth = () => "",
 } = {}) {
   if (!origin) return fallback; // Nothing configured: stay entirely offline.
   return {
@@ -121,12 +125,20 @@ export function createRemoteProvider({
       // ever an upgrade, and so a passing run stays silent without a request.
       const base = await fallback.respond(context);
       if (!base) return null;
+      // Signed-out learners get the offline nudge: the tutor would 401 anyway,
+      // so skip the request rather than spend a round-trip proving it.
+      const token = (() => { try { return getAuth() || ""; } catch { return ""; } })();
+      if (!token) return base;
       const controller = new AbortController();
       const deadline = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const response = await fetchImpl(origin + "/api/tutor", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Forge-Tutor": "1" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Forge-Tutor": "1",
+            Authorization: `Bearer ${token}`,
+          },
           cache: "no-store",
           signal: controller.signal,
           body: JSON.stringify(tutorPayload(context)),

@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 import { randomUUID, randomBytes } from "node:crypto";
 import { lessons } from "./public/curriculum.js";
 import { baseHeaders, policyFor } from "./security-policy.mjs";
+import { structuralEqual } from "./deep-equal.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const hostedPreview = process.argv.includes("--hosted-preview");
@@ -15,6 +16,26 @@ const port = Number(process.env.PORT || (hostedPreview ? 4331 : 4317));
 const token = randomBytes(24).toString("hex");
 const marker = "__FORGE_RESULT__";
 let active = false;
+
+// `child.kill()` on Windows signals only the immediate process, leaving the
+// `dotnet` worker it spawned running — a timeout or output-limit abort then
+// leaks processes. `taskkill /T` walks and kills the whole tree; on POSIX the
+// default signal already reaches the child, so a plain kill is enough.
+function killTree(child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  if (process.platform === "win32" && child.pid) {
+    try {
+      spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+        windowsHide: true,
+        stdio: "ignore",
+      }).on("error", () => child.kill());
+    } catch {
+      child.kill();
+    }
+  } else {
+    child.kill();
+  }
+}
 
 export function runProcess(
   file,
@@ -43,13 +64,13 @@ export function runProcess(
     };
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      killTree(child);
     }, timeout);
     const collect = (data) => {
       output += data.toString();
       if (output.length > maxOutput) {
         output = output.slice(0, maxOutput) + "\n[Output limit reached]";
-        child.kill();
+        killTree(child);
       }
     };
     child.stdout.setEncoding("utf8").on("data", collect);
@@ -177,7 +198,7 @@ export async function executeCSharp(code, tests = [], sdk = dotnet) {
               expected: test.expected,
               passed:
                 !item.error &&
-                JSON.stringify(item.actual) === JSON.stringify(test.expected),
+                structuralEqual(item.actual, test.expected),
             });
         } catch {
           logs.push(line);

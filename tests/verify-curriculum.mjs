@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { lessons } from "../public/curriculum.js";
 import { executeCSharp, findDotnet } from "../server.mjs";
+import { structuralEqual } from "../deep-equal.mjs";
 const sdk = await findDotnet();
 let count = 0;
 for (const lesson of lessons) {
@@ -20,9 +21,8 @@ for (const lesson of lessons) {
       { timeout: 2000 },
     );
     lesson.challenge.tests.forEach((t, i) =>
-      assert.deepEqual(
-        JSON.parse(JSON.stringify(actual[i])),
-        t.expected,
+      assert.ok(
+        structuralEqual(actual[i], t.expected),
         lesson.id + ": " + t.label,
       ),
     );

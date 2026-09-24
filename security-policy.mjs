@@ -43,6 +43,10 @@ export const baseHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  // Two years, refreshed on every response. No includeSubDomains/preload: the
+  // app shares the onrender.com suffix with unrelated sites, and pinning HSTS
+  // across the whole apex would speak for domains that are not ours.
+  "Strict-Transport-Security": "max-age=63072000",
 };
 export function policyFor(file) {
   return file.endsWith("runner-worker.js") ? workerPolicy : file.endsWith("dom-preview.html") ? domPolicy : appPolicy;

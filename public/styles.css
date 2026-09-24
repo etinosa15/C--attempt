@@ -365,10 +365,16 @@ svg {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow);
-  padding: 37px 20px 0;
+  padding: 37px 20px 20px;
   display: flex;
   flex-direction: column;
   z-index: 30;
+  /* Scroll when nav + bottom content is taller than the viewport, so the
+     Settings link and the streak pill stay reachable on short screens
+     (and inside the mobile slide-out). overscroll-behavior keeps the scroll
+     from chaining to the page behind it. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .brand {
   display: flex;
@@ -975,6 +981,35 @@ main {
     var(--glow-accent),
     inset 0 1px 1px var(--lglass-inner-top),
     inset 0 -1px 1px var(--lglass-inner-bottom);
+}
+/* Destructive action (reset all progress). Reads as a quiet secondary until the
+   learner is on it, then commits to a clear warning red so the intent is legible. */
+.button.danger {
+  background: color-mix(in srgb, #c0392b 12%, transparent);
+  color: #c0392b;
+  border: 1px solid color-mix(in srgb, #c0392b 40%, transparent);
+}
+.button.danger:hover:not(:disabled) {
+  background: #c0392b;
+  color: #fff;
+  border-color: #c0392b;
+}
+html[data-theme="dark"] .button.danger {
+  color: #f0a094;
+  border-color: color-mix(in srgb, #f0a094 34%, transparent);
+}
+html[data-theme="dark"] .button.danger:hover:not(:disabled) {
+  background: #b0392c;
+  color: #fff;
+  border-color: #b0392c;
+}
+.danger-zone {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, #c0392b 18%, transparent);
+}
+.danger-zone .button.danger {
+  margin-bottom: 8px;
 }
 /* Liquid-glass hero control. Apply alongside a shape (usually a pill/circle via a
    large border-radius). The fill + blur come from the --lglass-* tokens; the bright
@@ -2286,6 +2321,24 @@ main {
 .editor-highlight code {
   font: inherit;
   display: block;
+}
+/* High-contrast / forced-colors mode forces its own text colour onto the
+   textarea, so the "transparent text, coloured overlay" trick would paint two
+   overlapping copies. Hide the syntax overlay and let the textarea show its own
+   now-visible text; keep the CSS-drawn editor icons legible with a system colour. */
+@media (forced-colors: active) {
+  #code-editor {
+    color: CanvasText;
+    caret-color: CanvasText;
+  }
+  .editor-highlight {
+    display: none;
+  }
+  .status-dot,
+  .editor-status {
+    forced-color-adjust: none;
+    color: CanvasText;
+  }
 }
 .editor-bottom {
   display: flex;
@@ -3608,6 +3661,13 @@ dialog::backdrop {
   color: #9e816d;
   outline: none;
 }
+/* The bare outline:none above leaves keyboard users with no focus cue on the
+   search field. Restore a visible ring only when focus arrived via keyboard. */
+.search-dialog-top input:focus-visible {
+  outline: 3px solid #d9b49b;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
 .search-dialog-top input::placeholder {
   color: #cabaaf;
 }
@@ -4234,9 +4294,6 @@ button.search-result {
     gap: 6px;
     padding: 8px;
     margin-bottom: 10px;
-  }
-  .sidebar {
-    overflow-y: auto;
   }
   .sidebar .brand {
     font-size: 31px;

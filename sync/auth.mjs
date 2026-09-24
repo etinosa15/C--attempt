@@ -8,6 +8,37 @@ import { randomBytes, scrypt, timingSafeEqual, createHash } from "node:crypto";
 const N = 16384, R = 8, P = 1, KEYLEN = 64, MAXMEM = 64 * 1024 * 1024;
 const SALT_BYTES = 16;
 export const TOKEN_BYTES = 32;
+
+// scrypt is deliberately expensive (~16MB and ~100ms each). Left unbounded, a
+// burst of logins or signups could run many in parallel and exhaust the small
+// instance's memory. This semaphore caps concurrent hashes; the rest queue, so
+// peak memory stays ~MAX_CONCURRENT×16MB and CPU serialises under load. It does
+// not change the hashes themselves or the constant-time comparison.
+const MAX_CONCURRENT = 4;
+let running = 0;
+const waiters = [];
+function acquire() {
+  if (running < MAX_CONCURRENT) { running++; return Promise.resolve(); }
+  return new Promise((resolve) => waiters.push(resolve));
+}
+function release() {
+  const next = waiters.shift();
+  if (next) next(); // Hand the slot straight to the next waiter.
+  else running--;
+}
+function runScrypt(password, salt, keylen, options) {
+  return acquire().then(
+    () =>
+      new Promise((resolve, reject) => {
+        scrypt(password, salt, keylen, options, (error, key) =>
+          error ? reject(error) : resolve(key),
+        );
+      }).finally(release),
+  );
+}
+
+const derive = (password, salt) =>
+  runScrypt(password, salt, KEYLEN, { N, r: R, p: P, maxmem: MAXMEM });
 // No password reset exists in v1, so the floor stays reachable rather than
 // strict: length is what defeats guessing, and a locked-out learner cannot
 // recover an account by email.
@@ -18,11 +49,6 @@ const COMMON = new Set([
   "password123", "123456789012", "qwertyuiop", "1234567890", "letmein123",
   "passw0rd123", "welcome12345", "iloveyou123", "adminadmin", "0123456789",
 ]);
-
-const derive = (password, salt) => new Promise((resolve, reject) => {
-  scrypt(password, salt, KEYLEN, { N, r: R, p: P, maxmem: MAXMEM }, (error, key) =>
-    error ? reject(error) : resolve(key));
-});
 
 export async function hashPassword(password) {
   const salt = randomBytes(SALT_BYTES);
@@ -39,10 +65,8 @@ export async function verifyPassword(password, stored) {
     if (scheme !== "scrypt") return false;
     const expected = Buffer.from(key, "base64");
     if (expected.length !== KEYLEN) return false;
-    const actual = await new Promise((resolve, reject) => {
-      scrypt(password, Buffer.from(salt, "base64"), KEYLEN,
-        { N: Number(n), r: Number(r), p: Number(p), maxmem: MAXMEM },
-        (error, out) => error ? reject(error) : resolve(out));
+    const actual = await runScrypt(password, Buffer.from(salt, "base64"), KEYLEN, {
+      N: Number(n), r: Number(r), p: Number(p), maxmem: MAXMEM,
     });
     return timingSafeEqual(actual, expected);
   } catch {

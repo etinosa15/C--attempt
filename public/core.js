@@ -310,7 +310,10 @@ export function scheduleReview(previous, rating, now = Date.now()) {
     rating === "again"
       ? 0
       : rating === "hard"
-        ? 1
+        ? // "Hard" still returns soon, but grows gently on repeats so a card
+          // rated hard again and again does not stay pinned at one day forever
+          // (1 → 2 → 3 …), while a first "hard" is still ~tomorrow.
+          Math.min(60, Math.max(1, Math.ceil((Number(previous?.interval) || 0) * 1.2)))
         : Math.min(
             60,
             Math.max(1, Math.round((Number(previous?.interval) || 0.4) * 2.5)),

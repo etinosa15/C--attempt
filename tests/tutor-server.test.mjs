@@ -4,24 +4,32 @@ import { createTutorServer } from "../tutor-server.mjs";
 
 const ORIGIN = "https://forge.example";
 const KEY = "sk-ant-test-key";
+const SYNC = "https://sync.example";
 
 // Drive the proxy with a stubbed upstream so no real Anthropic call is made. The
-// stub records what it received and returns whatever the test sets.
-async function withServer(run, { upstream, ...options } = {}) {
+// stub records what it received and returns whatever the test sets. The same
+// fetchImpl also answers the server-to-server session check the tutor makes
+// against the sync service's /api/me, so it is stubbed separately here.
+async function withServer(run, { upstream, session, syncOrigin = SYNC, ...options } = {}) {
   let seen = null;
   let reply = upstream || (async () => ({ ok: true, json: async () => ({ content: [{ type: "text", text: "Trace the empty case." }] }) }));
+  // Default: any presented bearer is a valid session. Tests override to model a
+  // signed-out learner or a sync service that is down.
+  let sessionReply = session || (async () => ({ ok: true, json: async () => ({ email: "a@b.co" }) }));
   const fetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/me")) return sessionReply(url, init);
     seen = { url, init, body: JSON.parse(init.body) };
     return reply(url, init);
   };
-  const server = createTutorServer({ origins: [ORIGIN], apiKey: KEY, fetchImpl, ...options });
+  const server = createTutorServer({ origins: [ORIGIN], apiKey: KEY, syncOrigin, fetchImpl, ...options });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
 
-  async function call(path, { method = "POST", body, origin = ORIGIN, headers = {}, tutor = true } = {}) {
+  async function call(path, { method = "POST", body, origin = ORIGIN, headers = {}, tutor = true, auth = "valid-token" } = {}) {
     const sent = { ...headers };
     if (tutor) sent["X-Forge-Tutor"] = "1";
     if (origin) sent.Origin = origin;
+    if (auth) sent.Authorization = `Bearer ${auth}`;
     if (body !== undefined) sent["Content-Type"] = "application/json";
     const response = await fetch(base + path, {
       method, headers: sent,
@@ -33,7 +41,7 @@ async function withServer(run, { upstream, ...options } = {}) {
   }
 
   try {
-    await run({ call, upstream: () => seen, setReply: (fn) => { reply = fn; } });
+    await run({ call, upstream: () => seen, setReply: (fn) => { reply = fn; }, setSession: (fn) => { sessionReply = fn; } });
   } finally {
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));
@@ -123,6 +131,59 @@ test("hints are rate limited per client", async () => {
     for (let i = 0; i < 62; i++) last = (await call("/api/tutor", { body: payload })).status;
     assert.equal(last, 429);
   }, { origins: [ORIGIN] });
+});
+
+test("a request without a session bearer is refused before the model", async () => {
+  await withServer(async ({ call, upstream }) => {
+    const res = await call("/api/tutor", { body: payload, auth: null });
+    assert.equal(res.status, 401);
+    assert.equal(upstream(), null, "an unauthenticated caller must never reach the model");
+  });
+});
+
+test("a bearer the sync service rejects is a 401, not a hint", async () => {
+  await withServer(async ({ call, upstream, setSession }) => {
+    setSession(async () => ({ ok: false, json: async () => ({}) }));
+    const res = await call("/api/tutor", { body: payload });
+    assert.equal(res.status, 401);
+    assert.equal(upstream(), null, "an invalid session must never reach the model");
+  });
+});
+
+test("a valid session validated against /api/me is served, with the bearer forwarded to sync", async () => {
+  await withServer(async ({ call, setSession }) => {
+    let sawBearer = null;
+    setSession(async (_url, init) => {
+      sawBearer = init.headers.Authorization;
+      return { ok: true, json: async () => ({ email: "a@b.co" }) };
+    });
+    const res = await call("/api/tutor", { body: payload, auth: "learner-token" });
+    assert.equal(res.status, 200);
+    assert.equal(sawBearer, "Bearer learner-token", "the tutor validates the learner's own bearer with sync");
+  });
+});
+
+test("the global daily ceiling stops upstream calls once reached", async () => {
+  let upstreamCalls = 0;
+  await withServer(async ({ call }) => {
+    let last = 200;
+    for (let i = 0; i < 3; i++) last = (await call("/api/tutor", { body: payload })).status;
+    assert.equal(last, 429, "the third hint is over the daily ceiling of two");
+    assert.equal(upstreamCalls, 2, "only the two hints within budget reached the model");
+  }, {
+    dailyMax: 2,
+    upstream: async () => { upstreamCalls++; return { ok: true, json: async () => ({ content: [{ type: "text", text: "hint" }] }) }; },
+  });
+});
+
+test("the daily ceiling resets at the UTC-day boundary", async () => {
+  let clock = 0;
+  await withServer(async ({ call }) => {
+    assert.equal((await call("/api/tutor", { body: payload })).status, 200);
+    assert.equal((await call("/api/tutor", { body: payload })).status, 429, "second call is over the ceiling of one");
+    clock += 86400000; // next UTC day
+    assert.equal((await call("/api/tutor", { body: payload })).status, 200, "the budget resets the next day");
+  }, { dailyMax: 1, now: () => clock });
 });
 
 test("health needs no header and unknown routes are 404", async () => {

@@ -56,6 +56,18 @@ function readCookie(header, name) {
   return "";
 }
 
+// The trustworthy client address is the entry the immediate proxy appended —
+// the RIGHT-MOST X-Forwarded-For token — not the left-most, which the client
+// can forge to spoof the per-IP rate-limit key. Only consulted behind a proxy.
+function clientAddress(req, trustProxy) {
+  if (!trustProxy) return req.socket.remoteAddress;
+  const forwarded = String(req.headers["x-forwarded-for"] || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return forwarded.at(-1) || req.socket.remoteAddress;
+}
+
 export function createSyncServer({
   origins = [],
   dir = "./data",
@@ -119,9 +131,7 @@ export function createSyncServer({
         return;
       }
 
-      const client = trustProxy
-        ? String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress
-        : req.socket.remoteAddress;
+      const client = clientAddress(req, trustProxy);
 
       async function body(limit) {
         const chunks = [];
@@ -184,6 +194,11 @@ export function createSyncServer({
           catch { json(400, { error: "That progress data is not valid." }); return; }
         }
         const created = await store.createAccount(email, await hashPassword(parsed.value.password), seed);
+        // A 409 here does reveal that an address is registered. Signup logs the
+        // learner straight in, so without an email-verification step (which this
+        // service does not have) the response cannot both be useful and hide
+        // whether the account exists. Bulk enumeration is bounded instead by the
+        // per-client limiter above, which is recorded before this check runs.
         if (!created) { json(409, { error: "An account with that email already exists." }); return; }
         const { token, cookie } = await setSession(email);
         json(200, { email, state: created.state, revision: created.revision, token }, { "Set-Cookie": cookie });

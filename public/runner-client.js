@@ -41,6 +41,9 @@ export function createRunnerClient({
       throw new Error(data.error || `The local runner returned HTTP ${response.status}.`);
     if (typeof data.token !== "string" || !data.token || typeof data.csharp !== "boolean")
       throw new Error("The local runner returned an invalid status. Restart Forge and try again.");
+    // The SDK label is rendered into the editor toolbar. Normalise it to a short
+    // string so a malformed status can never inject markup or bloat the chrome.
+    data.sdk = typeof data.sdk === "string" ? data.sdk.slice(0, 40) : "";
     onStatus(data);
     return data;
   }

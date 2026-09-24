@@ -209,6 +209,10 @@ export function createSyncClient({
     get enabled() { return enabled; },
     get account() { return account; },
     get lastSynced() { return lastSynced || readRecord()?.lastSynced || 0; },
+    // The current in-memory session bearer, for callers that authenticate a
+    // learner to a sibling service (the tutor proxy). Empty when signed out.
+    // Cross-site cookies do not reach the tutor's origin, so it takes the token.
+    sessionToken() { return token || ""; },
 
     // One request at boot to learn whether the cookie still names a session.
     // Failure of any kind leaves the app exactly as local as it already was.

@@ -22,6 +22,18 @@ test("equal passwords hash differently, so a stolen store cannot be scanned for 
   assert.equal(await verifyPassword("same passphrase", b), true);
 });
 
+test("far more concurrent hashes than the semaphore allows still all complete correctly", async () => {
+  // The concurrency cap is 4; queue well past it. Every hash must finish (no
+  // deadlock as slots are handed to waiters) and verify against its own password
+  // and no other — the semaphore serialises without corrupting results.
+  const passwords = Array.from({ length: 20 }, (_, i) => `passphrase-number-${i}`);
+  const stored = await Promise.all(passwords.map(hashPassword));
+  const checks = await Promise.all(stored.map((hash, i) => verifyPassword(passwords[i], hash)));
+  assert.equal(checks.every(Boolean), true, "every queued hash verifies against its own password");
+  // A cross-check must fail: hash i does not verify password i+1.
+  assert.equal(await verifyPassword(passwords[1], stored[0]), false);
+});
+
 test("a damaged stored hash reads as a wrong password rather than a server error", async () => {
   for (const broken of ["", "nonsense", "scrypt$1$2$3", "bcrypt$1$2$3$aaaa$bbbb", null, undefined,
     "scrypt$16384$8$1$!!!notbase64!!!$short"])

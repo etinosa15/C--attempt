@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readSyncOrigin, readOrigin, appPolicy, policyFor, staticHeaders, bootScriptHash } from "../security-policy.mjs";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import {
+  readSyncOrigin, readOrigin, appPolicy, workerPolicy, domPolicy,
+  policyFor, staticHeaders, bootScriptHash, baseHeaders,
+} from "../security-policy.mjs";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 test("a configured sync origin is reduced to a bare scheme, host and port", () => {
   assert.equal(readSyncOrigin("https://api.forge.example"), "https://api.forge.example");
@@ -52,4 +61,41 @@ test("the generated host headers carry the same policy the server serves", () =>
   assert.notEqual(policyFor("/runner-worker.js"), appPolicy);
   assert.notEqual(policyFor("/dom-preview.html"), appPolicy);
   assert.equal(policyFor("/index.html"), appPolicy);
+});
+
+// Drift guard #1: the app CSP pins a sha256 of the inline boot script. It is a
+// documented footgun to edit that script and forget to regenerate the hash, so
+// recompute it here exactly as the HTML parser does (over the LF-normalised
+// text content) and assert the module's constant still matches.
+test("the pinned boot-script hash matches the inline script in index.html", () => {
+  const html = readFileSync(join(root, "public/index.html"), "utf8").replace(/\r\n/g, "\n");
+  const match = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match, "index.html should contain exactly one inline <script>");
+  const digest = createHash("sha256").update(match[1], "utf8").digest("base64");
+  assert.equal(`'sha256-${digest}'`, bootScriptHash,
+    "index.html's inline script changed — regenerate bootScriptHash in security-policy.mjs");
+});
+
+// Drift guard #2: Render ignores dist/_headers, so render.yaml restates the
+// policy by hand. Assert it still equals the single source of truth, computed
+// with the Render sync/tutor origins the blueprint deploys.
+test("render.yaml headers match the policy module", () => {
+  const yaml = readFileSync(join(root, "render.yaml"), "utf8");
+  const renderConnect = "connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com";
+  // appPolicy loads with no origins configured (connect-src 'self'); splice in
+  // the two Render origins to get the exact string the blueprint should carry.
+  const expectedApp = appPolicy.replace("connect-src 'self'", renderConnect);
+  const cspValues = [...yaml.matchAll(/name: Content-Security-Policy\s*\n\s*value: "([^"]*)"/g)].map((m) => m[1]);
+  const appEntries = cspValues.filter((v) => v.startsWith("default-src 'self'"));
+  assert.equal(appEntries.length, 3, "expected three app-document CSP entries (/, /index.html, /404.html)");
+  for (const value of appEntries)
+    assert.equal(value, expectedApp, "an app CSP entry in render.yaml drifted from appPolicy");
+  assert.ok(cspValues.includes(workerPolicy), "render.yaml worker CSP drifted from workerPolicy");
+  assert.ok(cspValues.includes(domPolicy), "render.yaml DOM-preview CSP drifted from domPolicy");
+  // Every baseHeaders entry (including the new HSTS header) must be present in
+  // the /* block, name and value.
+  for (const [name, val] of Object.entries(baseHeaders)) {
+    const re = new RegExp(`path: /\\*\\s*\\n\\s*name: ${name.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\s*\\n\\s*value: "?${val.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}"?`);
+    assert.match(yaml, re, `render.yaml /* block is missing ${name}: ${val}`);
+  }
 });

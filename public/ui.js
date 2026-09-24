@@ -37,6 +37,7 @@ const icons = {
   cloud: "M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 17 18z",
   refresh: "M4 12a8 8 0 0 1 14-5m0-4v4h-4M20 12a8 8 0 0 1-14 5m0 4v-4h4",
   award: "M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10m-3 9-2 9 5-3 5 3-2-9",
+  trash: "M4 7h16M10 4h4M6 7l1 13h10l1-13M10 11v6M14 11v6",
 };
 export const icon = (name, size = 20) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name] || icons.code}"/></svg>`;

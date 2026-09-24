@@ -282,6 +282,22 @@ test("repeated password guesses against one address are cut off", async () => {
   });
 });
 
+test("behind a proxy the rate-limit key is the right-most X-Forwarded-For, not the spoofable left-most", async () => {
+  await withServer(async ({ call }) => {
+    // An object body records a per-client hit and then 400s on the empty email —
+    // no scrypt, so this is cheap to repeat up to the per-client ceiling of 30.
+    const hit = (xff) => call("/api/auth/signup", { method: "POST", body: {}, headers: { "X-Forwarded-For": xff } });
+    // Thirty-one requests whose LEFT-most token differs every time but whose
+    // RIGHT-most token (the one the proxy appended) is constant. If the key were
+    // the left-most, these would land in separate buckets and never trip.
+    let last = 400;
+    for (let i = 0; i <= 30; i++) last = (await hit(`10.0.0.${i}, 9.9.9.9`)).status;
+    assert.equal(last, 429, "a constant right-most token shares one bucket and trips the limiter");
+    // A different right-most token is a different client and is not limited.
+    assert.equal((await hit("10.0.0.1, 8.8.8.8")).status, 400, "a distinct right-most token is a distinct client");
+  }, { trustProxy: true });
+});
+
 test("unknown routes and non-API paths say nothing useful", async () => {
   await withServer(async ({ call }) => {
     assert.equal((await call("/api/nope")).status, 404);

@@ -140,10 +140,7 @@ add(
       "A function is easier to reason about when it has a defined result for every valid input. Document preconditions such as min <= max. Separate calculations from Console.WriteLine so tests can assert returned values without parsing output.",
     ],
   ],
-  "static decimal WithTax(decimal amount, decimal rate)\n+{\n    return amount * (1 + rate);\n}\nConsole.WriteLine(WithTax(100m, 0.075m));".replace(
-    "\n+{",
-    "\n{",
-  ),
+  "static decimal WithTax(decimal amount, decimal rate)\n{\n    return amount * (1 + rate);\n}\nConsole.WriteLine(WithTax(100m, 0.075m));",
   "The decimal types tell callers what arithmetic is expected. The method returns a value; printing it is the caller’s choice.",
   "Changing a reference-type parameter to point at a new object does not change the caller’s binding unless it is passed by ref.",
   "Can two overloads differ only by return type?",
