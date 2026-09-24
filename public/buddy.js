@@ -94,6 +94,14 @@ const SPRITE = `<span class="ember3d" aria-hidden="true">
   </span>
 </span>`;
 
+// The same layered CSS-3D ember markup, exposed so other celebratory moments
+// (e.g. the lesson-completion overlay in app.js) can render Ember too — one
+// mascot, one source of truth, no assets/CDN. It carries only the base
+// sway/flicker/pulse animations; mood tweaks are scoped to `.buddy`.
+export function emberSprite() {
+  return SPRITE;
+}
+
 // Build and own the buddy's DOM inside `root` (a body-level container that
 // survives app.js's full #app re-renders). Everything visual lives here; app.js
 // only calls react/say/setVisible/rename.

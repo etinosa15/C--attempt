@@ -739,9 +739,12 @@ main {
 /* First visit: the panel a learner sees before anything else. */
 .welcome-panel {
   position: relative;
-  border: 1px solid #f1e1d7;
+  border: 1px solid var(--glass-border);
   border-radius: 13px;
-  background: #fefcfb;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
   padding: 27px 29px 24px;
   margin: 0 0 22px;
 }
@@ -758,8 +761,8 @@ main {
   color: #7f6f65;
 }
 .welcome-close:hover {
-  background: #faf0ea;
-  color: #8d6143;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .welcome-panel h2 {
   font-size: 20px;
@@ -778,9 +781,9 @@ main {
 }
 .welcome-steps li {
   position: relative;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  background: #fff;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   padding: 17px 15px 15px;
 }
 .welcome-number {
@@ -813,7 +816,7 @@ main {
   flex-wrap: wrap;
   gap: 14px 22px;
   padding-top: 21px;
-  border-top: 1px solid #f6ede7;
+  border-top: 1px solid var(--glass-border);
 }
 .welcome-choice > p {
   margin: 0;
@@ -1597,7 +1600,8 @@ main {
   border-radius: 5px;
 }
 .icon-button:hover {
-  background: #f6ede7;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 /* Topbar quick theme switch — a round liquid-glass pill sized to sit level with
    the search / streak / avatar set. The sun/moon icon is swapped in JS on toggle. */
@@ -5352,6 +5356,104 @@ html[data-theme="dark"] .buddy-name-row input { background: #281e17; border-colo
   .ember-core { animation: none; }
 }
 
+/* Lesson-completion celebration overlay (app.js celebrateLesson). A one-shot,
+   auto-dismissing burst: Ember cheers at the centre while embers fly outward.
+   Reduced motion collapses to a still card — no flying embers, no scaling. */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  background: radial-gradient(circle at 50% 42%, rgba(180, 83, 30, 0.22), rgba(20, 14, 10, 0.5) 70%);
+  backdrop-filter: blur(3px) saturate(115%);
+  -webkit-backdrop-filter: blur(3px) saturate(115%);
+}
+.celebrate--in { opacity: 1; }
+.celebrate--out { opacity: 0; }
+.celebrate-card {
+  position: relative;
+  text-align: center;
+  max-width: 360px;
+  padding: 30px 32px 28px;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glow-accent);
+  transform: translateY(10px) scale(0.96);
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.celebrate--in .celebrate-card { transform: translateY(0) scale(1); }
+.celebrate-ember {
+  width: 96px;
+  height: 108px;
+  margin: 0 auto 6px;
+  display: grid;
+  place-items: center;
+  transform: scale(1.9);
+  transform-origin: center bottom;
+  animation: celebrate-bounce 1.4s ease-in-out infinite;
+}
+.celebrate-eyebrow {
+  margin: 10px 0 2px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--accent);
+}
+.celebrate-title {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.celebrate-sub { margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+/* PLACEHOLDER-CELEBRATE-SPARKS */
+.celebrate-embers {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.celebrate-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--sz, 8px);
+  height: var(--sz, 8px);
+  margin: calc(var(--sz, 8px) / -2);
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(circle, #fff2cf, #ffb066 55%, #e0692b 80%, transparent);
+  animation: celebrate-spark var(--dur, 1.3s) ease-out var(--delay, 0s) forwards;
+}
+@keyframes celebrate-spark {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.4); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scale(1); }
+}
+@keyframes celebrate-bounce {
+  0%, 100% { transform: scale(1.9) translateY(0); }
+  50% { transform: scale(1.9) translateY(-8px); }
+}
+.celebrate--reduced { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.celebrate--reduced .celebrate-card { transform: none; transition: opacity 0.2s ease; }
+.celebrate--reduced .celebrate-ember { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-card { transform: none; transition: none; }
+  .celebrate-ember { animation: none; }
+  .celebrate-spark { display: none; animation: none; }
+}
+
 /* Per-track certificate dialog. Reuses the base <dialog> frame; the SVG is the
    artwork, actions reuse .button. .path-cert is the roadmap CTA. */
 .path-cert { margin-left: 10px; }
@@ -5456,6 +5558,12 @@ html[data-theme="dark"] .certificate-name-row input { background: #281e17; borde
   pointer-events: none;
   background: var(--bg);
   opacity: var(--bg-aurora-opacity, 1);
+  /* Pointer-reactive parallax: JS nudges these vars toward the cursor; the whole
+     field drifts a touch so the ground feels alive. Stays 0 under reduced-motion
+     and on touch pointers (app.js never sets them there). */
+  transform: translate3d(calc(var(--aurora-px, 0) * 1px), calc(var(--aurora-py, 0) * 1px), 0);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 .forge-aurora span {
   position: absolute;

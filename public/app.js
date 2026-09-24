@@ -3,7 +3,7 @@ import { createRunnerClient } from "./runner-client.js";
 import { createProgressStore, progressChanges, applyProgressChanges, BEFORE_SYNC_KEY } from "./progress-store.js";
 import { createSyncClient } from "./sync-client.js";
 import { dailyFocus } from "./focus.js";
-import { createBuddy } from "./buddy.js";
+import { createBuddy, emberSprite } from "./buddy.js";
 import { createTutor, heuristicProvider, createRemoteProvider } from "./tutor.js";
 import { hosted, syncOrigin, tutorOrigin } from "./deployment.js";
 import { initDock } from "./dock.js";
@@ -131,6 +131,29 @@ const buddy = createBuddy({
   root: document.getElementById("buddy"),
   reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
 });
+// Pointer-reactive aurora: the ambient background drifts a touch toward the
+// cursor so the ground feels alive without stealing focus. The CSS keyframe
+// drift stays as the base; this only nudges the whole field. Skipped under
+// reduced-motion and on coarse (touch) pointers where there is no hover.
+(function initAuroraParallax() {
+  const aurora = document.querySelector(".forge-aurora");
+  if (!aurora) return;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const fine = matchMedia("(pointer: fine)");
+  let raf = 0, tx = 0, ty = 0;
+  function apply() {
+    raf = 0;
+    aurora.style.setProperty("--aurora-px", tx.toFixed(2));
+    aurora.style.setProperty("--aurora-py", ty.toFixed(2));
+  }
+  addEventListener("pointermove", (e) => {
+    if (reduce.matches || !fine.matches) return;
+    // Drift opposite the cursor for a gentle sense of depth/parallax.
+    tx = (e.clientX / innerWidth - 0.5) * -28;
+    ty = (e.clientY / innerHeight - 0.5) * -28;
+    if (!raf) raf = requestAnimationFrame(apply);
+  }, { passive: true });
+})();
 // The tutor is the offline heuristic by default. When a build sets tutorOrigin,
 // hosted hints upgrade the message through the proxy, falling back to the same
 // heuristic on any failure — so the nudge is never worse than the offline one.
@@ -1190,6 +1213,62 @@ async function downloadCertificatePng(lang) {
     toast("Could not create the image on this browser. Use Print instead.");
   }
 }
+// A short, celebratory overlay when a lesson (or a whole track) is completed.
+// Ember is the star: a big cheering mascot at the centre with a burst of embers
+// flying out around it. Auto-dismisses; a click or Escape closes it early. Under
+// reduced motion it collapses to a still card with the same words — no flying
+// embers, no scaling. Purely presentational; progress was saved by the caller.
+// If the learner has hidden Ember, the mascot is omitted but the moment still lands.
+function celebrateLesson({ trackDone = false, lang } = {}, onDone) {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const langName = lang && tracks[lang] ? tracks[lang].name : "";
+  const title = trackDone ? "Track complete!" : "Congratulations!";
+  const sub = trackDone
+    ? `You finished the whole ${e(langName)} path — every lesson, start to finish.`
+    : "Lesson complete. +100 XP — one more idea made yours.";
+
+  const count = reduce ? 0 : 18;
+  let sparks = "";
+  for (let i = 0; i < count; i++) {
+    const angle = (360 / count) * i + (Math.random() * 18 - 9);
+    const dist = 120 + Math.random() * 120;
+    const delay = Math.random() * 0.25;
+    const dur = 1 + Math.random() * 0.7;
+    const size = 6 + Math.random() * 8;
+    sparks += `<span class="celebrate-spark" style="--a:${angle.toFixed(1)}deg;--d:${dist.toFixed(0)}px;--delay:${delay.toFixed(2)}s;--dur:${dur.toFixed(2)}s;--sz:${size.toFixed(1)}px"></span>`;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "celebrate" + (reduce ? " celebrate--reduced" : "");
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  overlay.innerHTML =
+    `<div class="celebrate-embers" aria-hidden="true">${sparks}</div>` +
+    `<div class="celebrate-card">` +
+      (buddy.hidden ? "" : `<div class="celebrate-ember">${emberSprite()}</div>`) +
+      `<p class="celebrate-eyebrow">${trackDone ? "Path finished" : "Lesson complete"}</p>` +
+      `<h2 class="celebrate-title">${title}</h2>` +
+      `<p class="celebrate-sub">${sub}</p>` +
+    `</div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("celebrate--in"));
+
+  let closed = false;
+  const timer = setTimeout(close, reduce ? 1400 : 2800);
+  function close() {
+    if (closed) return;
+    closed = true;
+    clearTimeout(timer);
+    document.removeEventListener("keydown", onKey);
+    overlay.classList.add("celebrate--out");
+    overlay.classList.remove("celebrate--in");
+    const finish = () => { overlay.remove(); onDone && onDone(); };
+    reduce ? finish() : setTimeout(finish, 340);
+  }
+  function onKey(ev) { if (ev.key === "Escape") close(); }
+  overlay.addEventListener("click", close);
+  document.addEventListener("keydown", onKey);
+}
 function openCertificate(lang) {
   if (!tracks[lang] || $("#certificate-dialog")) return;
   const returnTo = document.activeElement;
@@ -1352,13 +1431,15 @@ document.addEventListener("click", async (ev) => {
       renderLesson(l.id);
       syncResumeControl();
       syncXpDisplay();
-      if (trackDone) {
-        buddy.react("certificate", { lang: l.lang });
-        openCertificate(l.lang);
-      } else {
-        focusTarget($(".completion-panel h3"));
-        $("#reflect").scrollIntoView({ behavior: "smooth" });
-      }
+      celebrateLesson({ trackDone, lang: l.lang }, () => {
+        if (trackDone) {
+          buddy.react("certificate", { lang: l.lang });
+          openCertificate(l.lang);
+        } else {
+          focusTarget($(".completion-panel h3"));
+          $("#reflect").scrollIntoView({ behavior: "smooth" });
+        }
+      });
     }
   }
   if (button.dataset.playLang) {
