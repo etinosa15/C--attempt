@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#7970c9"/><path d="M17 18h32l-6 9H27v7h13l-6 9h-7v10H17z" fill="white"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Forge">
+  <defs>
+    <radialGradient id="tile" cx="50%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#2a2119"/>
+      <stop offset="100%" stop-color="#14120f"/>
+    </radialGradient>
+    <linearGradient id="ember" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#b4531e"/>
+      <stop offset="55%" stop-color="#d9824a"/>
+      <stop offset="100%" stop-color="#ffcf8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#tile)"/>
+  <path fill="url(#ember)" d="M33 11c4 11 15 14 15 27a16 16 0 0 1-32 0c0-6 3-11 8-14-1 7 3 9 3 9s6-8 6-22z"/>
+  <path fill="#ffe6bd" opacity="0.92" d="M32 30c2 5 6 6 6 12a6 6 0 0 1-12 0c0-3 1-5 3-6 0 3 1 4 1 4s2-3 2-6z"/>
+</svg>

@@ -211,6 +211,7 @@ const mime = {
   ".json": "application/json; charset=utf-8",
   ".zip": "application/zip",
   ".txt": "text/plain; charset=utf-8",
+  ".woff2": "font/woff2",
 };
 export async function startServer() {
   dotnet = hostedPreview ? null : await findDotnet();

@@ -6,6 +6,8 @@ import { dailyFocus } from "./focus.js";
 import { createBuddy } from "./buddy.js";
 import { createTutor, heuristicProvider, createRemoteProvider } from "./tutor.js";
 import { hosted, syncOrigin, tutorOrigin } from "./deployment.js";
+import { initDock } from "./dock.js";
+import "./loader.js";
 import {
   validateProgress,
   dayKey,
@@ -50,11 +52,77 @@ function themePref() {
 function applyTheme(pref = themePref()) {
   document.documentElement.dataset.theme = resolveTheme(pref, darkQuery.matches);
 }
+// The topbar quick-toggle and the Settings radio group both reflect the theme, so
+// keep them in step after any change (toggle, radio, or the OS flipping "System").
+function syncThemeControls() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const toggle = document.querySelector(".theme-toggle");
+  if (toggle) {
+    const label = dark ? "Switch to light theme" : "Switch to dark theme";
+    toggle.innerHTML = icon(dark ? "sun" : "moon", 18);
+    toggle.setAttribute("aria-label", label);
+    toggle.setAttribute("title", label);
+  }
+  const pref = themePref();
+  for (const b of document.querySelectorAll("[data-theme-choice]")) {
+    const on = b.dataset.themeChoice === pref;
+    b.classList.toggle("selected", on);
+    b.setAttribute("aria-pressed", String(on));
+  }
+}
 // Re-resolve while "System" is selected so the OS switching modes repaints live.
 darkQuery.addEventListener("change", () => {
-  if (themePref() === "system") applyTheme("system");
+  if (themePref() === "system") { applyTheme("system"); syncThemeControls(); }
 });
 applyTheme();
+// The sticky topbar lifts off the page once anything scrolls under it. One passive
+// listener toggles a class on whichever .topbar is currently mounted (shell()
+// rebuilds it every route change), and scrollTo(0,0) on each render resets it.
+addEventListener("scroll", () => {
+  const bar = document.querySelector(".topbar");
+  if (bar) bar.classList.toggle("scrolled", scrollY > 4);
+}, { passive: true });
+// Scroll-reveal: content blocks rise gently into view as they enter the viewport.
+// The hidden pre-state lives only under html.reveal-ready, which is set ONLY when
+// motion is allowed — so reduced-motion users (and a no-JS load) always see the
+// page fully painted. #app is rebuilt every route change, so revealOnScroll() is
+// called after each render to (re)tag and observe that render's fresh blocks.
+const revealObserver = matchMedia("(prefers-reduced-motion: reduce)").matches
+  ? null
+  : new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("revealed");
+          revealObserver.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
+    );
+if (revealObserver) document.documentElement.classList.add("reveal-ready");
+function revealOnScroll() {
+  if (!revealObserver) return;
+  const main = $("#main");
+  if (!main) return;
+  // Tag the current screen's top-level blocks. A small per-block index drives a
+  // staggered delay in CSS, so a screen cascades in rather than snapping as a slab.
+  const blocks = [...main.children];
+  blocks.forEach((block, i) => {
+    block.classList.add("reveal");
+    block.style.setProperty("--reveal-i", String(Math.min(i, 6)));
+  });
+  // Blocks already in view when the screen mounts animate in on the next frame
+  // (the hidden state paints first, then .revealed transitions it in) instead of
+  // waiting on the observer, which some browsers hold until the tab is actually
+  // displayed. Blocks below the fold are handed to the observer to reveal on scroll.
+  const fold = (innerHeight || document.documentElement.clientHeight) * 0.92;
+  requestAnimationFrame(() => {
+    for (const block of blocks) {
+      if (block.getBoundingClientRect().top < fold) block.classList.add("revealed");
+      else revealObserver.observe(block);
+    }
+  });
+}
 // The study buddy lives in a body-level container (index.html), so it survives
 // the full #app re-render on every route change. Its prefs are device-local, like
 // the theme. The tutor is the heuristic (offline) provider by default.
@@ -293,6 +361,13 @@ function syncResumeControl() {
   else if (current) current.outerHTML = markup;
   else bar.insertAdjacentHTML("afterbegin", markup);
 }
+// The XP pill lives in the persistent topbar, so #main-only re-renders (solving a
+// challenge, completing a lesson, answering a concept check) refresh it here rather
+// than rebuilding the whole shell.
+function syncXpDisplay() {
+  const el = $(".xp-pill strong");
+  if (el) el.textContent = xp().toLocaleString();
+}
 function shell() {
   const parts = location.hash.slice(1).split("?")[0].split("/");
   route = parts[0] || "overview";
@@ -308,6 +383,7 @@ function shell() {
     settings: "Settings",
     "local-setup": "Local C# setup",
     privacy: "Privacy & storage",
+    terms: "Terms of use",
   };
   const nav = [
     ["overview", "grid", "Overview"],
@@ -322,7 +398,7 @@ function shell() {
   // the page they are already reading.
   const resumeControl = resumeControlMarkup();
   $("#app").innerHTML =
-    `<aside class="sidebar" id="sidebar"><button class="sidebar-close" data-action="close-menu" aria-label="Close navigation">${icon("close", 18)} Close</button><a href="#overview" class="brand"><span class="brand-mark">f<span>↗</span></span><span>forge<span class="brand-sub">CODE ACADEMY</span></span></a><div class="workspace-label">YOUR LEARNING SPACE</div><nav aria-label="Main navigation">${nav.map(([id, ico, label]) => `<a href="#${id}" class="nav-item ${route === id || (route === "lesson" && id === "paths") || (route === "project" && id === "projects") ? "active" : ""}">${icon(ico)}<span>${label}</span>${id === "review" && dueCards(false).length ? `<span class="nav-count">${dueCards(false).length}</span>` : ""}${id === "playground" ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><div class="sidebar-tip"><span class="little-spark">✳</span><strong>Small steps. Real skills.</strong><p>A little focused practice today<br>goes a long way tomorrow.</p><a href="#settings">Your daily goal <span>${state.goal} min ${icon("chevron", 12)}</span></a></div><a class="nav-item settings-link ${route === "settings" ? "active" : ""}" href="#settings">${icon("settings")}<span>Settings & backups</span></a><div class="profile"><div class="avatar">Y</div><div><strong>${sync.account ? e(sync.account.email) : "Your personal academy"}</strong><small><i class="status-dot"></i> ${storageOK ? savedLabel() : "Storage unavailable"}</small></div></div></div></aside><div class="main-shell"><header class="topbar"><button class="icon-button mobile-menu" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false" data-action="menu">${icon("menu")}</button><div class="breadcrumbs">Your workspace <span>/</span> <strong>${titles[route] || "Overview"}</strong></div><div class="topbar-right">${resumeControl}<button class="search-trigger" data-action="search" aria-label="Search lessons" aria-keyshortcuts="Control+k Meta+k">${icon("search", 17)}<span>Find a lesson</span><kbd>Ctrl K</kbd></button><div class="streak">${icon("flame", 18)}<strong>${streak(state.activity)}</strong><span>day streak</span></div><div class="top-avatar">Y</div></div></header><main id="main" tabindex="-1"></main><footer class="page-footer"><span>Made for the way you learn. Built for what comes next.</span><span class="footer-links"><a href="#local-setup">Local C# setup</a><a href="#privacy">Privacy &amp; storage</a></span></footer></div>`;
+    `<aside class="sidebar" id="sidebar"><button class="sidebar-close" data-action="close-menu" aria-label="Close navigation">${icon("close", 18)} Close</button><a href="#overview" class="brand"><span class="brand-mark"><svg class="brand-ember" viewBox="0 0 64 64" aria-hidden="true"><path d="M33 11c4 11 15 14 15 27a16 16 0 0 1-32 0c0-6 3-11 8-14-1 7 3 9 3 9s6-8 6-22z"/><path class="brand-ember-inner" d="M32 30c2 5 6 6 6 12a6 6 0 0 1-12 0c0-3 1-5 3-6 0 3 1 4 1 4s2-3 2-6z"/></svg></span><span>forge<span class="brand-sub">CODE ACADEMY</span></span></a><div class="workspace-label">YOUR LEARNING SPACE</div><nav aria-label="Main navigation">${nav.map(([id, ico, label]) => `<a href="#${id}" class="nav-item ${route === id || (route === "lesson" && id === "paths") || (route === "project" && id === "projects") ? "active" : ""}">${icon(ico)}<span>${label}</span>${id === "review" && dueCards(false).length ? `<span class="nav-count">${dueCards(false).length}</span>` : ""}${id === "playground" ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav><div class="sidebar-bottom"><div class="sidebar-tip"><strong>Small steps. Real skills.</strong><p>A little focused practice today<br>goes a long way tomorrow.</p><a href="#settings">Your daily goal <span>${state.goal} min ${icon("chevron", 12)}</span></a></div><a class="nav-item settings-link ${route === "settings" ? "active" : ""}" href="#settings">${icon("settings")}<span>Settings & backups</span></a><div class="profile"><div class="avatar">Y</div><div><strong>${sync.account ? e(sync.account.email) : "Your personal academy"}</strong><small><i class="status-dot"></i> ${storageOK ? savedLabel() : "Storage unavailable"}</small></div></div></div></aside><div class="main-shell"><header class="topbar"><button class="icon-button mobile-menu" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false" data-action="menu">${icon("menu")}</button><div class="breadcrumbs">Your workspace <span>/</span> <strong>${titles[route] || "Overview"}</strong></div><div class="topbar-right">${resumeControl}<button class="search-trigger liquid-glass" data-action="search" aria-label="Search lessons" aria-keyshortcuts="Control+k Meta+k">${icon("search", 17)}<span>Find a lesson</span><kbd>Ctrl K</kbd></button>${(() => { const dark = document.documentElement.dataset.theme === "dark"; const label = dark ? "Switch to light theme" : "Switch to dark theme"; return `<button class="theme-toggle liquid-glass" data-action="toggle-theme" aria-label="${label}" title="${label}">${icon(dark ? "sun" : "moon", 18)}</button>`; })()}<div class="xp-pill liquid-glass" title="${xp().toLocaleString()} XP earned so far">${icon("bolt", 18)}<strong>${xp().toLocaleString()}</strong><span>XP earned</span></div><div class="streak liquid-glass" title="${streak(state.activity)} day streak">${icon("flame", 18)}<strong>${streak(state.activity)}</strong><span>day streak</span></div><div class="top-avatar">Y</div></div></header><main id="main" tabindex="-1"></main><footer class="page-footer"><span>Made for the way you learn. Built for what comes next.</span><span class="footer-links"><a href="#local-setup">Local C# setup</a><a href="#privacy">Privacy &amp; storage</a><a href="#terms">Terms of use</a></span></footer></div>`;
   if (route === "paths") renderPaths(parts[1]);
   else if (route === "lesson") renderLesson(parts[1]);
   else if (route === "playground") {
@@ -337,6 +413,7 @@ function shell() {
   else if (route === "settings") renderSettings();
   else if (route === "local-setup") renderLocalSetup();
   else if (route === "privacy") renderPrivacy();
+  else if (route === "terms") renderTerms();
   else if (route === "overview") renderOverview();
   else $("#main").innerHTML = sectionHead("PAGE NOT FOUND", "Let’s get you back on track.", "This link does not match a page in Forge.") + linkButton("#overview", "Return to overview");
   const title = route === "lesson" ? lessons.find(l => l.id === parts[1])?.title
@@ -347,11 +424,13 @@ function shell() {
   updateStorageStatus();
   updateFocusDisplay();
   syncNavigationLayout();
+  initDock($("#sidebar nav"));
+  revealOnScroll();
   document.querySelectorAll(".nav-item.active").forEach(link => link.setAttribute("aria-current", "page"));
 }
 
 function heroArt() {
-  return `<div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-dot one"></div><div class="orbit-dot two"></div><div class="float-code tiny top">const future = <em>"yours";</em></div><div class="art-tile js-tile">JS<span>create.</span></div><div class="art-tile cs-tile">C#<span>engineer.</span></div><div class="art-link">${icon("code", 26)}</div><div class="float-code bottom"><span class="terminal-dot"></span> Hello, possibility<span class="cursor">▏</span></div><span class="art-spark spark-one">✳</span><span class="art-spark spark-two">+</span></div>`;
+  return `<div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-dot one"></div><div class="orbit-dot two"></div><div class="float-code tiny top">const future = <em>"yours";</em></div><div class="art-tile js-tile">JS<span>create.</span></div><div class="art-tile cs-tile">C#<span>engineer.</span></div><div class="art-link">${icon("code", 26)}</div><div class="float-code bottom"><span class="terminal-dot"></span> Hello, possibility<span class="cursor">▏</span></div></div>`;
 }
 function welcomePanel() {
   const steps = [
@@ -409,7 +488,7 @@ function renderPaths(filter) {
       "Learn the why. Master the how.",
       "Forty focused lessons. Every one turns a concept into something you can do.",
     ) +
-    `<div class="tabs" role="group" aria-label="Choose curriculum"><button data-path="all" class="${pathFilter === "all" ? "selected" : ""}">All paths</button><button data-path="js" class="${pathFilter === "js" ? "selected" : ""}">JavaScript <span>20</span></button><button data-path="cs" class="${pathFilter === "cs" ? "selected" : ""}">C# <span>20</span></button><button data-path="compare" class="${pathFilter === "compare" ? "selected" : ""}">Language bridge ${icon("code", 15)}</button></div>` +
+    `<div class="tabs liquid-glass" role="group" aria-label="Choose curriculum"><button data-path="all" class="${pathFilter === "all" ? "selected" : ""}">All paths</button><button data-path="js" class="${pathFilter === "js" ? "selected" : ""}">JavaScript <span>20</span></button><button data-path="cs" class="${pathFilter === "cs" ? "selected" : ""}">C# <span>20</span></button><button data-path="compare" class="${pathFilter === "compare" ? "selected" : ""}">Language bridge ${icon("code", 15)}</button></div>` +
     (pathFilter === "compare"
       ? `<div class="bridge-grid">${bridges.map((b) => `<article class="panel bridge-detail"><h2>${b.title}</h2><div class="comparison-code">${codeBlock(b.js, "JavaScript")}${codeBlock(b.cs, "C#")}</div><p>${b.note}</p></article>`).join("")}</div>`
       : ["js", "cs"]
@@ -432,6 +511,10 @@ function renderPaths(filter) {
                 .join("")}</div></section>`,
           )
           .join(""));
+  // The curriculum tab bar is a dock-like row: give it the same proximity
+  // magnify as the sidebar nav, along its horizontal axis — but far gentler, so
+  // it reads as a soft settle rather than the full macOS-dock swell.
+  initDock($(".tabs"), { axis: "x", selector: "button", scale: 0.05, shift: 2, radius: 68 });
 }
 // Staged help that unlocks one tier at a time — either as the learner's checks
 // keep failing (see runCode) or on demand. hintTiers(lesson) decides the tiers;
@@ -624,7 +707,7 @@ async function runCode(check = false) {
     .querySelectorAll(".editor-bottom button")
     .forEach((b) => (b.disabled = true));
   $("#code-output").innerHTML =
-    `<div class="running"><span class="spinner"></span>${lang === "cs" ? "Compiling and running C#…" : "Running your JavaScript…"}</div>`;
+    `<div class="running"><forge-loader size="22" stroke="3" label="Running your code"></forge-loader>${lang === "cs" ? "Compiling and running C#…" : "Running your JavaScript…"}</div>`;
   let result;
   try {
     if (lang === "js")
@@ -679,6 +762,7 @@ async function runCode(check = false) {
     if (!state.solved.includes(key)) {
       state.solved.push(key);
       recordActivity();
+      syncXpDisplay();
       toast("Challenge solved. +40 XP — well earned.");
       buddy.react("solved", { streak: streak(state.activity) });
     } else save();
@@ -778,6 +862,7 @@ function updateFocusDisplay(now = Date.now()) {
   for (const el of document.querySelectorAll("[data-focus-lifetime]"))
     el.textContent = `${Math.floor(focus.totalSeconds / 60)} min`;
   if ($(".streak strong")) $(".streak strong").textContent = streak(state.activity);
+  syncXpDisplay();
 }
 async function checkpointFocus(action = "tick") {
   if (focusCommandBusy || replacingProgress) return;
@@ -953,13 +1038,32 @@ function renderPrivacy() {
     `<article class="info-page panel"><h2>Saved in this browser</h2><p>Forge stores completed lessons, quiz results, code drafts, notes, review schedules, project milestones, focus time, and any name you set on a completion certificate in browser storage. ${accountLine}</p>${accountSection}${tutorSection}<h2>Where code runs</h2><p>JavaScript runs in a browser worker. The DOM lab uses an isolated preview frame. On the hosted site, C# code is not submitted to a server; use the local edition to compile it on your computer.</p><h2>Backups and deletion</h2><p>Exported backups contain your notes and code as readable JSON. Keep them somewhere you trust. Clearing this site’s data in your browser deletes its progress and recovery copies. Export a backup first if you want to keep your work.</p><h2>Site requests</h2><p>Forge includes no analytics scripts, advertising trackers, or third-party fonts. Your hosting provider may retain ordinary access logs when serving the site. Official reference links open external websites with their own privacy policies.</p><h2>Addresses have separate storage</h2><p>Each domain, browser, and local port has its own save. Private browsing and browser cleanup can remove saves. Use <a href="#settings">Settings &amp; backups</a> when moving between the website and the local edition.</p></article>`;
 }
 
+function renderTerms() {
+  // Plain-language terms for a free, local-first educational app. Kept honest and
+  // narrow: no fees, no accounts required, code runs on the learner's own machine,
+  // and the strong self-execution warning matches the security posture in
+  // renderPrivacy / renderLocalSetup. Account clause appears only on a sync build.
+  const accountSection = sync.enabled
+    ? `<h2>Optional accounts</h2><p>An account is optional and created only when you ask. You are responsible for keeping your password safe, since there is no password reset yet. Do not share an account or use it to store anything you are not comfortable keeping on this project's self-hosted sync service. We may suspend an account that is used to attack, overload, or abuse the service.</p>`
+    : "";
+  $("#main").innerHTML = sectionHead("THE AGREEMENT", "Terms of use.", "The short, plain version of how Forge is offered and used.") +
+    `<article class="info-page panel"><h2>Using Forge</h2><p>Forge Code Academy is a free tool for learning JavaScript and C#. By using it you agree to these terms. If you do not agree, please stop using it. These terms may change as Forge grows; continuing to use it after a change means you accept the updated version.</p>` +
+    `<h2>What Forge is</h2><p>Forge is an educational project provided as is, for personal learning. It is not professional instruction, certification, or advice, and completing a track does not guarantee any particular skill level or outcome. Lesson content and timings are guidance, not promises.</p>` +
+    `<h2>Running code is your responsibility</h2><p>The local edition compiles and runs C# with your own computer's permissions, and JavaScript runs in your browser. You are responsible for the code you write, paste, or run. Run only code you understand and trust, and keep the local server private to your machine. Forge does not review or sandbox the C# you choose to run locally.</p>` +
+    accountSection +
+    `<h2>Your work is yours</h2><p>The code, notes, and answers you create stay yours. The Forge name, curriculum, lesson text, and interface are the work of this project. You may use Forge for your own learning and share what you build, but please do not resell Forge itself or present its curriculum as your own.</p>` +
+    `<h2>Acceptable use</h2><p>Use Forge for learning. Do not use it to break the law, to attack or overload the service or others, or to attempt to defeat the browser isolation that keeps lesson code contained. Automated bulk access and attempts to disrupt other learners are not allowed.</p>` +
+    `<h2>No warranty</h2><p>Forge is offered without warranties of any kind, including fitness for a particular purpose or that it will be uninterrupted or error free. Your progress lives in your browser and in backups you export, so keep your own copies of anything important. To the fullest extent allowed by law, the project and its contributors are not liable for any loss arising from using Forge, including lost progress or anything that results from code you run.</p>` +
+    `<h2>Questions</h2><p>These terms sit alongside the <a href="#privacy">Privacy &amp; storage</a> page, which explains where your data lives. For anything else, see the project's repository.</p></article>`;
+}
+
 function openSearch() {
   if ($("#search-dialog")) return;
   const returnTo = document.activeElement;
   const d = document.createElement("dialog");
   d.id = "search-dialog";
-  d.setAttribute("aria-label", "Search lessons");
-  d.innerHTML = `<div class="search-dialog-top">${icon("search")}<label class="sr-only" for="lesson-search">Search lessons</label><input id="lesson-search" placeholder="Search topics, languages, or ideas…" autocomplete="off"><button class="icon-button" data-action="close-search" aria-label="Close search">${icon("close", 18)}</button></div><div id="search-results"></div><div class="search-dialog-foot">Search all 40 lessons <kbd>Esc to close</kbd></div>`;
+  d.setAttribute("aria-label", "Command palette");
+  d.innerHTML = `<div class="search-dialog-top">${icon("search")}<label class="sr-only" for="lesson-search">Search pages and lessons</label><input id="lesson-search" placeholder="Jump to a page, run a command, or find a lesson…" autocomplete="off"><button class="icon-button" data-action="close-search" aria-label="Close command palette">${icon("close", 18)}</button></div><div id="search-results"></div><div class="search-dialog-foot">Pages, actions &amp; all 40 lessons <kbd>Esc to close</kbd></div>`;
   document.body.append(d);
   d.showModal();
   searchResults("");
@@ -976,13 +1080,37 @@ function openSearch() {
     if (ev.target === d) d.close();
   });
 }
+// The command palette (Ctrl/Cmd+K) surfaces every page and a theme action beside
+// the lesson search. Navigation entries are plain hash links, so the existing
+// #search-results click handler drives them; the theme entry is a <button> that
+// falls through to the shared data-action dispatch. `keywords` lets a page be found
+// by more than its visible label.
+function paletteCommands() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  return [
+    { label: "Overview", hint: "Your learning home", href: "#overview", icon: "grid", keywords: "home dashboard start" },
+    { label: "Learning paths", hint: "Browse the curriculum", href: "#paths", icon: "path", keywords: "lessons curriculum tracks modules javascript csharp" },
+    { label: "Playground", hint: "A blank canvas to experiment", href: "#playground", icon: "code", keywords: "editor run sandbox repl scratch" },
+    { label: "Review deck", hint: "Recall what you have learned", href: "#review", icon: "cards", keywords: "flashcards spaced repetition recall" },
+    { label: "Projects", hint: "Build something real", href: "#projects", icon: "folder", keywords: "build apps portfolio" },
+    { label: "Notebook", hint: "Your notes in one place", href: "#notebook", icon: "note", keywords: "notes journal snippets" },
+    { label: "Settings & backups", hint: "Preferences, goal, export", href: "#settings", icon: "settings", keywords: "preferences export import backup daily goal appearance" },
+    { label: "Local C# setup", hint: "Run C# on your computer", href: "#local-setup", icon: "terminal", keywords: "dotnet install download local edition compiler" },
+    { label: "Privacy & storage", hint: "Where your data lives", href: "#privacy", icon: "help", keywords: "data storage privacy" },
+    { label: "Terms of use", hint: "How Forge is offered", href: "#terms", icon: "note", keywords: "terms legal agreement" },
+    { label: dark ? "Switch to light theme" : "Switch to dark theme", hint: "Change appearance on this device", action: "toggle-theme", icon: dark ? "sun" : "moon", keywords: "theme dark light mode appearance toggle" },
+  ];
+}
 function searchResults(query) {
-  const terms = query.toLowerCase().trim().split(/\s+/);
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const matches = (haystack) => terms.every((q) => haystack.toLowerCase().includes(q));
+  const commands = paletteCommands().filter(
+    (c) => !terms.length || matches(`${c.label} ${c.hint} ${c.keywords}`),
+  );
   const found = lessons
     .filter((l) =>
-      terms.every((q) =>
-        (
-          tracks[l.lang].name +
+      matches(
+        tracks[l.lang].name +
           " " +
           l.title +
           " " +
@@ -990,21 +1118,30 @@ function searchResults(query) {
           " " +
           modules[l.module] +
           " " +
-          l.sections.map((s) => s.join(" ")).join(" ")
-        )
-          .toLowerCase()
-          .includes(q),
+          l.sections.map((s) => s.join(" ")).join(" "),
       ),
     )
-    .slice(0, 12);
-  $("#search-results").innerHTML = found.length
-    ? found
+    .slice(0, 10);
+  const commandRow = (c) => {
+    const inner = `<span class="command-icon">${icon(c.icon, 17)}</span><span><strong>${e(c.label)}</strong><small>${e(c.hint)}</small></span>${icon("arrow", 16)}`;
+    return c.href
+      ? `<a class="search-result" href="${c.href}">${inner}</a>`
+      : `<button type="button" class="search-result" data-action="${c.action}">${inner}</button>`;
+  };
+  const commandSection = commands.length
+    ? `<div class="palette-group">Go to</div>${commands.map(commandRow).join("")}`
+    : "";
+  const lessonSection = found.length
+    ? `<div class="palette-group">Lessons</div>${found
         .map(
           (l) =>
             `<a class="search-result" href="#lesson/${l.id}">${badge(l.lang)}<span><strong>${l.title}</strong><small>${modules[l.module]} · ${l.minutes} min</small></span>${icon("arrow", 16)}</a>`,
         )
-        .join("")
-    : '<div class="empty-note">No lessons match that search. Try “async”, “types”, or “testing”.</div>';
+        .join("")}`
+    : "";
+  $("#search-results").innerHTML =
+    commandSection + lessonSection ||
+    '<div class="empty-note">Nothing matches that. Try “async”, “types”, “playground”, or “theme”.</div>';
 }
 
 function certDateText(ts) {
@@ -1091,13 +1228,18 @@ document.addEventListener("click", async (ev) => {
     return;
   }
   if (button.closest("#search-results")) {
-    ev.preventDefault();
     const dialog = $("#search-dialog");
-    dialog.dataset.navigating = "true";
+    if (button.hash) {
+      ev.preventDefault();
+      dialog.dataset.navigating = "true";
+      dialog.close();
+      if (location.hash === button.hash) focusPageHeading();
+      else location.hash = button.hash;
+      return;
+    }
+    // Action commands (e.g. theme toggle) carry no hash: close the palette so
+    // focus returns to the trigger, then fall through to the data-action dispatch.
     dialog.close();
-    if (location.hash === button.hash) focusPageHeading();
-    else location.hash = button.hash;
-    return;
   }
   if (mobileLayout.matches && button.closest("#sidebar") && button.matches('a[href^="#"]')) {
     ev.preventDefault();
@@ -1209,6 +1351,7 @@ document.addEventListener("click", async (ev) => {
       buddy.react("complete", { streak: streak(state.activity) });
       renderLesson(l.id);
       syncResumeControl();
+      syncXpDisplay();
       if (trackDone) {
         buddy.react("certificate", { lang: l.lang });
         openCertificate(l.lang);
@@ -1299,15 +1442,17 @@ document.addEventListener("click", async (ev) => {
     focusTarget($(`[data-goal="${state.goal}"]`));
     toast("Daily goal updated.");
   }
+  if (a === "toggle-theme") {
+    const pref = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, pref);
+    applyTheme(pref);
+    syncThemeControls();
+  }
   if (button.dataset.themeChoice) {
     const pref = button.dataset.themeChoice;
     localStorage.setItem(THEME_KEY, pref);
     applyTheme(pref);
-    for (const b of document.querySelectorAll("[data-theme-choice]")) {
-      const on = b.dataset.themeChoice === pref;
-      b.classList.toggle("selected", on);
-      b.setAttribute("aria-pressed", String(on));
-    }
+    syncThemeControls();
     focusTarget($(`[data-theme-choice="${CSS.escape(pref)}"]`));
   }
   if (a === "export") {
@@ -1480,6 +1625,7 @@ document.addEventListener("submit", (ev) => {
   if (correct && !state.quizzes[l.id]) {
     state.quizzes[l.id] = true;
     recordActivity();
+    syncXpDisplay();
     toast("Concept checked. +10 XP.");
     buddy.react("quiz");
   }

@@ -159,7 +159,7 @@ in-app **Privacy & storage** page discloses what is sent.
 - **Six project briefs** with milestones, suggested starting ideas, official resources, and stretch goals. These are projects for you to implement, not generated completed applications.
 - **Notebook, draft autosave, focus timer, search, and progress export/import**.
 - **Daily focus goals**: choose 15, 30, 60, or 90 minutes and see today's accumulated time, remaining time, and goal completion in Overview, Playground, and Settings. Focus time is tracked by local calendar day, separately from the lifetime total.
-- **A study buddy**: a small mascot that reacts to what you do and, when a check fails, points you at the first failing case. It runs entirely in your browser and its name and hidden/shown state are device-local — never uploaded or included in a backup.
+- **Ember, the study buddy**: Forge's mascot — a small ember rendered as a layered CSS-3D flame (three flame planes stacked in real depth, a gentle idle bob and flicker, and a parallax tilt toward the cursor on a mouse). It reacts to what you do and, when a check fails, points you at the first failing case. The same ember is Forge's logo mark and favicon. It is drawn entirely with CSS — no WebGL, no 3D asset, no CDN — so it stays same-origin and offline; under `prefers-reduced-motion`, on a touch device, or with a coarse pointer it holds a still ember instead of animating. It runs entirely in your browser and its name and hidden/shown state are device-local — never uploaded or included in a backup.
 - **A built-in tutor**: offline and deterministic, it names the first failing check (and what it expected) and unlocks staged hints as your checks keep coming up short — escalating to the worked solution only after repeated attempts. No network, no API key, nothing uploaded. A deployment can optionally add a hosted AI tutor for richer hints (see [Tutor service](#tutor-service-optional-ai-hints)); it always falls back to this offline one.
 - **Per-track certificates**: complete every lesson in a track (all 20 JavaScript or all 20 C#) and earn a printable, downloadable record of practice. It is framed honestly as a record of practice, not a professional credential.
 - **A separate isolated DOM lab** for browser events and HTML practice.
@@ -212,6 +212,9 @@ The first command checks progress handling, scheduling, rendering safety, and cu
 
 - `server.mjs`: dependency-free HTTP server and local C# compiler runner.
 - `public/app.js`, `styles.css`: responsive interface and interactions.
+- `public/buddy.js`: Ember, the CSS-3D mascot, and its device-local preferences.
+- `public/loader.js`: `<forge-loader>`, the self-hosted route/boot loading indicator.
+- `public/dock.js`: pointer-proximity magnification for the nav and tab rows.
 - `public/js-lessons.js`, `cs-lessons.js`: authored curriculum and exercises.
 - `public/curriculum.js`: tracks, language comparisons, and project briefs.
 - `public/core.js`: persistence validation, scheduling, and shared rendering helpers.

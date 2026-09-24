@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#7970c9" />
+    <meta name="theme-color" content="#b4531e" />
     <meta
       name="description"
       content="Your personal learning studio for JavaScript and C#. Learn deeply, write real code, and build lasting skills."
@@ -31,9 +31,10 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <div class="forge-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
     <noscript><main class="standalone-page"><h1>Forge needs JavaScript</h1><p>Enable JavaScript in your browser to use lessons, code practice, and saved progress.</p></main></noscript>
     <a class="skip-link" href="#main">Skip to content</a>
-    <div id="app"></div>
+    <div id="app"><div class="app-boot"><forge-loader size="52" stroke="4" label="Loading Forge"></forge-loader></div></div>
     <div id="storage-warning" class="storage-warning" role="status" hidden>
       <span id="storage-message"></span>
       <div>
@@ -44,6 +45,7 @@
     </div>
     <div id="toast" role="status" aria-live="polite"></div>
     <div id="buddy" hidden></div>
+    <script type="module" src="/loader.js"></script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>

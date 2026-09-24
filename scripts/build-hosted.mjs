@@ -9,8 +9,13 @@ const destination = path.join(root, "dist");
 const publicFiles = ["app.js", "core.js", "ui.js", "curriculum.js", "js-lessons.js", "cs-lessons.js",
   "styles.css", "index.html", "404.html", "favicon.svg", "deployment.js", "focus.js",
   "progress-store.js", "runner-client.js", "runner-worker.js", "sync-client.js",
-  "buddy.js", "tutor.js",
-  "dom-preview.html", "dom-preview.js", "dom-preview.css"];
+  "buddy.js", "tutor.js", "dock.js", "loader.js",
+  "dom-preview.html", "dom-preview.js", "dom-preview.css",
+  // Self-hosted fonts: shipped so the hosted site and the local ZIP both render
+  // the type system without a CDN, keeping the CSP same-origin and offline-safe.
+  "fonts/Satoshi-Variable.woff2", "fonts/Satoshi-VariableItalic.woff2",
+  "fonts/ClashDisplay-Variable.woff2", "fonts/JetBrainsMono-Regular.woff2",
+  "fonts/JetBrainsMono-Medium.woff2", "fonts/JetBrainsMono-Bold.woff2"];
 
 function crc32(data) {
   let crc = 0xffffffff;
@@ -63,8 +68,11 @@ entries.push(["package.json", JSON.stringify({ name: "forge-local", private: tru
 entries.push(["README.md", "# Forge local edition\n\nInstall Node.js 20+ (https://nodejs.org) and the .NET 10 SDK (https://dotnet.microsoft.com/download). Extract the entire ZIP first. On Windows double-click Start Forge.cmd. On macOS/Linux, open a terminal in this folder and run npm start. Open http://localhost:4317 and keep the terminal running. No npm install is needed.\n\nRun only code you trust: C# executes on your computer with your permissions. Do not deploy this local server to the internet.\n\nTransfer progress using Settings & backups: export on the website, import locally. After completing C# lessons, export locally and import on the website. Import replaces progress, so export current work first. The two editions do not sync automatically.\n"]);
 if (existing) await rm(destination, { recursive: true, force: true });
 await mkdir(path.join(destination, "downloads"), { recursive: true });
-for (const [name, data] of entries.filter(([name]) => name.startsWith("public/")))
-  await writeFile(path.join(destination, name.slice(7)), data);
+for (const [name, data] of entries.filter(([name]) => name.startsWith("public/"))) {
+  const out = path.join(destination, name.slice(7));
+  await mkdir(path.dirname(out), { recursive: true });
+  await writeFile(out, data);
+}
 // syncOrigin and tutorOrigin are already-validated bare origins from
 // security-policy.mjs, so the client config and the CSP connect-src come from one
 // source. Empty ships local-only, with the offline heuristic tutor.

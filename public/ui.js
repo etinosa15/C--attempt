@@ -33,6 +33,7 @@ const icons = {
   coffee: "M4 5h12v10a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zm12 1h2a3 3 0 0 1 0 6h-2",
   help: "M9 8a3 3 0 1 1 5 2c-2 1-2 2-2 4m0 3v1",
   moon: "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z",
+  sun: "M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 2v2m0 16v2M4 12H2m20 0h-2M6 6 4.5 4.5M19.5 19.5 18 18M6 18l-1.5 1.5M19.5 4.5 18 6",
   cloud: "M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 17 18z",
   refresh: "M4 12a8 8 0 0 1 14-5m0-4v4h-4M20 12a8 8 0 0 1-14 5m0 4v-4h4",
   award: "M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10m-3 9-2 9 5-3 5 3-2-9",
@@ -55,8 +56,14 @@ export function relativeTime(at, now = Date.now()) {
 }
 export const codeBlock = (code, label = "Example") =>
   `<div class="code-block"><div class="code-label"><span>${icon("code", 14)} ${e(label)}</span><span>READ · TRACE · UNDERSTAND</span></div><pre><code>${highlight(code)}</code></pre></div>`;
+// Official Devicon language logos (jsDelivr, pinned) in place of the old "JS"/"C#"
+// text badges. The logo carries meaning, so alt + title name the language; the alt
+// text doubles as the graceful fallback when the CDN is unreachable (the offline
+// local edition). Box + logo sizes come from CSS tokens; width/height attrs only
+// reserve space to avoid layout shift.
+const deviconPath = { js: "javascript/javascript-original", cs: "csharp/csharp-original" };
 export const badge = (lang) =>
-  `<span class="language-badge ${lang}">${tracks[lang].short}</span>`;
+  `<span class="language-badge ${lang}"><img class="language-logo" src="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/${deviconPath[lang]}.svg" alt="${tracks[lang].name}" title="${tracks[lang].name}" width="24" height="24" loading="lazy" decoding="async" /></span>`;
 export const sectionHead = (eyebrow, title, desc = "") =>
   `<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ""}</div>`;
 export const linkButton = (url, text, cls = "primary") =>

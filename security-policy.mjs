@@ -30,7 +30,13 @@ export const syncOrigin = readOrigin(globalThis.process?.env?.FORGE_SYNC_ORIGIN)
 // as the only provider, so Forge's no-network promise is unchanged by default.
 export const tutorOrigin = readOrigin(globalThis.process?.env?.FORGE_TUTOR_ORIGIN);
 const connectSrc = ["'self'", syncOrigin, tutorOrigin].filter(Boolean).join(" ");
-export const appPolicy = `default-src 'self'; script-src 'self' ${bootScriptHash}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ${connectSrc}; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`;
+// Devicon ships the official JS/C# language logos as SVGs on jsDelivr. They load as
+// <img>, so jsdelivr is allowed in img-src ONLY — script-src, connect-src, worker-src
+// and the rest stay exactly as strict, and no learner data or code is ever sent there.
+// This is the single external host in the whole policy; the offline local edition
+// simply shows each logo's alt text when the CDN is unreachable.
+const logoHost = "https://cdn.jsdelivr.net";
+export const appPolicy = `default-src 'self'; script-src 'self' ${bootScriptHash}; style-src 'self' 'unsafe-inline'; img-src 'self' data: ${logoHost}; connect-src ${connectSrc}; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`;
 export const workerPolicy = "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'";
 export const domPolicy = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
 export const baseHeaders = {

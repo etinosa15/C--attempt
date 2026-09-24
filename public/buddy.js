@@ -71,13 +71,28 @@ export function buddyReaction(event, signals = {}) {
   }
 }
 
-const SPRITE = `<svg class="buddy-svg" viewBox="0 0 48 56" width="52" height="60" aria-hidden="true" focusable="false">
-  <path class="buddy-flame" d="M24 3c4 9 13 11 13 22a13 13 0 0 1-26 0c0-5 3-9 6-11-1 6 2 7 2 7s5-6 5-18z"/>
-  <ellipse class="buddy-glow" cx="24" cy="30" rx="9" ry="10"/>
-  <circle class="buddy-eye" cx="20" cy="28" r="1.7"/>
-  <circle class="buddy-eye" cx="28" cy="28" r="1.7"/>
-  <path class="buddy-mouth" d="M20 33q4 4 8 0"/>
-</svg>`;
+// Ember, rendered as a layered CSS-3D ember rather than a flat sprite. Three flame
+// planes stacked in real depth (transform-style: preserve-3d, each at its own
+// translateZ) give the mascot volume; a glow core sits between them and a small
+// face rides the front plane. The whole stage bobs and sways, each plane flickers
+// on its own offset, and on a fine pointer the stage parallax-tilts toward the
+// cursor (wired in createBuddy). All motion is CSS and collapses to a static,
+// still-legible ember under prefers-reduced-motion — no WebGL, no assets, no CDN,
+// so it stays same-origin and offline like the rest of Forge. The face keeps the
+// original .buddy-eye/.buddy-mouth classes so the existing mood rules still apply.
+const SPRITE = `<span class="ember3d" aria-hidden="true">
+  <span class="ember3d-stage">
+    <span class="ember-layer ember-back"></span>
+    <span class="ember-layer ember-mid"></span>
+    <span class="ember-layer ember-front"></span>
+    <span class="ember-core"></span>
+    <svg class="ember-face" viewBox="0 0 48 56" aria-hidden="true" focusable="false">
+      <circle class="buddy-eye" cx="20" cy="30" r="1.9"/>
+      <circle class="buddy-eye" cx="28" cy="30" r="1.9"/>
+      <path class="buddy-mouth" d="M20 35q4 4 8 0"/>
+    </svg>
+  </span>
+</span>`;
 
 // Build and own the buddy's DOM inside `root` (a body-level container that
 // survives app.js's full #app re-renders). Everything visual lives here; app.js
@@ -144,6 +159,27 @@ export function createBuddy({ storage, root, reducedMotion = false }) {
 
   sprite.addEventListener("click", () => react("greet"));
   root.querySelector(".buddy-close").addEventListener("click", () => setVisible(false));
+
+  // Parallax tilt: on a fine pointer (and only when motion is allowed), lean the
+  // 3D stage toward the cursor so Ember reads as a solid object catching the light.
+  // Skipped entirely under reduced motion / coarse pointers, where the ember is
+  // deliberately static. The stage reads --rx/--ry; leaving the sprite eases home.
+  const stage = root.querySelector(".ember3d-stage");
+  const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
+  if (stage && !reducedMotion && finePointer.matches) {
+    sprite.addEventListener("pointermove", (ev) => {
+      if (ev.pointerType && ev.pointerType !== "mouse") return;
+      const r = sprite.getBoundingClientRect();
+      const px = (ev.clientX - r.left) / r.width - 0.5;
+      const py = (ev.clientY - r.top) / r.height - 0.5;
+      stage.style.setProperty("--ry", `${px * 26}deg`);
+      stage.style.setProperty("--rx", `${-py * 20}deg`);
+    });
+    sprite.addEventListener("pointerleave", () => {
+      stage.style.removeProperty("--ry");
+      stage.style.removeProperty("--rx");
+    });
+  }
 
   return {
     react,
