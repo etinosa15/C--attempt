@@ -34,8 +34,12 @@ const connectSrc = ["'self'", syncOrigin, tutorOrigin].filter(Boolean).join(" ")
 // <img>, so jsdelivr is allowed in img-src ONLY — script-src, connect-src, worker-src
 // and the rest stay exactly as strict, and no learner data or code is ever sent there.
 // This is the single external host in the whole policy; the offline local edition
-// simply shows each logo's alt text when the CDN is unreachable.
-const logoHost = "https://cdn.jsdelivr.net";
+// simply shows each logo's alt text when the CDN is unreachable. The source is
+// path-scoped to the pinned devicon icons directory (note the trailing slash: a
+// source ending in "/" matches only URLs whose path starts with it), so the policy
+// permits exactly those icon SVGs and nothing else the CDN happens to host. Keep it
+// in step with the pinned version in public/ui.js.
+const logoHost = "https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/";
 export const appPolicy = `default-src 'self'; script-src 'self' ${bootScriptHash}; style-src 'self' 'unsafe-inline'; img-src 'self' data: ${logoHost}; connect-src ${connectSrc}; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`;
 export const workerPolicy = "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'";
 export const domPolicy = "default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
@@ -47,6 +51,10 @@ export const baseHeaders = {
   // app shares the onrender.com suffix with unrelated sites, and pinning HSTS
   // across the whole apex would speak for domains that are not ours.
   "Strict-Transport-Security": "max-age=63072000",
+  // Sever the window.opener link with anything we open or that opens us, so a
+  // cross-origin page can never reach back into this context. The app opens no
+  // popups it needs to talk to, so this costs nothing.
+  "Cross-Origin-Opener-Policy": "same-origin",
 };
 export function policyFor(file) {
   return file.endsWith("runner-worker.js") ? workerPolicy : file.endsWith("dom-preview.html") ? domPolicy : appPolicy;

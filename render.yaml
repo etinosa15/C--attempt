@@ -57,18 +57,21 @@ services:
         name: Strict-Transport-Security
         value: "max-age=63072000"
       - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: "same-origin"
+      - path: /*
         name: Cache-Control
         value: "public, max-age=0, must-revalidate"
       # App documents: connect-src allows self + the sync and tutor origins.
       - path: /
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /index.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /404.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com https://forge-tutor.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       # DOM lab: stricter sandbox policy.
       - path: /dom-preview.html
         name: Content-Security-Policy
