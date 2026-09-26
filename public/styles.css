@@ -1033,6 +1033,29 @@ html[data-theme="dark"] .button.danger:hover:not(:disabled) {
 .danger-zone .button.danger {
   margin-bottom: 8px;
 }
+/* Type-to-confirm field for the destructive account-deletion step. Mirrors the
+   account form's label layout and gives the input a visible box like other inputs. */
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 12px 0;
+}
+.delete-confirm input {
+  border: 1px solid #ebdbd1;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+html[data-theme="dark"] .delete-confirm input {
+  background: #281e17;
+  border-color: #4b3b30;
+}
 /* Liquid-glass hero control. Apply alongside a shape (usually a pill/circle via a
    large border-radius). The fill + blur come from the --lglass-* tokens; the bright
    specular edge is a gradient ring drawn in ::before and masked to a 1px border, so

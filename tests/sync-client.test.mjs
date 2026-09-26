@@ -43,6 +43,7 @@ test("a client with no origin makes no requests and every method is a no-op", as
   assert.equal(await client.signup("a@b.com", PASSWORD), null);
   assert.equal(await client.login("a@b.com", PASSWORD), null);
   assert.equal(await client.requestReset("a@b.com"), null);
+  assert.equal(await client.deleteAccount(), null);
   assert.equal(await client.logout(), null);
   assert.equal(await client.syncNow(), null);
   assert.equal(await client.flush(), null);
@@ -310,6 +311,68 @@ test("a dead refresh token on 401 signs out cleanly", async () => {
   await assert.rejects(() => client.login("l@e.com", PASSWORD));
   assert.equal(client.account, null);
   assert.equal(client.sessionToken(), "");
+});
+
+test("deleting an account drops the session and baseline but keeps local progress", async () => {
+  const storage = memoryStorage();
+  const cell = stateCell({ ...freshState(), focusSeconds: 321 });
+  let deleteAuth = "absent";
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => storage,
+    readState: cell.readState,
+    writeState: cell.writeState,
+    fetchImpl: async (url, options = {}) => {
+      if (url.endsWith("/api/auth/login"))
+        return json({ email: "l@e.com", state: freshState(), revision: 1, token: "t1", refreshToken: "r1", expiresIn: 3600 });
+      if (url.endsWith("/api/auth/delete")) {
+        deleteAuth = (options.headers || {}).Authorization ?? "absent";
+        return json({ deleted: true });
+      }
+      if (url.endsWith("/api/sync")) return json({ state: freshState(), revision: 1, applied: 0 });
+      return json({ email: "l@e.com" });
+    },
+  });
+  await client.login("l@e.com", PASSWORD);
+  // Signing in wrote a baseline for this account on this device.
+  assert.notEqual(storage.getItem("forge.academy.v1.sync"), null);
+  // Simulate ongoing local work after sign-in, so we can prove deletion leaves it.
+  cell.set({ ...cell.get(), focusSeconds: 321 });
+
+  const result = await client.deleteAccount();
+  assert.deepEqual(result, { deleted: true });
+  // The erasure call carried the in-memory bearer.
+  assert.equal(deleteAuth, "Bearer t1");
+  // The session and its baseline are gone, exactly as after logging out.
+  assert.equal(client.account, null);
+  assert.equal(client.sessionToken(), "");
+  assert.equal(storage.getItem("forge.academy.v1.sync"), null);
+  // The coursework on this device is deliberately untouched — deleteAccount never
+  // writes state, so a now-signed-out learner keeps every lesson they had.
+  assert.equal(cell.get().focusSeconds, 321);
+});
+
+test("a failed deletion keeps the session, because the account still exists", async () => {
+  const storage = memoryStorage();
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => storage,
+    readState: () => freshState(),
+    fetchImpl: async (url) => {
+      if (url.endsWith("/api/auth/login"))
+        return json({ email: "l@e.com", state: freshState(), revision: 1, token: "t1", refreshToken: "r1", expiresIn: 3600 });
+      // The service-role delete fails: a real failure, not an auth problem.
+      if (url.endsWith("/api/auth/delete")) return json({ error: "Could not delete the account identity." }, 500);
+      if (url.endsWith("/api/sync")) return json({ state: freshState(), revision: 1, applied: 0 });
+      return json({ email: "l@e.com" });
+    },
+  });
+  await client.login("l@e.com", PASSWORD);
+  await assert.rejects(() => client.deleteAccount(), /Could not delete the account identity\./);
+  // Nothing was dropped: the account is still signed in with its baseline intact.
+  assert.equal(client.account?.email, "l@e.com");
+  assert.notEqual(client.sessionToken(), "");
+  assert.notEqual(storage.getItem("forge.academy.v1.sync"), null);
 });
 
 test("a returning device replays only what changed since its baseline", async () => {

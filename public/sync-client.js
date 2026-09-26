@@ -331,6 +331,28 @@ export function createSyncClient({
         return null;
       });
     },
+    // Right to erasure: delete the account and its server-side progress, then drop
+    // this device's session exactly as logout does. Unlike logout, the service call
+    // must SUCCEED first — if it throws, the session is kept and the caller reports
+    // the failure, because the account still exists. The learner's LOCAL progress
+    // record is deliberately left in place: it carries no credential, so it is no
+    // way back into a deleted account, and wiping their coursework because they
+    // removed the cloud copy would be its own data loss.
+    deleteAccount() {
+      if (!enabled || !account) return Promise.resolve(null);
+      clearTimeout(timer);
+      timer = null;
+      return queue(async () => {
+        await request("/api/auth/delete", { method: "POST" });
+        token = "";
+        refreshToken = "";
+        expiresAt = 0;
+        lastSynced = 0;
+        try { storage().removeItem(SYNC_KEY); } catch { /* Nothing to clear. */ }
+        setAccount(null);
+        return { deleted: true };
+      });
+    },
     syncNow() {
       if (!enabled || !account) return Promise.resolve(null);
       pausedUntil = 0;

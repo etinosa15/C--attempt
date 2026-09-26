@@ -242,6 +242,9 @@ storageOK = !storageMessage;
 // sync service) `enabled` is false and every method is a no-op: no requests, no
 // account UI, byte-for-byte the local-first app. Only the hosted build sets it.
 let syncMessage = "", syncBusy = false;
+// True once the learner has armed account deletion (a backup has downloaded and the
+// type-your-email confirmation is showing). Reset whenever the panel leaves that step.
+let deleteArming = false;
 const sync = createSyncClient({
   origin: syncOrigin,
   readState: () => state,
@@ -1017,7 +1020,13 @@ function accountPanel() {
   const head = `<section class="panel settings-panel"><div class="settings-icon">${icon("cloud", 24)}</div>`;
   if (sync.account) {
     const last = sync.lastSynced ? `Last synced ${relativeTime(sync.lastSynced)}` : "Not yet synced on this device";
-    return `${head}<h2>Your account</h2><p>Signed in as <strong>${e(sync.account.email)}</strong>. Your progress backs up to your account and merges across your devices.</p>${accountFeedback()}<div class="settings-actions"><button class="button primary" data-action="sync-now"${syncBusy ? " disabled" : ""}>${icon("refresh", 16)} Sync now</button><button class="button secondary" data-action="logout">Log out</button></div><p class="muted">${e(last)}. Logging out keeps your progress on this device and removes this account’s copy from it.</p><div class="settings-actions"><button class="button secondary" data-action="export-before-sync">Export pre-sync backup</button></div><p class="muted">The pre-sync backup is exactly what this device held before it first merged with your account.</p></section>`;
+    // Right-to-erasure control. Two steps: an initial "Delete account" button, then —
+    // after a backup downloads — a type-your-email confirmation. The confirm button
+    // ships disabled and the input event enables it only on an exact email match.
+    const danger = deleteArming
+      ? `<div class="danger-zone"><strong>Delete your account?</strong><p class="muted">This permanently erases your account and the progress synced to it, and cannot be undone. Your progress on <em>this</em> device is kept — you are simply signed out — and a backup just downloaded. To confirm, type <strong>${e(sync.account.email)}</strong> below.</p><label class="delete-confirm">Your account email<input id="delete-confirm-input" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="${e(sync.account.email)}"></label><div class="settings-actions"><button class="button danger" data-action="confirm-delete" disabled>Permanently delete account</button><button class="button secondary" data-action="cancel-delete"${syncBusy ? " disabled" : ""}>Cancel</button></div></div>`
+      : `<div class="danger-zone"><button class="button danger" data-action="delete-account"${syncBusy ? " disabled" : ""}>${icon("trash", 16)} Delete account</button><p class="muted">Permanently erases your account and its synced progress, and cannot be undone. Your progress on this device stays and you are signed out. A backup downloads first, then you confirm by typing your email.</p></div>`;
+    return `${head}<h2>Your account</h2><p>Signed in as <strong>${e(sync.account.email)}</strong>. Your progress backs up to your account and merges across your devices.</p>${accountFeedback()}<div class="settings-actions"><button class="button primary" data-action="sync-now"${syncBusy ? " disabled" : ""}>${icon("refresh", 16)} Sync now</button><button class="button secondary" data-action="logout">Log out</button></div><p class="muted">${e(last)}. Logging out keeps your progress on this device and removes this account’s copy from it.</p><div class="settings-actions"><button class="button secondary" data-action="export-before-sync">Export pre-sync backup</button></div><p class="muted">The pre-sync backup is exactly what this device held before it first merged with your account.</p>${danger}</section>`;
   }
   return `${head}<h2>Account &amp; cloud sync</h2><p>Optional. Create an account to back up your progress and pick up on another device. Everything keeps working on this device whether or not you sign in.</p>${accountFeedback()}<form class="account-form" id="account-form"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" autocomplete="current-password" minlength="10" required></label><div class="settings-actions"><button class="button primary" type="submit" data-account-submit="signup"${syncBusy ? " disabled" : ""}>Create account</button><button class="button secondary" type="submit" data-account-submit="login"${syncBusy ? " disabled" : ""}>Log in</button></div><button type="button" class="linklike" data-action="reset-password"${syncBusy ? " disabled" : ""}>Forgot your password?</button></form><p class="muted">Use at least 10 characters. Forgot it? Enter your email above and choose “Forgot your password?” — we’ll email a link to set a new one. Your email and a securely hashed password are stored by this project’s own sync service; your theme is never uploaded.</p></section>`;
 }
@@ -1055,7 +1064,7 @@ function renderPrivacy() {
     ? "Creating an account is optional; without one, nothing leaves this browser."
     : "It does not create an account or sync your learning data to a cloud database.";
   const accountSection = sync.enabled
-    ? `<h2>If you create an account</h2><p>Signing in is optional and only happens when you ask. An account stores your email address, a securely hashed password (scrypt — the password itself is never stored), and the same progress record described above, on this project’s own self-hosted sync service. It is used to back up your progress and merge it across your devices. Your appearance theme stays on each device and is never uploaded. If you forget your password, you can request a reset email and set a new one. Logging out removes this account’s copy of your progress from the device.</p>`
+    ? `<h2>If you create an account</h2><p>Signing in is optional and only happens when you ask. An account stores your email address, a securely hashed password (scrypt — the password itself is never stored), and the same progress record described above, on this project’s own self-hosted sync service. It is used to back up your progress and merge it across your devices. Your appearance theme stays on each device and is never uploaded. If you forget your password, you can request a reset email and set a new one. Logging out removes this account’s copy of your progress from the device. You can permanently delete your account and its synced progress at any time from Settings; deletion cannot be undone, but your progress on this device is kept.</p>`
     : "";
   // Only shown on a build wired to the hosted tutor. The offline heuristic tutor,
   // the default, sends nothing — so this disclosure appears exactly when it is true.
@@ -1072,7 +1081,7 @@ function renderTerms() {
   // and the strong self-execution warning matches the security posture in
   // renderPrivacy / renderLocalSetup. Account clause appears only on a sync build.
   const accountSection = sync.enabled
-    ? `<h2>Optional accounts</h2><p>An account is optional and created only when you ask. If you forget your password, you can request a reset email to set a new one; otherwise keep it somewhere safe. Do not share an account or use it to store anything you are not comfortable keeping on this project's self-hosted sync service. We may suspend an account that is used to attack, overload, or abuse the service.</p>`
+    ? `<h2>Optional accounts</h2><p>An account is optional and created only when you ask. If you forget your password, you can request a reset email to set a new one; otherwise keep it somewhere safe. You can delete your account and its synced progress at any time from Settings. Do not share an account or use it to store anything you are not comfortable keeping on this project's self-hosted sync service. We may suspend an account that is used to attack, overload, or abuse the service.</p>`
     : "";
   $("#main").innerHTML = sectionHead("THE AGREEMENT", "Terms of use.", "The short, plain version of how Forge is offered and used.") +
     `<article class="info-page panel"><h2>Using Forge</h2><p>Forge Code Academy is a free tool for learning JavaScript and C#. By using it you agree to these terms. If you do not agree, please stop using it. These terms may change as Forge grows; continuing to use it after a change means you accept the updated version.</p>` +
@@ -1665,6 +1674,59 @@ document.addEventListener("click", async (ev) => {
     if (route === "settings") renderSettings();
     refreshProfile();
   }
+  if (a === "delete-account") {
+    if (runBusy) { toast("Wait for the current code run to finish before deleting your account."); return; }
+    // The account is going, the coursework need not: download a full backup of this
+    // device's progress first, then arm the type-your-email confirmation step.
+    await checkpointFocus();
+    state.lastExport = Date.now();
+    await save();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "forge-progress-before-delete-" + dayKey() + ".json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    syncMessage = "";
+    deleteArming = true;
+    renderSettings();
+    focusTarget($("#delete-confirm-input"));
+    return;
+  }
+  if (a === "cancel-delete") {
+    deleteArming = false;
+    syncMessage = "";
+    if (route === "settings") renderSettings();
+    return;
+  }
+  if (a === "confirm-delete") {
+    // The disabled button is only a hint; the typed-email check is the real guard.
+    const typed = $("#delete-confirm-input")?.value.trim().toLowerCase() || "";
+    if (!sync.account || typed !== sync.account.email.toLowerCase()) {
+      syncMessage = "Type your account email exactly as shown to confirm deletion.";
+      if (route === "settings") renderSettings();
+      return;
+    }
+    syncMessage = "";
+    syncBusy = true;
+    renderSettings();
+    try {
+      await sync.deleteAccount();
+      // Deletion succeeded server-side; the client has already dropped the session
+      // and sync baseline. Local progress stays, so the learner is local-first again.
+      deleteArming = false;
+      syncMessage = "Your account and its synced progress were deleted. Your work stays on this device, and a backup is in your downloads.";
+    } catch (err) {
+      // deleteAccount only clears the session if the service call SUCCEEDS, so on a
+      // failure the account still exists and the learner is still signed in.
+      syncMessage = err?.message || "Could not delete your account right now. It still exists — try again in a moment.";
+    } finally {
+      syncBusy = false;
+      if (route === "settings") renderSettings();
+      refreshProfile();
+    }
+    return;
+  }
 });
 async function submitAccount(mode, form) {
   const email = form.email.value.trim();
@@ -1693,6 +1755,11 @@ document.addEventListener("input", (ev) => {
   if (ev.target.dataset.note) {
     state.notes[ev.target.dataset.note] = ev.target.value;
     save();
+  }
+  // Enable the destructive confirm button only on an exact account-email match.
+  if (ev.target.id === "delete-confirm-input") {
+    const btn = $('[data-action="confirm-delete"]');
+    if (btn) btn.disabled = ev.target.value.trim().toLowerCase() !== (sync.account?.email || "").toLowerCase();
   }
 });
 document.addEventListener("change", async (ev) => {
