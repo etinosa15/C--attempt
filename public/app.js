@@ -1019,7 +1019,7 @@ function accountPanel() {
     const last = sync.lastSynced ? `Last synced ${relativeTime(sync.lastSynced)}` : "Not yet synced on this device";
     return `${head}<h2>Your account</h2><p>Signed in as <strong>${e(sync.account.email)}</strong>. Your progress backs up to your account and merges across your devices.</p>${accountFeedback()}<div class="settings-actions"><button class="button primary" data-action="sync-now"${syncBusy ? " disabled" : ""}>${icon("refresh", 16)} Sync now</button><button class="button secondary" data-action="logout">Log out</button></div><p class="muted">${e(last)}. Logging out keeps your progress on this device and removes this account’s copy from it.</p><div class="settings-actions"><button class="button secondary" data-action="export-before-sync">Export pre-sync backup</button></div><p class="muted">The pre-sync backup is exactly what this device held before it first merged with your account.</p></section>`;
   }
-  return `${head}<h2>Account &amp; cloud sync</h2><p>Optional. Create an account to back up your progress and pick up on another device. Everything keeps working on this device whether or not you sign in.</p>${accountFeedback()}<form class="account-form" id="account-form"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" autocomplete="current-password" minlength="10" required></label><div class="settings-actions"><button class="button primary" type="submit" data-account-submit="signup"${syncBusy ? " disabled" : ""}>Create account</button><button class="button secondary" type="submit" data-account-submit="login"${syncBusy ? " disabled" : ""}>Log in</button></div></form><p class="muted">Use at least 10 characters. There is no password reset yet, so keep your password somewhere safe. Your email and a securely hashed password are stored by this project’s own sync service; your theme is never uploaded.</p></section>`;
+  return `${head}<h2>Account &amp; cloud sync</h2><p>Optional. Create an account to back up your progress and pick up on another device. Everything keeps working on this device whether or not you sign in.</p>${accountFeedback()}<form class="account-form" id="account-form"><label>Email<input type="email" name="email" autocomplete="email" required></label><label>Password<input type="password" name="password" autocomplete="current-password" minlength="10" required></label><div class="settings-actions"><button class="button primary" type="submit" data-account-submit="signup"${syncBusy ? " disabled" : ""}>Create account</button><button class="button secondary" type="submit" data-account-submit="login"${syncBusy ? " disabled" : ""}>Log in</button></div><button type="button" class="linklike" data-action="reset-password"${syncBusy ? " disabled" : ""}>Forgot your password?</button></form><p class="muted">Use at least 10 characters. Forgot it? Enter your email above and choose “Forgot your password?” — we’ll email a link to set a new one. Your email and a securely hashed password are stored by this project’s own sync service; your theme is never uploaded.</p></section>`;
 }
 // The study buddy is device-local, like the theme, so its toggle and name live in
 // the appearance panel — not in the exported progress record. buddy.hidden/name
@@ -1055,7 +1055,7 @@ function renderPrivacy() {
     ? "Creating an account is optional; without one, nothing leaves this browser."
     : "It does not create an account or sync your learning data to a cloud database.";
   const accountSection = sync.enabled
-    ? `<h2>If you create an account</h2><p>Signing in is optional and only happens when you ask. An account stores your email address, a securely hashed password (scrypt — the password itself is never stored), and the same progress record described above, on this project’s own self-hosted sync service. It is used to back up your progress and merge it across your devices. Your appearance theme stays on each device and is never uploaded. There is no password reset yet, so keep your password safe. Logging out removes this account’s copy of your progress from the device.</p>`
+    ? `<h2>If you create an account</h2><p>Signing in is optional and only happens when you ask. An account stores your email address, a securely hashed password (scrypt — the password itself is never stored), and the same progress record described above, on this project’s own self-hosted sync service. It is used to back up your progress and merge it across your devices. Your appearance theme stays on each device and is never uploaded. If you forget your password, you can request a reset email and set a new one. Logging out removes this account’s copy of your progress from the device.</p>`
     : "";
   // Only shown on a build wired to the hosted tutor. The offline heuristic tutor,
   // the default, sends nothing — so this disclosure appears exactly when it is true.
@@ -1072,7 +1072,7 @@ function renderTerms() {
   // and the strong self-execution warning matches the security posture in
   // renderPrivacy / renderLocalSetup. Account clause appears only on a sync build.
   const accountSection = sync.enabled
-    ? `<h2>Optional accounts</h2><p>An account is optional and created only when you ask. You are responsible for keeping your password safe, since there is no password reset yet. Do not share an account or use it to store anything you are not comfortable keeping on this project's self-hosted sync service. We may suspend an account that is used to attack, overload, or abuse the service.</p>`
+    ? `<h2>Optional accounts</h2><p>An account is optional and created only when you ask. If you forget your password, you can request a reset email to set a new one; otherwise keep it somewhere safe. Do not share an account or use it to store anything you are not comfortable keeping on this project's self-hosted sync service. We may suspend an account that is used to attack, overload, or abuse the service.</p>`
     : "";
   $("#main").innerHTML = sectionHead("THE AGREEMENT", "Terms of use.", "The short, plain version of how Forge is offered and used.") +
     `<article class="info-page panel"><h2>Using Forge</h2><p>Forge Code Academy is a free tool for learning JavaScript and C#. By using it you agree to these terms. If you do not agree, please stop using it. These terms may change as Forge grows; continuing to use it after a change means you accept the updated version.</p>` +
@@ -1613,6 +1613,37 @@ document.addEventListener("click", async (ev) => {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast("Backup exported.");
     } catch { toast("The backup copy could not be read. Export your current progress instead."); }
+  }
+  if (a === "reset-password") {
+    // Signed-out recovery: send the email here, but the new password is set on the
+    // sync service's own /update-password page (reached from the email link), since
+    // only that origin can hold a Supabase recovery session. Then they sign in here.
+    const form = $("#account-form");
+    const email = form?.email.value.trim();
+    if (!email) {
+      syncMessage = "Enter your account email above first, then choose “Forgot your password?” and we’ll send a reset link.";
+      if (route === "settings") renderSettings();
+      return;
+    }
+    syncMessage = "";
+    syncBusy = true;
+    renderSettings();
+    try {
+      await sync.requestReset(email);
+      // Deliberately does not confirm the address exists — same reason the service
+      // won't. Anyone who has an account gets a link; anyone who doesn't sees this too.
+      syncMessage = "If an account exists for that email, a reset link is on its way. Open it to set a new password, then sign in here.";
+    } catch (err) {
+      // A self-hosted sync service without email support answers 404 here. Say so
+      // plainly instead of leaking its "Not found." — the learner still has export.
+      syncMessage = err?.status === 404
+        ? "This sync service can’t email a reset link. Keep your password safe, and keep an exported backup so your progress is never tied to it alone."
+        : err?.message || "Could not send a reset link right now. Your progress is saved on this device.";
+    } finally {
+      syncBusy = false;
+      if (route === "settings") renderSettings();
+    }
+    return;
   }
   if (a === "sync-now") {
     syncMessage = "";

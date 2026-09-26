@@ -261,6 +261,28 @@ a {
 button {
   color: inherit;
 }
+/* A button that reads as a text link — used for the low-emphasis "Forgot your
+   password?" affordance in the account form. Keeps the global focus-visible ring. */
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 4px 0 0;
+  color: var(--link);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linklike:hover {
+  color: var(--accent);
+}
+.linklike:disabled {
+  color: inherit;
+  opacity: 0.5;
+  cursor: default;
+  text-decoration: none;
+}
 button,
 textarea,
 input {

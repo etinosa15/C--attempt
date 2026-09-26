@@ -42,6 +42,7 @@ test("a client with no origin makes no requests and every method is a no-op", as
   assert.equal(await client.restore(), null);
   assert.equal(await client.signup("a@b.com", PASSWORD), null);
   assert.equal(await client.login("a@b.com", PASSWORD), null);
+  assert.equal(await client.requestReset("a@b.com"), null);
   assert.equal(await client.logout(), null);
   assert.equal(await client.syncNow(), null);
   assert.equal(await client.flush(), null);
@@ -185,6 +186,33 @@ test("logging into an account with matching focus time does not double it", asyn
     await new Promise(resolve => server.close(resolve));
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("requesting a password reset posts the email and carries no session", async () => {
+  const storage = memoryStorage();
+  const bodies = [];
+  let authHeaderSeen = "absent";
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => storage,
+    fetchImpl: async (url, options = {}) => {
+      if (url.endsWith("/api/auth/reset")) {
+        bodies.push(JSON.parse(options.body));
+        authHeaderSeen = (options.headers || {}).Authorization ?? "absent";
+        return json({ ok: true });
+      }
+      return json({});
+    },
+  });
+  const result = await client.requestReset("learner@example.com");
+  assert.deepEqual(result, { ok: true });
+  assert.deepEqual(bodies, [{ email: "learner@example.com" }]);
+  // Signed out throughout: no bearer is attached, no session is created, and the
+  // reset request writes nothing to storage.
+  assert.equal(authHeaderSeen, "absent");
+  assert.equal(client.account, null);
+  assert.equal(client.sessionToken(), "");
+  assert.equal(storage.getItem("forge.academy.v1.sync"), null);
 });
 
 test("signup with email confirmation on stays local and stores nothing", async () => {

@@ -300,6 +300,18 @@ export function createSyncClient({
       if (!enabled) return Promise.resolve(null);
       return queue(() => authenticate("/api/auth/login", email, password));
     },
+    // Ask the service to email a password-reset link. Signed-out on purpose (that
+    // is the whole point), so it carries no bearer, creates no session, and stores
+    // nothing. Resolves the same way whether or not the address has an account —
+    // the service will not say, and neither should the caller.
+    requestReset(email) {
+      if (!enabled) return Promise.resolve(null);
+      return queue(() => request("/api/auth/reset", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        auth: false,
+      }));
+    },
     logout() {
       if (!enabled) return Promise.resolve(null);
       clearTimeout(timer);
