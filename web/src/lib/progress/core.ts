@@ -32,4 +32,16 @@ export const progressChanges = core.progressChanges;
 export const adoptState = core.adoptState;
 export const DEVICE_LOCAL = core.DEVICE_LOCAL;
 
+// `sanitizeState` validates strictly (it doubles as the import-file check and throws
+// on anything that isn't a versioned Forge state). But two legitimate paths produce a
+// bare `{}`: the DB seeds each new learner an empty `{}` progress row (see
+// handle_new_user), and a brand-new device has an empty localStorage snapshot. Coerce
+// any missing/empty/non-v1 value to a fresh state, and only sanitize what looks real,
+// so first-contact sync never 500s.
+export function toState(raw: unknown): ProgressState {
+  if (!raw || typeof raw !== "object" || (raw as { version?: number }).version !== 1)
+    return freshState();
+  return sanitizeState(raw);
+}
+
 export type { ProgressState, ProgressChange } from "./state";

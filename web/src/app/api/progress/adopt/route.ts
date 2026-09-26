@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeState, adoptState, freshState } from "@/lib/progress/core";
+import { sanitizeState, adoptState, toState } from "@/lib/progress/core";
 import type { ProgressState } from "@/lib/progress/state";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  const local: ProgressState = sanitizeState((payload as { local?: unknown })?.local ?? {});
+  const local: ProgressState = toState((payload as { local?: unknown })?.local);
 
   const { data: current, error: readErr } = await supabase
     .from("progress")
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (readErr) return NextResponse.json({ error: "Could not read progress." }, { status: 500 });
 
-  const account: ProgressState = current ? sanitizeState(current.state) : freshState();
+  const account: ProgressState = toState(current?.state);
   const merged = sanitizeState(adoptState(account, local));
 
   const { data: saved, error: saveErr } = current

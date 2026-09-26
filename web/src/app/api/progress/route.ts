@@ -4,7 +4,7 @@ import {
   sanitizeChanges,
   sanitizeState,
   applyProgressChanges,
-  freshState,
+  toState,
 } from "@/lib/progress/core";
 import type { ProgressState } from "@/lib/progress/state";
 
@@ -28,7 +28,7 @@ export async function GET() {
     .maybeSingle();
   if (error) return NextResponse.json({ error: "Could not read progress." }, { status: 500 });
 
-  const state = data ? sanitizeState(data.state) : freshState();
+  const state = toState(data?.state);
   return NextResponse.json({ state, revision: data?.revision ?? 0 });
 }
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (readErr) return NextResponse.json({ error: "Could not read progress." }, { status: 500 });
 
-    const baseState: ProgressState = current ? sanitizeState(current.state) : freshState();
+    const baseState: ProgressState = toState(current?.state);
     const baseRevision = current?.revision ?? 0;
 
     let next: ProgressState;

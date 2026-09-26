@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { adoptLocalProgress } from "@/lib/progress/sync-client";
 import styles from "../login/auth.module.css";
 
 export default function SignupPage() {
+  const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +25,7 @@ export default function SignupPage() {
     }
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,12 +33,21 @@ export default function SignupPage() {
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       setError(error.message);
       return;
     }
-    // If email confirmation is on, the learner must verify before signing in.
+    // When email confirmation is disabled, signUp returns a live session and the
+    // learner is already signed in — adopt local progress and go straight in.
+    // With confirmation on, session is null: show the "check your email" screen.
+    if (data.session) {
+      await adoptLocalProgress();
+      router.push("/");
+      router.refresh();
+      return;
+    }
+    setBusy(false);
     setSent(true);
   }
 
