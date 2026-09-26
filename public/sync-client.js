@@ -24,6 +24,9 @@ export const SYNC_KEY = STORAGE_KEY + ".sync";
 const REQUEST_MS = 15000;
 const DEBOUNCE_MS = 3000;
 const BACKOFF_MS = 60000;
+// Renew the in-memory access token this long before it expires, so a request in
+// flight never races the ~1h expiry and drops the learner to local mode.
+const EXPIRY_SKEW_MS = 60000;
 // Browsers cap the body of a keepalive request; above this, send it normally
 // and accept that a page closing mid-flight will sync on the next visit.
 const KEEPALIVE_LIMIT = 60 * 1024;
@@ -57,6 +60,12 @@ export function createSyncClient({
   // cross-site cookie outright, and it stays in memory on purpose: a bearer
   // token in localStorage is readable by any script that gets injected.
   let token = "";
+  // The refresh token + access-token expiry ride along in memory too, on the same
+  // reasoning — never persisted, so a reload still means a fresh sign-in, but a
+  // session left open past an hour renews itself instead of silently signing out.
+  let refreshToken = "";
+  let expiresAt = 0;
+  let refreshing = null;
   let timer = null;
   let pausedUntil = 0;
   let lastSynced = 0;
@@ -93,7 +102,11 @@ export function createSyncClient({
     catch { /* Full storage costs a delta baseline, not correctness. */ }
   }
 
-  async function request(path, { method = "GET", body, keepalive = false } = {}) {
+  async function request(path, { method = "GET", body, keepalive = false, auth = true } = {}) {
+    // Renew a token that is about to expire before we spend it — but only when we
+    // know the expiry and hold a refresh token. login/signup/refresh pass auth:false.
+    if (auth && token && refreshToken && expiresAt && now() >= expiresAt - EXPIRY_SKEW_MS)
+      await doRefresh();
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), requestTimeoutMs);
     const headers = { "X-Forge-Sync": "1" };
@@ -118,7 +131,14 @@ export function createSyncClient({
     let data = null;
     try { data = await response.json(); } catch { data = null; }
     if (response.status === 401) {
+      // The access token may just have expired since the pre-check. Try one refresh
+      // and replay before giving up the session (auth:false so a dead refresh token
+      // cannot loop). Only a genuine failure signs the learner out.
+      if (auth && refreshToken && await doRefresh())
+        return request(path, { method, body, keepalive, auth: false });
       token = "";
+      refreshToken = "";
+      expiresAt = 0;
       setAccount(null);
       throw problem("You are signed out. Your progress is still saved on this device.", 401);
     }
@@ -190,6 +210,44 @@ export function createSyncClient({
     return chain;
   }
 
+  // Adopt the session fields from an auth/refresh reply. expiresIn is seconds from
+  // now; without it we simply fall back to the reactive 401 refresh path.
+  function setSession(data) {
+    token = typeof data.token === "string" ? data.token : "";
+    if (typeof data.refreshToken === "string" && data.refreshToken) refreshToken = data.refreshToken;
+    const secs = Number(data.expiresIn);
+    expiresAt = Number.isFinite(secs) && secs > 0 ? now() + secs * 1000 : 0;
+  }
+
+  // Trade the stored refresh token for a fresh access token. Coalesces concurrent
+  // callers onto one request; a rejected token is dropped so the next 401 signs out.
+  function doRefresh() {
+    if (!refreshToken) return Promise.resolve(false);
+    if (refreshing) return refreshing;
+    refreshing = (async () => {
+      try {
+        const data = await request("/api/auth/refresh", {
+          method: "POST",
+          body: JSON.stringify({ refreshToken }),
+          auth: false,
+        });
+        if (data && typeof data.token === "string" && data.token) {
+          setSession(data);
+          return true;
+        }
+        return false;
+      } catch {
+        token = "";
+        refreshToken = "";
+        expiresAt = 0;
+        return false;
+      } finally {
+        refreshing = null;
+      }
+    })();
+    return refreshing;
+  }
+
   async function authenticate(path, email, password, seed) {
     const payload = { email, password };
     if (seed) {
@@ -198,8 +256,12 @@ export function createSyncClient({
       state.focusTimer = freshFocusTimer();
       payload.state = state;
     }
-    const data = await request(path, { method: "POST", body: JSON.stringify(payload) });
-    token = typeof data.token === "string" ? data.token : "";
+    const data = await request(path, { method: "POST", body: JSON.stringify(payload), auth: false });
+    // Confirmation is on and no session came back: stay local and let the caller
+    // prompt the learner to confirm their email, then sign in. Nothing is stored.
+    if (data && data.pending)
+      return { pending: true, email: typeof data.email === "string" ? data.email : email };
+    setSession(data);
     setAccount({ email: typeof data.email === "string" ? data.email : email });
     await reconcile(sanitizeState(data.state), data.revision);
     return account;
@@ -246,6 +308,8 @@ export function createSyncClient({
         try { await request("/api/auth/logout", { method: "POST" }); }
         catch { /* Signing out locally matters more than telling the service. */ }
         token = "";
+        refreshToken = "";
+        expiresAt = 0;
         lastSynced = 0;
         // Dropping the baseline is what makes the next sign-in merge rather
         // than replay a stale delta, and it takes this account's progress copy

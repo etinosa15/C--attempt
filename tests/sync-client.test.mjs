@@ -187,6 +187,103 @@ test("logging into an account with matching focus time does not double it", asyn
   }
 });
 
+test("signup with email confirmation on stays local and stores nothing", async () => {
+  const storage = memoryStorage();
+  let syncCalls = 0;
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => storage,
+    fetchImpl: async (url) => {
+      if (url.endsWith("/api/auth/signup")) return json({ pending: true, email: "new@example.com" });
+      syncCalls++;
+      return json({ state: freshState(), revision: 0 });
+    },
+  });
+  const result = await client.signup("new@example.com", PASSWORD);
+  // The caller learns to prompt for confirmation; nothing is treated as a session.
+  assert.deepEqual(result, { pending: true, email: "new@example.com" });
+  assert.equal(client.account, null);
+  assert.equal(client.sessionToken(), "");
+  assert.equal(storage.getItem("forge.academy.v1.sync"), null);
+  assert.equal(syncCalls, 0);
+});
+
+test("a token nearing expiry is refreshed before the next request, and the new one is used", async () => {
+  let clock = 1_000_000;
+  const authHeaders = [];
+  let refreshCalls = 0;
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => memoryStorage(),
+    now: () => clock,
+    readState: () => freshState(),
+    fetchImpl: async (url, options = {}) => {
+      const auth = (options.headers || {}).Authorization;
+      if (url.endsWith("/api/auth/login"))
+        return json({ email: "l@e.com", state: freshState(), revision: 1, token: "t1", refreshToken: "r1", expiresIn: 3600 });
+      if (url.endsWith("/api/auth/refresh")) {
+        refreshCalls++;
+        assert.deepEqual(JSON.parse(options.body), { refreshToken: "r1" });
+        return json({ token: "t2", refreshToken: "r2", expiresIn: 3600 });
+      }
+      if (url.endsWith("/api/sync")) { authHeaders.push(auth); return json({ state: freshState(), revision: 1, applied: 0 }); }
+      return json({ email: "l@e.com" });
+    },
+  });
+  await client.login("l@e.com", PASSWORD);
+  authHeaders.length = 0;
+  // Jump to inside the 60s skew window before the 1h token expires.
+  clock += 3600_000 - 30_000;
+  await client.syncNow();
+  assert.equal(refreshCalls, 1);
+  assert.equal(authHeaders[0], "Bearer t2");
+});
+
+test("a 401 on an authed request refreshes and replays before signing out", async () => {
+  let firstSync = true;
+  let refreshCalls = 0;
+  const authHeaders = [];
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => memoryStorage(),
+    readState: () => freshState(),
+    fetchImpl: async (url, options = {}) => {
+      const auth = (options.headers || {}).Authorization;
+      if (url.endsWith("/api/auth/login"))
+        return json({ email: "l@e.com", state: freshState(), revision: 1, token: "t1", refreshToken: "r1" });
+      if (url.endsWith("/api/auth/refresh")) { refreshCalls++; return json({ token: "t2", refreshToken: "r2" }); }
+      if (url.endsWith("/api/sync")) {
+        authHeaders.push(auth);
+        if (auth === "Bearer t1" && firstSync) { firstSync = false; return json({ error: "expired" }, 401); }
+        return json({ state: freshState(), revision: 1, applied: 0 });
+      }
+      return json({ email: "l@e.com" });
+    },
+  });
+  await client.login("l@e.com", PASSWORD);
+  assert.equal(refreshCalls, 1);
+  assert.equal(client.account?.email, "l@e.com");
+  assert.ok(authHeaders.includes("Bearer t2"));
+});
+
+test("a dead refresh token on 401 signs out cleanly", async () => {
+  const client = createSyncClient({
+    origin: ORIGIN,
+    storage: () => memoryStorage(),
+    readState: () => freshState(),
+    fetchImpl: async (url) => {
+      if (url.endsWith("/api/auth/login"))
+        return json({ email: "l@e.com", state: freshState(), revision: 1, token: "t1", refreshToken: "r1" });
+      if (url.endsWith("/api/auth/refresh")) return json({ error: "expired" }, 401);
+      if (url.endsWith("/api/sync")) return json({ error: "expired" }, 401);
+      return json({ email: "l@e.com" });
+    },
+  });
+  await assert.rejects(() => client.login("l@e.com", PASSWORD));
+  assert.equal(client.account, null);
+  assert.equal(client.sessionToken(), "");
+});
+
 test("a returning device replays only what changed since its baseline", async () => {
   const dir = await mkdtemp(join(tmpdir(), "forge-sync-client-"));
   const server = createSyncServer({ origins: [ORIGIN], dir, secureCookie: false });

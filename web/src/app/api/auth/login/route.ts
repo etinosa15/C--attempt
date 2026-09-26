@@ -6,8 +6,10 @@ import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
 
 // POST /api/auth/login — legacy-protocol sign-in adapter. Validates the credentials
 // against Supabase, sets the session cookie (for same-origin use) AND returns the
-// access token so the cross-origin studio can carry it as a bearer. Also returns the
-// account's current progress so the client can reconcile in one round-trip.
+// access token so the cross-origin studio can carry it as a bearer. The refresh token
+// + lifetime travel back too so a long open session can renew the ~1h access token
+// in place (see /api/auth/refresh) instead of dropping to local mode mid-lesson. Also
+// returns the account's current progress so the client can reconcile in one round-trip.
 export const runtime = "nodejs";
 
 export function OPTIONS(request: Request) {
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
     request,
     NextResponse.json({
       token: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresIn: data.session.expires_in,
       email: data.user.email,
       state: progress.ok ? progress.state : freshState(),
       revision: progress.ok ? progress.revision : 0,

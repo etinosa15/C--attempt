@@ -1642,9 +1642,14 @@ async function submitAccount(mode, form) {
   syncBusy = true;
   renderSettings();
   try {
-    if (mode === "signup") await sync.signup(email, password, state);
-    else await sync.login(email, password);
-    syncMessage = "";
+    const result = mode === "signup"
+      ? await sync.signup(email, password, state)
+      : await sync.login(email, password);
+    // Signup with email confirmation on: no session yet. Tell the learner to
+    // confirm, then sign in. Their progress stays saved on this device meanwhile.
+    syncMessage = result && result.pending
+      ? "Almost there — check your email to confirm your account, then sign in. Your progress is saved on this device."
+      : "";
   } catch (err) {
     syncMessage = err?.message || "That did not work. Check your email and password and try again.";
   } finally {
