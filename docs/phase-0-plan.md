@@ -2,7 +2,15 @@
 
 > Companion to [monetization-plan.md](monetization-plan.md). Forks resolved
 > 2026-09-24: **managed auth**, **Paddle** (later phase), **C# WASM = fast-follow**.
-> This is the plan for the work everything else depends on. Not built yet.
+>
+> **Status (2026-09-26): code-complete.** Items 1–7 + 9 are built (Supabase +
+> Next app, the legacy sync bridge, progress merge, export, delete, PostHog). Item
+> 6 (embedding lessons in the Next shell) is superseded by the strangler sync
+> bridge and deferred to the React port. Item 8 (deploy cutover) is the only step
+> left and needs hosting access — see the step-by-step
+> [phase-0-deploy.md](phase-0-deploy.md). Launch decisions locked: **Vercel** for
+> the `web/` app, **soft-launch on Supabase built-in email** (Resend later), **no
+> OAuth in the studio panel** (the Next app's `/login` has it).
 
 ## Goal & exit criteria
 

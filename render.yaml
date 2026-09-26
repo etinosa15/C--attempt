@@ -1,12 +1,21 @@
-# Render Blueprint for Forge Code Academy.
+# Render Blueprint for Forge Code Academy — Phase 0 topology.
 #
-# Two services from one repo:
-#   * forge-code-academy  — the static reading edition (the SAME `dist/` that
-#                            `npm run build` produces). C# is read-only here.
-#   * forge-sync          — optional accounts/progress-sync Node service.
+# One service lives here now:
+#   * forge-code-academy — the static studio (the SAME `dist/` that `npm run
+#                          build` produces). This is the learning surface.
+#
+# Accounts + progress sync are handled by the Next.js + Supabase app in `web/`,
+# deployed SEPARATELY on Vercel (see docs/phase-0-deploy.md). The studio reaches
+# it through the legacy-protocol sync bridge (/api/me, /api/auth/*, /api/sync)
+# using the FORGE_SYNC_ORIGIN below.
+#
+# RETIRED: the old ephemeral `forge-sync` Node service (sync-server.mjs) is no
+# longer deployed. Supabase is the one durable accounts backend. `sync-server.mjs`
+# stays in the repo ONLY as a protocol-conformance fixture for the tests
+# (tests/sync-server.test.mjs, tests/sync-client.test.mjs); it is not hosted.
 #
 # The local C# compiler in server.mjs is loopback-only and is NEVER deployed
-# here — it is a separate program from the sync service.
+# here — it is a separate program from the accounts backend.
 #
 # Render does NOT read the Netlify-style `dist/_headers` file, so the security
 # headers are declared here instead. The values below mirror `dist/_headers`,
@@ -14,17 +23,17 @@
 # The Content-Security-Policy is per-document: the app, the DOM lab, and the
 # runner worker each get their own policy.
 #
-# DRIFT WARNING (two things to keep in sync with the build):
+# DRIFT WARNING (two things to keep in sync):
 #  1. The app CSP pins a sha256 hash of the inline bootstrap script in
 #     index.html. If you change that inline script, run `npm run build` and
 #     copy the new hash from `dist/_headers` into the three app-CSP entries.
-#  2. The app CSP `connect-src` must list the sync origin so the browser may
-#     call it. It is hardcoded below AND passed to the static build as
-#     FORGE_SYNC_ORIGIN so `deployment.js` shows the account UI. If Render
-#     assigns the sync service a different hostname (e.g. the name was taken
-#     and got a suffix), update the three app-CSP `connect-src` entries, the
-#     FORGE_SYNC_ORIGIN value here, and the sync service's FORGE_ORIGINS to
-#     match the real URLs.
+#  2. The app CSP `connect-src` must list the backend origin so the browser may
+#     call the sync bridge. It is hardcoded below AND passed to the static build
+#     as FORGE_SYNC_ORIGIN so `deployment.js` shows the account UI. This value
+#     must equal your real Vercel production URL, and the Vercel app's
+#     FORGE_STUDIO_ORIGINS must in turn equal this studio's Render URL. The
+#     `https://forge-app.vercel.app` below is a PLACEHOLDER — replace it with the
+#     actual production domain Vercel assigns (see docs/phase-0-deploy.md, step 5).
 services:
   - type: web
     runtime: static
@@ -35,9 +44,10 @@ services:
       - key: NODE_VERSION
         value: "22"
       # Build-time origin: written into dist/deployment.js and the generated
-      # connect-src so the hosted app enables the account features.
+      # connect-src so the hosted app enables the account features. PLACEHOLDER —
+      # set to the real Vercel production URL of the web/ app.
       - key: FORGE_SYNC_ORIGIN
-        value: https://forge-sync.onrender.com
+        value: https://forge-app.vercel.app
     headers:
       # Applied to every response (matches the `/*` block in dist/_headers).
       - path: /*
@@ -58,16 +68,16 @@ services:
       - path: /*
         name: Cache-Control
         value: "public, max-age=0, must-revalidate"
-      # App documents: connect-src allows self + the sync origin.
+      # App documents: connect-src allows self + the backend origin (Vercel).
       - path: /
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /index.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /404.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-sync.onrender.com; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       # DOM lab: stricter sandbox policy.
       - path: /dom-preview.html
         name: Content-Security-Policy
@@ -76,49 +86,3 @@ services:
       - path: /runner-worker.js
         name: Content-Security-Policy
         value: "default-src 'none'; script-src 'unsafe-eval'; connect-src 'none'"
-
-  # ---------------------------------------------------------------------------
-  # Optional accounts / progress-sync service.
-  # Free plan: filesystem is EPHEMERAL — accounts reset on every restart/deploy
-  # and on cold-start spin-up. Fine for testing.
-  #
-  # DURABLE ACCOUNTS (opt-in, paid): a persistent disk survives restarts and
-  # deploys. Render disks are NOT offered on the free plan, so enabling this is a
-  # deliberate cost decision. To turn it on, three coordinated edits below:
-  #   1. change `plan: free` → `plan: starter` (the smallest plan that allows a
-  #      disk; billed monthly),
-  #   2. uncomment the `disk:` block, and
-  #   3. uncomment the `FORGE_DATA` env var so the store writes to the mount.
-  # sync-server.mjs reads FORGE_DATA (default "./data"), so the mount path and the
-  # env var must match. Leaving all three commented keeps the free, ephemeral
-  # behaviour unchanged.
-  #
-  # onrender.com is a public suffix, so the site and this service are cross-site
-  # → FORGE_CROSS_SITE=1 issues the session cookie SameSite=None; Secure.
-  - type: web
-    runtime: node
-    name: forge-sync
-    plan: free
-    buildCommand: npm install
-    startCommand: npm run sync
-    healthCheckPath: /api/health
-    # Uncomment together with `FORGE_DATA` and a paid `plan:` to keep accounts
-    # across restarts and deploys.
-    # disk:
-    #   name: forge-sync-data
-    #   mountPath: /var/data
-    #   sizeGB: 1
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: FORGE_ORIGINS
-        value: https://forge-code-academy.onrender.com
-      - key: FORGE_CROSS_SITE
-        value: "1"
-      - key: FORGE_TRUST_PROXY
-        value: "1"
-      # Durable store location; must equal the disk mountPath above. Uncomment
-      # only when the disk and a paid plan are enabled.
-      # - key: FORGE_DATA
-      #   value: /var/data
-
