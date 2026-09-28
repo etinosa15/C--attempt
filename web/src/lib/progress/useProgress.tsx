@@ -7,8 +7,10 @@
 // server. One instance is shared across the /learn surface via context, so a
 // change on the lesson page is instantly visible on the Overview.
 //
-// Deferred from progress-store.js (tracked for the pre-cutover hardening pass):
-// multi-tab Web Locks coordination and the corruption-recovery backup copies.
+// Durability (multi-tab Web Locks coordination, `_generation` epochs, and the
+// corruption-recovery backup slots) lives in ./local-store, ported from
+// progress-store.js. This hook owns the React state and the server sync lifecycle
+// and drives all local persistence through that store.
 import {
   createContext,
   useCallback,
@@ -17,13 +19,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { freshState, toState } from "./core";
-import {
-  readLocalState,
-  writeLocalState,
-  adoptLocalProgress,
-  pushChanges,
-} from "./sync-client";
+import { freshState, toState, STORAGE_KEY } from "./core";
+import { createLocalStore, setLocalStore, type LocalStore } from "./local-store";
+import { adoptLocalProgress, pushChanges } from "./sync-client";
 import type { ForgeState, ProgressState } from "./state";
 
 /** loading → first paint; then local-only, or the sync lifecycle when signed in. */
@@ -36,6 +34,10 @@ interface ProgressContextValue {
   status: SyncStatus;
   /** False until the initial local read (and, when signed in, the merge) settles. */
   ready: boolean;
+  /** A durability warning to surface (corruption recovery, full storage, …), or "". */
+  problem: string;
+  /** True when the loaded record came from an automatic backup — prompt an export. */
+  recovered: boolean;
   /** Apply a pure update; persists locally at once and syncs (debounced) when signed in. */
   update: (updater: (prev: ForgeState) => ForgeState) => void;
 }
@@ -59,23 +61,45 @@ export function ProgressProvider({
   );
   const [status, setStatus] = useState<SyncStatus>("loading");
   const [ready, setReady] = useState(false);
+  const [problem, setProblem] = useState("");
+  const [recovered, setRecovered] = useState(false);
 
   // Refs mirror the latest values so `update` and the debounced push can read them
   // without stale closures, and side effects stay out of the state updater.
   const stateRef = useRef<ForgeState>(state);
   const baselineRef = useRef<ForgeState>(state); // last state the server has confirmed
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The durable local store. Created on the client only (its constructor reads
+  // localStorage), so it stays null through SSR and the first render.
+  const storeRef = useRef<LocalStore | null>(null);
 
   const commit = useCallback((next: ForgeState) => {
     stateRef.current = next;
     setState(next);
   }, []);
 
-  // Initial load: local snapshot first (instant, offline), then merge up if signed in.
+  // Initial load: create the store, read the local snapshot (backup-aware, instant,
+  // offline), then merge up if signed in. Re-runs on sign-in transitions.
   useEffect(() => {
-    const local = asForge(readLocalState());
-    commit(local);
-    baselineRef.current = local;
+    if (!storeRef.current) {
+      const store = createLocalStore({
+        // The store owns `view`; every republish (a merge from a concurrent tab, a
+        // storage-event re-read, an adopted server snapshot) flows into React here.
+        onChange: (next) => commit(asForge(next)),
+        onStatus: (message) => {
+          setProblem(message);
+          setRecovered(storeRef.current?.recovered ?? false);
+        },
+      });
+      storeRef.current = store;
+      setLocalStore(store); // sync-client persists server results through this store
+      const local = asForge(store.state);
+      commit(local);
+      baselineRef.current = local;
+      setProblem(store.problem);
+      setRecovered(store.recovered);
+    }
+    const store = storeRef.current;
 
     if (!signedIn) {
       setStatus("local");
@@ -85,6 +109,8 @@ export function ProgressProvider({
 
     let cancelled = false;
     setStatus("syncing");
+    // Keep the exact pre-merge device record downloadable before first contact.
+    store.snapshotBeforeSync();
     // adopt is a safe superset of pull: it unions local into the account (never
     // doubling counters) and returns the canonical merged state, so an offline
     // device that comes back never loses the work it did while signed out.
@@ -113,6 +139,20 @@ export function ProgressProvider({
     };
   }, [signedIn, commit]);
 
+  // Converge with other tabs: when one writes the shared record, re-read and
+  // republish it here (the store's write-time generation checks guard the writer).
+  useEffect(() => {
+    const store = storeRef.current;
+    if (!store) return;
+    const onStorage = (event: StorageEvent) => {
+      // key === null is a full clear; otherwise only our record matters.
+      if (event.key !== null && event.key !== STORAGE_KEY) return;
+      void store.sync();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const scheduleSync = useCallback(() => {
     if (!signedIn) return;
     setStatus("syncing");
@@ -136,15 +176,18 @@ export function ProgressProvider({
   const update = useCallback(
     (updater: (prev: ForgeState) => ForgeState) => {
       const next = asForge(updater(stateRef.current) as unknown as ProgressState);
-      commit(next);
-      writeLocalState(next as unknown as ProgressState); // local-first: never lose work
+      commit(next); // local-first optimism: the UI updates before the write settles
+      // Durable, lock-guarded write with the `_generation` envelope + backup copy.
+      storeRef.current?.save(next as unknown as ProgressState);
       scheduleSync();
     },
     [commit, scheduleSync],
   );
 
   return (
-    <ProgressContext.Provider value={{ state, signedIn, status, ready, update }}>
+    <ProgressContext.Provider
+      value={{ state, signedIn, status, ready, problem, recovered, update }}
+    >
       {children}
     </ProgressContext.Provider>
   );

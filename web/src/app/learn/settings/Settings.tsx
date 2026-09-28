@@ -42,7 +42,7 @@ function csRuntimeLabel(available: boolean | null, sdk: string): string {
 }
 
 export function Settings() {
-  const { state, update } = useProgress();
+  const { state, update, problem, recovered } = useProgress();
   const cs = useCsRunner();
   const [pref, setPref] = useState<ThemePref>("system");
   const [message, setMessage] = useState("");
@@ -117,6 +117,21 @@ export function Settings() {
         <p className={styles.notice} role="status" aria-live="polite">
           {message}
         </p>
+      )}
+
+      {problem && (
+        <div className={styles.warning} role="alert">
+          <p>{problem}</p>
+          {recovered && (
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              onClick={exportProgress}
+            >
+              Export a copy now
+            </button>
+          )}
+        </div>
       )}
 
       <div className={styles.grid}>

@@ -5,6 +5,7 @@
 // local snapshot into the account (adopt), after which changes flow both ways using
 // the same core.js delta rules the legacy app used.
 import { STORAGE_KEY, sanitizeState, progressChanges } from "./core";
+import { getLocalStore } from "./local-store";
 import type { ProgressState, ProgressChange } from "./state";
 
 // Read the device's localStorage snapshot (the shape core.js writes). Returns an
@@ -19,15 +20,13 @@ export function readLocalState(): ProgressState {
   }
 }
 
-// Persist a state snapshot back to localStorage so signed-out use continues offline
-// and the next adopt starts from the merged baseline.
+// Persist a server-authoritative snapshot (an adopt/push result) back to the
+// device. Routed through the local store so the `_generation` envelope and backup
+// copies apply on every persist, exactly as an ordinary edit's save does — never a
+// bare setItem that a vanilla tab or a restored tab could not reason about.
 export function writeLocalState(state: ProgressState): void {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeState(state)));
-  } catch {
-    // Storage full or blocked — nothing else we can safely do here.
-  }
+  void getLocalStore().write(state);
 }
 
 // First contact on sign-in: push the local snapshot up so account + device combine
