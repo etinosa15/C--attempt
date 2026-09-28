@@ -13,6 +13,7 @@ const NAV = [
   { href: "/learn/projects", label: "Projects" },
   { href: "/learn/playground", label: "Playground" },
   { href: "/learn/notebook", label: "Notebook" },
+  { href: "/learn/settings", label: "Settings" },
 ];
 
 // A short, human sync label so the learner always knows their work is safe. This

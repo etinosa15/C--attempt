@@ -1,0 +1,237 @@
+/* Settings — the React re-shell of the vanilla studio's settings-grid. A single
+   column of quiet panels: appearance, daily goal, backups, runtime, study rhythm.
+   Tokens from tokens.css. Account actions live in the top bar, not here. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+.notice {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.panel h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+.panel > p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+.muted {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.65;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.option {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.option:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.option small {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+.goalOption {
+  min-width: 4.5rem;
+}
+.optionActive {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+.meterHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+.meterHead strong {
+  font-size: 0.85rem;
+}
+.meterHead span {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  width: 100%;
+  height: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.bar::-webkit-progress-bar {
+  background: transparent;
+}
+.bar::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.25s;
+}
+.bar::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--accent);
+}
+.achieved {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btnPrimary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+}
+.btnDanger {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+.btnDanger:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.danger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.runtime {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+.runtime dt {
+  opacity: 0.7;
+}
+.runtime dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.rhythm {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.rhythm strong {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
