@@ -1,0 +1,186 @@
+/* Projects index — the React re-shell of the vanilla studio's #projects view. A
+   filterable grid of brief cards, each with a decorative art panel. Tokens from
+   tokens.css. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 0.45rem 0.85rem;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  opacity: 0.72;
+  cursor: pointer;
+}
+.tab:hover {
+  opacity: 1;
+}
+.tabActive {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: translateY(-2px);
+}
+.art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6.5rem;
+  padding: 1.2rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    color-mix(in srgb, var(--accent) 6%, transparent)
+  );
+}
+.art[data-art="1"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--link, #6ea8fe) 22%, transparent),
+    color-mix(in srgb, var(--link, #6ea8fe) 6%, transparent)
+  );
+}
+.art[data-art="2"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--success) 20%, transparent),
+    color-mix(in srgb, var(--success) 6%, transparent)
+  );
+}
+.artCode {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.level {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.8rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 65%, transparent);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+.body h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+.body p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.82;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+.badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}
+.badge[data-lang="cs"] {
+  background: color-mix(in srgb, var(--link, #6ea8fe) 18%, transparent);
+  color: color-mix(in srgb, var(--link, #6ea8fe) 85%, currentColor);
+}
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.skills span {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  opacity: 0.8;
+}
+.cardLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
