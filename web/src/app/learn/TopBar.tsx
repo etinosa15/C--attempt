@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
+import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
 import styles from "./learn.module.css";
 
@@ -87,6 +88,7 @@ export function TopBar({ email }: { email: string | null }) {
 
       <div className={styles.actions}>
         <SyncBadge />
+        <CommandPalette />
         <ThemeToggle />
         {email ? (
           <div className={styles.account} ref={menuRef}>

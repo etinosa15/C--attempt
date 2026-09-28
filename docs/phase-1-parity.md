@@ -64,17 +64,20 @@ prod-gated session and documented as a runbook at the end of this file.
 | Sync status indicator | `SyncBadge` in the top bar (`Saved on this device` / `Synced` / `Syncing…` / `Sync paused`) | 🟡 |
 | Multi-tab / corruption durability | `local-store.ts` (`.recovery`/`.before-import`/`.before-sync`, `_generation` epoch, Web Locks) + storage-event convergence; 10 unit tests | ✅ |
 | Theme (light/dark/system) | `ThemeToggle` + pre-paint boot script; device-local, never synced | ✅ |
-| Command palette (`openSearch`, Ctrl-K) | — | ⛔ |
+| Command palette (`openSearch`, Ctrl-K) | `CommandPalette` ([learn/CommandPalette.tsx](../web/src/app/learn/CommandPalette.tsx)) in the top bar | ✅ |
 
 **Action notes:**
 
 - **Sync status (🟡)** — the vanilla studio surfaced sync state inline in
   Settings; the port promotes it to a persistent top-bar badge so state is
   visible from every screen.
-- **Command palette (⛔)** — the vanilla `openSearch` fuzzy jump-to
-  (pages / actions / all 40 lessons, Ctrl-K) has **no React equivalent yet**.
-  It is a genuine parity gap, deferred beyond Phase 1; navigation is covered by
-  the top-bar nav and the Paths drill-down in the interim. Track as follow-up.
+- **Command palette (✅)** — the vanilla `openSearch` fuzzy jump (pages /
+  actions / all 40 lessons, Ctrl-K) is now ported as `CommandPalette`, mounted
+  in the top bar next to the sync badge. It drives navigation through the Next
+  router, toggles the device-local theme in place, and marks completed lessons
+  with a ✓; arrow keys move the highlight and Enter activates. The lesson badge
+  is a compact text chip (JS / C#) rather than the vanilla devicon logo, to
+  avoid the CDN image dependency.
 
 ## Verification (Step 10a)
 
