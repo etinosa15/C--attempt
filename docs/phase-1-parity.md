@@ -45,8 +45,9 @@ prod-gated session and documented as a runbook at the end of this file.
   ported faithfully with two intentional trims: privacy renders the
   accounts-enabled variant **without** the AI-tutor disclosure (the hosted tutor
   is Phase 5, not live), and terms includes the optional-accounts clause. The
-  local-setup download button links the hosted studio's generated ZIP (see the
-  open item under the runbook).
+  local-setup download button links the same-origin `/downloads/forge-local.zip`,
+  generated into `web/public/` at build by `web/scripts/build-local-zip.mjs`
+  (web's `prebuild`) — Vercel serves it, with no dependency on the Render studio.
 
 ## Actions / cross-cutting features
 
@@ -98,17 +99,25 @@ prod-gated session and documented as a runbook at the end of this file.
 
 The following is the **destructive** half of Step 10. It breaks the **live**
 Render studio's sync, so it must wait until the React surface is confirmed in
-production. **Do not execute these from an in-repo session** — they are recorded
-here for the prod-gated session.
+production. The *code* for step 1 is already merged and deployed **inert**; the
+runbook is the sequence to actually flip it on. **Do not execute steps 2–3 from
+an in-repo session** — they are recorded here for the prod-gated session.
 
-1. **Return 410 Gone from the legacy bridge handlers.** Add a shared helper in
-   [web/src/lib/api/cors.ts](../web/src/lib/api/cors.ts) and return it from:
-   `api/sync`, `api/me`, and `api/auth/{login,signup,logout,refresh,reset,delete}`
-   (route files confirmed present). 410 is safe: the vanilla studio's `request()`
-   degrades to local mode on it, whereas 401/429 are special-cased and would
-   loop. The only consumer is `public/sync-client.js`. Leave the Supabase-backed
-   app routes (`api/account`, `api/account/export`, `api/progress`,
-   `api/progress/adopt`) untouched — those serve the React app.
+1. **Retire the legacy bridge handlers (env-gated 410 Gone).** The shared helper
+   is already in [web/src/lib/api/cors.ts](../web/src/lib/api/cors.ts):
+   `legacyGone()` reads `FORGE_LEGACY_GONE`, and `goneResponse()` returns a
+   CORS-wrapped 410. Every legacy handler — `api/sync` (GET+POST), `api/me`
+   (GET), and `api/auth/{login,signup,logout,refresh,reset,delete}` (POST) —
+   already starts with `if (legacyGone()) return goneResponse(request);`. The flag
+   is **unset in production today**, so the routes behave exactly as before and
+   the committed code is deploy-safe. To retire them, set `FORGE_LEGACY_GONE=1`
+   in the Vercel environment (no code change, no redeploy of app logic needed —
+   instantly reversible by clearing the var). 410 is the right code: the vanilla
+   studio's `request()` degrades to local mode on it, whereas 401/429 are
+   special-cased and would loop. The only consumer is `public/sync-client.js`.
+   The Supabase-backed app routes (`api/account`, `api/account/export`,
+   `api/progress`, `api/progress/adopt`) are **not** gated — they serve the React
+   app and must keep working.
 2. **Suspend / remove the Render static service.** The `forge-code-academy`
    static service in [render.yaml](../render.yaml) serves the vanilla `dist/`.
    Suspend or delete it once the React app is the live surface. Optionally clear
@@ -119,17 +128,16 @@ here for the prod-gated session.
    `runner-worker.js`) via `next.config.ts` `externalDir`. Deleting `public/`
    breaks `next build`. Retire it from *deploy*, not from the repo.
 
-## Open item — local-setup download link
+## Resolved — local-setup download link
 
-`/local-setup` currently links `https://forge-code-academy.onrender.com/downloads/forge-local.zip`
-— the ZIP generated into Render's `dist/` by
-[scripts/build-hosted.mjs](../scripts/build-hosted.mjs) and served by the Render
-static site. **This link breaks when the Render service is suspended in Step
-10b.** Before cutover, choose one:
-
-- copy `forge-local.zip` into `web/public/downloads/` at build so Vercel serves
-  it, or
-- publish it as a GitHub release asset and link that.
-
-Flagged for confirmation; the default hosted link is a placeholder until then.
+`/local-setup` links the same-origin `/downloads/forge-local.zip`. The ZIP is
+generated into `web/public/downloads/` at build time by
+[web/scripts/build-local-zip.mjs](../web/scripts/build-local-zip.mjs), wired as
+web's `prebuild` so every `next build` (local and Vercel) refreshes it from the
+current repo-root `public/` sources. It mirrors the entry list of
+[scripts/build-hosted.mjs](../scripts/build-hosted.mjs) (the Render-side builder,
+kept in step until Render is retired at step 2 above). The generated ZIP is
+gitignored (`web/public/downloads/`). Vercel now serves the download with no
+dependency on the Render studio, so **the link survives the Step 10b cutover** —
+this open item is closed.
 

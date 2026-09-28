@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // POST /api/auth/reset — legacy-protocol password-reset-request adapter. The
 // cross-origin studio has nowhere to complete a recovery on its own origin (a
@@ -21,6 +21,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
 

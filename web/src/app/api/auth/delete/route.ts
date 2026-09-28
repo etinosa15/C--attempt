@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveUser } from "@/lib/supabase/route-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // POST /api/auth/delete — legacy-protocol account-erasure adapter (GDPR right to
 // erasure) for the cross-origin studio. The Next-native DELETE /api/account does the
@@ -21,6 +21,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
 

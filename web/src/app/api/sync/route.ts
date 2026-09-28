@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { resolveUser } from "@/lib/supabase/route-auth";
 import { readProgress, applyChanges } from "@/lib/progress/handlers";
 import { sanitizeChanges } from "@/lib/progress/core";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // /api/sync — the legacy studio's progress endpoint, mapped onto the same Supabase
 // merge logic as /api/progress (shared via handlers.ts). GET returns the current
@@ -15,6 +15,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
   const { supabase, user } = await resolveUser(request);
@@ -27,6 +28,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
   const { supabase, user } = await resolveUser(request);

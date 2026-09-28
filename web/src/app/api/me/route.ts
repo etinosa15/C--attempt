@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveUser } from "@/lib/supabase/route-auth";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // GET /api/me — the legacy studio's boot-time "is the cookie/token still a session?"
 // probe. Returns { email } on a valid session, 401 otherwise. Part of the legacy
@@ -13,6 +13,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
   const { user } = await resolveUser(request);

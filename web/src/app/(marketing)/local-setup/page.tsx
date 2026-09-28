@@ -11,10 +11,11 @@ export const metadata: Metadata = {
 
 // Local C# setup — the SSG re-shell of the vanilla studio's renderLocalSetup
 // (public/app.js). The online edition runs JavaScript in the browser; the local
-// edition also compiles C# with .NET. The download ZIP is produced by the hosted
-// studio build (scripts/build-hosted.mjs) and served from the Render studio
-// origin — Vercel does not serve it — so the button links there.
-const DOWNLOAD_URL = "https://forge-code-academy.onrender.com/downloads/forge-local.zip";
+// edition also compiles C# with .NET. The download ZIP is generated at build time
+// into web/public/downloads/ by web/scripts/build-local-zip.mjs (web's `prebuild`
+// step), so Vercel serves it from this same origin — no dependency on the Render
+// studio, which is retired at Step 10b.
+const DOWNLOAD_URL = "/downloads/forge-local.zip";
 
 export default function LocalSetup() {
   return (

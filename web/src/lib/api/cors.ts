@@ -8,7 +8,7 @@
 // bearer token (see public/sync-client.js). We still allow credentials for the
 // same-origin / cookie-capable case, which means the allow-origin header must echo a
 // specific origin — never "*". The allowlist is server-only config.
-import type { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const ALLOWED_ORIGINS = (process.env.FORGE_STUDIO_ORIGINS || "")
   .split(",")
@@ -57,4 +57,34 @@ export function withCors(request: Request, res: NextResponse): NextResponse {
 // cross-origin studio request always carries it).
 export function hasSyncHeader(request: Request): boolean {
   return request.headers.get("x-forge-sync") === "1";
+}
+
+// --- Step 10b cutover switch ------------------------------------------------
+// Retiring the legacy sync bridge is the destructive half of the cutover: it
+// breaks the *live* vanilla studio's sync, so it must not happen until the React
+// surface is the confirmed live surface. Rather than hard-code 410s (which would
+// go live on the next deploy and can't be walked back without another deploy),
+// the retirement is gated behind an env flag that is UNSET in production today.
+// The routes behave exactly as before while it is unset; setting FORGE_LEGACY_GONE
+// in the prod-gated session flips every adapter to 410 at once, and clearing it
+// restores them — no code change, instantly reversible. See docs/phase-1-parity.md.
+//
+// 410 (not 404/401/429) is deliberate: public/sync-client.js treats 410 as
+// "endpoint retired" and degrades to local-only mode, whereas 401/429 are
+// special-cased there and would retry or loop.
+export function legacyGone(): boolean {
+  return process.env.FORGE_LEGACY_GONE === "1";
+}
+
+// The 410 body each retired adapter returns (with CORS headers preserved so the
+// cross-origin studio can still read it). Call as the first line of a handler:
+//   if (legacyGone()) return goneResponse(request);
+export function goneResponse(request: Request): NextResponse {
+  return withCors(
+    request,
+    NextResponse.json(
+      { error: "This endpoint has been retired. Please update to the current app." },
+      { status: 410 },
+    ),
+  );
 }

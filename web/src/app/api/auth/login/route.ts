@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { readProgress } from "@/lib/progress/handlers";
 import { freshState } from "@/lib/progress/core";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // POST /api/auth/login — legacy-protocol sign-in adapter. Validates the credentials
 // against Supabase, sets the session cookie (for same-origin use) AND returns the
@@ -17,6 +17,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
 

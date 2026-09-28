@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { readProgress } from "@/lib/progress/handlers";
 import { freshState } from "@/lib/progress/core";
-import { preflight, withCors, hasSyncHeader } from "@/lib/api/cors";
+import { preflight, withCors, hasSyncHeader, legacyGone, goneResponse } from "@/lib/api/cors";
 
 // POST /api/auth/signup — legacy-protocol registration adapter. Creates the Supabase
 // account; the DB trigger seeds an empty progress row. When email confirmation is off
@@ -21,6 +21,7 @@ export function OPTIONS(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (legacyGone()) return goneResponse(request);
   if (!hasSyncHeader(request))
     return withCors(request, NextResponse.json({ error: "Missing sync header." }, { status: 403 }));
 
