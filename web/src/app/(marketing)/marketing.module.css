@@ -1,0 +1,547 @@
+/* Marketing surface — the public, indexable funnel (landing, pricing shell,
+   about). Server-rendered and static; the only client island is the nav's
+   session-aware CTA. Reads the shared tokens from tokens.css, so it inherits the
+   studio's brand + both themes for free. No paywall logic here — that is Phase 2. */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ---- Top nav ---- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.brandMark {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent), var(--glow-accent);
+}
+
+.navLinks {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+}
+
+.navLink {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+.navLink:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.navAuth {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.signIn {
+  padding: 0.45rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.signIn:hover {
+  opacity: 1;
+}
+
+/* Shared buttons ------------------------------------------------------------ */
+.btnPrimary,
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.btnPrimary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--glow-accent);
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+}
+.btnGhost {
+  background: transparent;
+  color: inherit;
+  border-color: color-mix(in srgb, currentColor 22%, transparent);
+}
+.btnGhost:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btnSmall {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+}
+.btnDisabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Page frame ---------------------------------------------------------------- */
+.main {
+  flex: 1;
+}
+.container {
+  width: min(72rem, 100% - 3rem);
+  margin-inline: auto;
+}
+
+.section {
+  padding: 3.5rem 0;
+}
+.sectionHead {
+  max-width: 42rem;
+  margin: 0 auto 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.sectionTitle {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+}
+.sectionLead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Hero ---------------------------------------------------------------------- */
+.hero {
+  text-align: center;
+  padding: clamp(3.5rem, 8vw, 6rem) 0 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+.heroTitle {
+  margin: 0;
+  max-width: 20ch;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  line-height: 1.05;
+}
+.heroTitle .grad {
+  background: linear-gradient(120deg, var(--accent), var(--warn));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.heroLead {
+  margin: 0;
+  max-width: 48ch;
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+.heroNote {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Tracks -------------------------------------------------------------------- */
+.tracks {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+.trackCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.6rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border-top: 3px solid var(--track, var(--accent));
+}
+.trackTag {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--track, var(--accent)) 16%, transparent);
+  color: color-mix(in srgb, var(--track, var(--accent)) 80%, currentColor);
+}
+.trackName {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.trackDesc {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.trackMeta {
+  margin-top: auto;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Steps (the learning loop) ------------------------------------------------- */
+.steps {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  counter-reset: step;
+}
+.step {
+  padding: 1.3rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.stepNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  margin-bottom: 0.7rem;
+  font-family: var(--display);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.stepTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+.stepDesc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Features ------------------------------------------------------------------ */
+.features {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.feature {
+  padding: 1.3rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+.featureTitle {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.featureDot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--glow-accent);
+  flex: none;
+}
+.featureDesc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* CTA band ------------------------------------------------------------------ */
+.ctaBand {
+  margin: 1rem auto 4rem;
+  padding: clamp(2rem, 5vw, 3.2rem);
+  text-align: center;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.ctaBand h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+}
+.ctaBand p {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Pricing shell ------------------------------------------------------------- */
+.notice {
+  width: min(48rem, 100% - 3rem);
+  margin: 0 auto 2.5rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--warn) 55%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.tiers {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  align-items: start;
+}
+.tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.6rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+.tierPopular {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: var(--glow-accent);
+}
+.badge {
+  position: absolute;
+  top: -0.7rem;
+  right: 1.2rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.tierName {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.tierPrice {
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.tierPriceNote {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.tierList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.tierList li {
+  padding-left: 1.3rem;
+  position: relative;
+  color: var(--muted);
+}
+.tierList li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--success);
+  font-weight: 700;
+}
+.tierCta {
+  margin-top: auto;
+}
+
+.trust {
+  margin: 2.5rem auto 0;
+  max-width: 40rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* About prose --------------------------------------------------------------- */
+.prose {
+  width: min(44rem, 100% - 3rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.prose h2 {
+  margin: 1.4rem 0 0;
+  font-size: 1.35rem;
+}
+.prose p {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.prose p.dim {
+  color: var(--muted);
+}
+
+/* Footer -------------------------------------------------------------------- */
+.footer {
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  padding: 2.5rem 1.5rem;
+}
+.footerInner {
+  width: min(72rem, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: space-between;
+}
+.footerBrand {
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.footerTagline {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.footerCols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+.footerCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.footerColHead {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.footerLink {
+  font-size: 0.9rem;
+  color: inherit;
+  opacity: 0.8;
+}
+.footerLink:hover {
+  opacity: 1;
+}
+.footerNote {
+  width: min(72rem, 100%);
+  margin: 2rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .navLinks {
+    display: none;
+  }
+  .nav {
+    padding: 0.7rem 1rem;
+    gap: 0.5rem;
+  }
+  .brand {
+    font-size: 0.95rem;
+    min-width: 0;
+  }
+  .navAuth {
+    gap: 0.35rem;
+  }
+  .btnSmall {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .signIn {
+    display: none;
+  }
+}
