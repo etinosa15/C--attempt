@@ -55,6 +55,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link href="/learn" className={styles.footerLink}>
                 Open the studio
               </Link>
+              <Link href="/local-setup" className={styles.footerLink}>
+                Local C# setup
+              </Link>
             </div>
             <div className={styles.footerCol}>
               <span className={styles.footerColHead}>Company</span>
@@ -66,6 +69,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               </Link>
               <Link href="/signup" className={styles.footerLink}>
                 Create account
+              </Link>
+              <Link href="/privacy" className={styles.footerLink}>
+                Privacy
+              </Link>
+              <Link href="/terms" className={styles.footerLink}>
+                Terms
               </Link>
             </div>
           </div>

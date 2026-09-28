@@ -458,6 +458,37 @@
 .prose p.dim {
   color: var(--muted);
 }
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose a:hover {
+  text-decoration: none;
+}
+.prose ol,
+.prose ul {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.prose li {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.prose code {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.9em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.prose strong {
+  font-weight: 700;
+}
 
 /* Footer -------------------------------------------------------------------- */
 .footer {
