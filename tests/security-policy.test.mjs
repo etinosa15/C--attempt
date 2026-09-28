@@ -81,7 +81,7 @@ test("the pinned boot-script hash matches the inline script in index.html", () =
 // with the backend origin the blueprint points the studio at (the Vercel app).
 test("render.yaml headers match the policy module", () => {
   const yaml = readFileSync(join(root, "render.yaml"), "utf8");
-  const renderConnect = "connect-src 'self' https://forge-app.vercel.app";
+  const renderConnect = "connect-src 'self' https://forge-app-omega-dusky.vercel.app";
   // appPolicy loads with no origins configured (connect-src 'self'); splice in
   // the backend origin to get the exact string the blueprint should carry.
   const expectedApp = appPolicy.replace("connect-src 'self'", renderConnect);

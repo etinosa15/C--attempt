@@ -32,8 +32,8 @@
 #     as FORGE_SYNC_ORIGIN so `deployment.js` shows the account UI. This value
 #     must equal your real Vercel production URL, and the Vercel app's
 #     FORGE_STUDIO_ORIGINS must in turn equal this studio's Render URL. The
-#     `https://forge-app.vercel.app` below is a PLACEHOLDER — replace it with the
-#     actual production domain Vercel assigns (see docs/phase-0-deploy.md, step 5).
+#     `https://forge-app-omega-dusky.vercel.app` below is the live Vercel
+#     production URL of the web/ app (see docs/phase-0-deploy.md, step 5).
 services:
   - type: web
     runtime: static
@@ -44,10 +44,10 @@ services:
       - key: NODE_VERSION
         value: "22"
       # Build-time origin: written into dist/deployment.js and the generated
-      # connect-src so the hosted app enables the account features. PLACEHOLDER —
-      # set to the real Vercel production URL of the web/ app.
+      # connect-src so the hosted app enables the account features. This is the
+      # live Vercel production URL of the web/ app.
       - key: FORGE_SYNC_ORIGIN
-        value: https://forge-app.vercel.app
+        value: https://forge-app-omega-dusky.vercel.app
     headers:
       # Applied to every response (matches the `/*` block in dist/_headers).
       - path: /*
@@ -71,13 +71,13 @@ services:
       # App documents: connect-src allows self + the backend origin (Vercel).
       - path: /
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app-omega-dusky.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /index.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app-omega-dusky.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       - path: /404.html
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+        value: "default-src 'self'; script-src 'self' 'sha256-wVtf6a4QHgMjh+7h5KU6dv08CH6VCRZGMgY7c+/qY4g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons/; connect-src 'self' https://forge-app-omega-dusky.vercel.app; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
       # DOM lab: stricter sandbox policy.
       - path: /dom-preview.html
         name: Content-Security-Policy
