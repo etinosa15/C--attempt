@@ -15,6 +15,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Editor } from "@/components/Editor";
+import { FocusCard } from "@/components/FocusCard";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useJsRunner } from "@/lib/runner/useJsRunner";
 import { useCsRunner } from "@/lib/runner/useCsRunner";
@@ -172,6 +173,7 @@ function PlaygroundInner() {
         </section>
 
         <aside className={styles.aside}>
+          <FocusCard />
           <div className={styles.promptsCard}>
             <h3>Follow a small question.</h3>
             <p>What happens if the input is empty?</p>

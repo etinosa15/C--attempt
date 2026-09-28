@@ -1,0 +1,125 @@
+/* Focus card — the playground aside's 25-minute session timer + daily-goal meter.
+   Mirrors the vanilla studio's focus controls. Tokens from tokens.css. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.4rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.clock {
+  font-family: var(--mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btnPrimary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+.meterHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+.meterHead strong {
+  font-size: 0.85rem;
+}
+.meterHead span {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  width: 100%;
+  height: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.bar::-webkit-progress-bar {
+  background: transparent;
+}
+.bar::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.25s;
+}
+.bar::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--accent);
+}
+.status,
+.achieved {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+.achieved {
+  color: var(--success);
+  opacity: 1;
+  font-weight: 600;
+}
+.lifetime {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.6;
+}
+.announce {
+  margin: 0;
+  min-height: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--success);
+  font-weight: 600;
+}
+.announce:empty {
+  min-height: 0;
+}
