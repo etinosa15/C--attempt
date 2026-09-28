@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
+import type { Entitlement } from "@/lib/entitlements/types";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
 import styles from "./learn.module.css";
@@ -34,7 +35,48 @@ function SyncBadge() {
   );
 }
 
-export function TopBar({ email }: { email: string | null }) {
+// The plan/trial state, one glance from every screen. During the reverse trial it
+// counts down (a gentle, honest nudge, not a wall); on the Free floor it invites
+// an upgrade; a paid learner sees a quiet "Pro". Paid Pro is the only state
+// without an upgrade CTA. Rendered only when signed in — a signed-out learner has
+// no account entitlement.
+function PlanPill({ entitlement }: { entitlement: Entitlement | null }) {
+  if (!entitlement) return null;
+
+  if (entitlement.inTrial) {
+    const days = entitlement.trialDaysLeft ?? 0;
+    const left = days <= 1 ? "ends today" : `${days} days left`;
+    return (
+      <Link href="/pricing" className={styles.planPill} data-plan="trial">
+        <span className={styles.planPillLabel}>Pro trial · {left}</span>
+        <span className={styles.planPillCta}>Upgrade</span>
+      </Link>
+    );
+  }
+
+  if (entitlement.tier === "pro") {
+    return (
+      <span className={styles.planPill} data-plan="pro">
+        <span className={styles.planPillLabel}>Pro</span>
+      </span>
+    );
+  }
+
+  return (
+    <Link href="/pricing" className={styles.planPill} data-plan="free">
+      <span className={styles.planPillLabel}>Free</span>
+      <span className={styles.planPillCta}>Upgrade</span>
+    </Link>
+  );
+}
+
+export function TopBar({
+  email,
+  entitlement,
+}: {
+  email: string | null;
+  entitlement: Entitlement | null;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -88,6 +130,7 @@ export function TopBar({ email }: { email: string | null }) {
 
       <div className={styles.actions}>
         <SyncBadge />
+        {email && <PlanPill entitlement={entitlement} />}
         <CommandPalette />
         <ThemeToggle />
         {email ? (

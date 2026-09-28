@@ -393,3 +393,58 @@
 .paletteFoot kbd {
   margin-left: auto;
 }
+
+/* Plan / trial pill in the top bar (see TopBar PlanPill). */
+.planPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.35rem 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.planPill[data-plan="trial"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}
+
+.planPill[data-plan="pro"] {
+  padding: 0.3rem 0.7rem;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.planPill[data-plan="free"] {
+  opacity: 0.9;
+}
+
+/* The inner "Upgrade" chip on the actionable (trial / free) pills. */
+.planPillCta {
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.planPill:hover .planPillCta {
+  filter: brightness(1.06);
+}
+
+@media (max-width: 640px) {
+  /* Keep the countdown label off small screens; the Upgrade chip carries it. */
+  .planPill[data-plan="trial"] .planPillLabel,
+  .planPill[data-plan="free"] .planPillLabel {
+    display: none;
+  }
+}

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getEntitlement } from "@/lib/entitlements/server";
 import { ProgressProvider } from "@/lib/progress/useProgress";
 import { TopBar } from "./TopBar";
 import styles from "./learn.module.css";
@@ -18,10 +19,15 @@ export default async function LearnLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Resolve the entitlement server-side so the top bar renders the trial/plan
+  // state with no flash and the browser receives only capability booleans (no
+  // tokens). Signed-out learners have no account entitlement to surface.
+  const entitlement = user ? await getEntitlement(supabase, user.id) : null;
+
   return (
     <ProgressProvider signedIn={!!user}>
       <div className={styles.shell}>
-        <TopBar email={user?.email ?? null} />
+        <TopBar email={user?.email ?? null} entitlement={entitlement} />
         <main className={styles.content}>{children}</main>
       </div>
     </ProgressProvider>
