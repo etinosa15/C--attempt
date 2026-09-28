@@ -9,6 +9,7 @@ import styles from "./learn.module.css";
 
 const NAV = [
   { href: "/learn", label: "Overview" },
+  { href: "/learn/paths", label: "Paths" },
   { href: "/learn/review", label: "Review" },
   { href: "/learn/projects", label: "Projects" },
   { href: "/learn/playground", label: "Playground" },

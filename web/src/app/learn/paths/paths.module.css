@@ -1,0 +1,257 @@
+/* Paths — the React re-shell of the vanilla studio's #paths screen. A tab bar over
+   per-track module grids (or the language-bridge comparison). Shares the token
+   vocabulary and rhythm of overview.module.css and settings.module.css. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.tab:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.tabActive {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}
+.tabCount {
+  font-size: 0.72rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+.trackHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--track, var(--accent));
+}
+.trackId {
+  margin-right: auto;
+}
+.trackName {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.5rem;
+}
+.trackTag {
+  margin: 0.1rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+.trackPct {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+.certBtn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--track, var(--accent)) 45%, transparent);
+  background: transparent;
+  color: color-mix(in srgb, var(--track, var(--accent)) 80%, currentColor);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.certBtn:hover {
+  background: color-mix(in srgb, var(--track, var(--accent)) 12%, transparent);
+}
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.module {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.moduleHead {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.5rem;
+}
+.moduleIndex {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  opacity: 0.35;
+  font-variant-numeric: tabular-nums;
+}
+.moduleName {
+  margin: 0;
+  font-size: 1rem;
+}
+.moduleMeta {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.lesson {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 9px;
+  color: inherit;
+  text-decoration: none;
+}
+.lesson:hover {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.lessonOrder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  opacity: 0.75;
+}
+.lessonDone .lessonOrder {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success);
+  opacity: 1;
+}
+.lessonBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.lessonBody small {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.6;
+}
+.chevron {
+  margin-left: auto;
+  opacity: 0.4;
+  font-size: 1.1rem;
+}
+
+.bridgeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.bridge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.4rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.bridgeTitle {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+.comparison {
+  display: grid;
+  gap: 0.7rem;
+}
+.codeFig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.codeCaption {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.code {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+.bridgeNote {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  opacity: 0.85;
+}
