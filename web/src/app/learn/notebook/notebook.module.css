@@ -1,0 +1,162 @@
+/* Notebook — the React re-shell of the vanilla studio's #notebook view. A wide
+   scratchpad column beside a grid of read-only note cards. Tokens from tokens.css. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.75rem;
+}
+.sectionTitle h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+.pill {
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+  font-weight: 700;
+}
+.savedCount {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+
+.scratchPanel {
+  position: sticky;
+  top: 5rem;
+  padding: 1.4rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  opacity: 0.75;
+  line-height: 1.5;
+}
+.scratch {
+  width: 100%;
+  min-height: 16rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  color: inherit;
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+.scratch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.savedList {
+  min-width: 0;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+.card[data-static="true"] {
+  cursor: default;
+}
+.card:not([data-static="true"]):hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.card small {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.card h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.05rem;
+}
+.card p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  opacity: 0.82;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cardCta {
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.empty {
+  padding: 2.5rem 1.5rem;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
+  text-align: center;
+  line-height: 1.7;
+  opacity: 0.7;
+  font-size: 0.92rem;
+}
