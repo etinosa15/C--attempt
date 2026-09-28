@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
-import { streak } from "@/lib/progress/core";
+import { streak, certificateEarned } from "@/lib/progress/core";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
+import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./overview.module.css";
 
 const TRACK_ORDER: Lang[] = ["js", "cs"];
 
 export default function Overview() {
   const { state, ready } = useProgress();
+  const [certLang, setCertLang] = useState<Lang | null>(null);
 
   const done = new Set(state.completed ?? []);
   const days = streak(state.activity ?? {});
@@ -47,6 +50,7 @@ export default function Overview() {
           const complete = track.lessons.filter((l) => done.has(l.id)).length;
           const percent = total > 0 ? Math.round((complete / total) * 100) : 0;
           const next = track.lessons.find((l) => !done.has(l.id)) ?? track.lessons[0];
+          const earned = certificateEarned(state.completed ?? [], track.lessons.map((l) => l.id));
 
           return (
             <section key={lang} className={styles.track} style={{ ["--track" as string]: track.color }}>
@@ -66,14 +70,29 @@ export default function Overview() {
               </div>
 
               {next && (
-                <Link href={`/learn/lesson/${next.id}`} className={styles.trackCta}>
-                  {complete === 0 ? "Start the track" : complete === total ? "Review lessons" : `Next: ${next.title}`}
-                </Link>
+                <div className={styles.ctaRow}>
+                  <Link href={`/learn/lesson/${next.id}`} className={styles.trackCta}>
+                    {complete === 0 ? "Start the track" : complete === total ? "Review lessons" : `Next: ${next.title}`}
+                  </Link>
+                  {earned && (
+                    <button
+                      type="button"
+                      className={styles.certBtn}
+                      onClick={() => setCertLang(lang)}
+                    >
+                      View certificate
+                    </button>
+                  )}
+                </div>
               )}
             </section>
           );
         })}
       </div>
+
+      {certLang && (
+        <CertificateDialog lang={certLang} onClose={() => setCertLang(null)} />
+      )}
 
       {!ready && <p className={styles.loading}>Loading your progress…</p>}
     </div>

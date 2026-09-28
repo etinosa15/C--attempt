@@ -1,0 +1,95 @@
+/* Certificate dialog — a native <dialog> modal. Tokens from tokens.css. */
+.dialog {
+  width: min(92vw, 40rem);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 18px;
+  background: var(--bg);
+  color: inherit;
+}
+.dialog::backdrop {
+  background: color-mix(in srgb, #000 55%, transparent);
+}
+.frame {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.frame :global(svg) {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.nameForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+}
+.nameForm label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.nameRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.nameInput {
+  flex: 1 1 12rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.nameInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btnPrimary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+}
+.note {
+  margin: 1rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.7;
+}

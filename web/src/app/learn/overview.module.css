@@ -143,6 +143,13 @@
   white-space: nowrap;
 }
 
+.ctaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .trackCta {
   align-self: flex-start;
   padding: 0.55rem 0.95rem;
@@ -152,6 +159,21 @@
   font-weight: 700;
   font-size: 0.88rem;
   text-decoration: none;
+}
+
+.certBtn {
+  padding: 0.55rem 0.95rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--track, var(--accent)) 45%, transparent);
+  background: transparent;
+  color: color-mix(in srgb, var(--track, var(--accent)) 80%, currentColor);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.certBtn:hover {
+  background: color-mix(in srgb, var(--track, var(--accent)) 12%, transparent);
 }
 
 .loading {
