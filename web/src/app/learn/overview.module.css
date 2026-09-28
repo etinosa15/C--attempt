@@ -1,0 +1,161 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.streak {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.streak strong {
+  font-size: 1.2rem;
+  color: var(--accent);
+}
+
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+
+.resume:hover {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.resumeLabel {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.resumeTitle {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.resumeCta {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tracks {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.4rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border-top: 3px solid var(--track, var(--accent));
+}
+
+.trackHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.trackName {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.35rem;
+}
+
+.trackTag {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--track, var(--accent)) 18%, transparent);
+  color: color-mix(in srgb, var(--track, var(--accent)) 80%, currentColor);
+  white-space: nowrap;
+}
+
+.trackDesc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: auto;
+}
+
+.bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--track, var(--accent));
+  transition: width 0.4s ease;
+}
+
+.count {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.trackCta {
+  align-self: flex-start;
+  padding: 0.55rem 0.95rem;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.loading {
+  text-align: center;
+  opacity: 0.6;
+  font-size: 0.9rem;
+}

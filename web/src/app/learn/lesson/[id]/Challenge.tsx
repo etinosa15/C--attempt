@@ -1,0 +1,277 @@
+"use client";
+
+// The "make the code yours" beat: an editor seeded from the learner's saved draft
+// (or the starter), a Run/Check button, and staged hints. Passing every check
+// records the lesson id in `solved` once and counts toward today's activity —
+// the other half of the completion gate (see canComplete in the vanilla studio).
+//
+// JavaScript runs in the isolated in-browser Web Worker (useJsRunner). C# runs in
+// the vanilla studio's loopback .NET program (useCsRunner) when it is reachable —
+// the local edition; in the hosted edition no runner answers, so the challenge is
+// fully editable and its solution is revealable, but Check is replaced by a note
+// pointing to the local edition. This mirrors the studio's hosted/local C# split.
+import { useEffect, useRef, useState } from "react";
+import { Editor } from "@/components/Editor";
+import { useProgress } from "@/lib/progress/useProgress";
+import { useJsRunner } from "@/lib/runner/useJsRunner";
+import { useCsRunner } from "@/lib/runner/useCsRunner";
+import {
+  dayKey,
+  hintTiers,
+  formatValue,
+  valueKind,
+  typeMismatch,
+  explainError,
+  type HintTier,
+} from "@/lib/progress/core";
+import type { Lesson, RunResult } from "@/lib/curriculum";
+import styles from "./lesson.module.css";
+
+const DRAFT_DEBOUNCE_MS = 500;
+
+// "an array" / "a string": kind name with the right article.
+const withArticle = (value: unknown) => {
+  const kind = valueKind(value);
+  return (/^[aeiou]/i.test(kind) ? "an " : "a ") + kind;
+};
+
+export function Challenge({ lesson }: { lesson: Lesson }) {
+  const { state, update } = useProgress();
+  const isJs = lesson.lang === "js";
+  const js = useJsRunner();
+  const cs = useCsRunner();
+  const running = isJs ? js.running : cs.running;
+  // C# can only be checked when the loopback .NET runner answers (local edition).
+  // `cs.available` is null while probing, then true/false. JS is always runnable.
+  const canRun = isJs || cs.available === true;
+
+  const [code, setCode] = useState(lesson.challenge.starter);
+  const [result, setResult] = useState<RunResult | null>(null);
+  const touched = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hydrate the editor from the saved draft once progress loads, but stop as
+  // soon as the learner types so we never clobber an in-progress edit.
+  useEffect(() => {
+    if (touched.current) return;
+    setCode(state.drafts[lesson.id] ?? lesson.challenge.starter);
+  }, [state.drafts, lesson.id, lesson.challenge.starter]);
+
+  const persistDraft = (value: string) => {
+    update((prev) => ({ ...prev, drafts: { ...prev.drafts, [lesson.id]: value } }));
+  };
+
+  function onCodeChange(value: string) {
+    touched.current = true;
+    setCode(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => persistDraft(value), DRAFT_DEBOUNCE_MS);
+  }
+
+  function reset() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    touched.current = true;
+    setCode(lesson.challenge.starter);
+    persistDraft(lesson.challenge.starter);
+  }
+
+  const tiers = hintTiers(lesson);
+  const unlocked = Math.min(state.hints[lesson.id] || 0, tiers.length);
+
+  function revealHint() {
+    update((prev) => ({
+      ...prev,
+      hints: {
+        ...prev.hints,
+        [lesson.id]: Math.min((prev.hints[lesson.id] || 0) + 1, tiers.length),
+      },
+    }));
+  }
+
+  async function check() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    persistDraft(code); // never lose the exact code that was run
+    // JS grades in the browser against the lesson's tests; C# sends only the code
+    // and lesson id, and the loopback program grades against its own copy of the
+    // tests (so a submission can't fake a pass). Both return the same RunResult.
+    const r = isJs
+      ? await js.run(code, lesson.challenge.tests)
+      : await cs.run(code, lesson.id);
+    setResult(r);
+    const allPassed =
+      r.checks.length === lesson.challenge.tests.length &&
+      r.checks.length > 0 &&
+      r.checks.every((c) => c.passed);
+    if (allPassed) {
+      if (!state.solved.includes(lesson.id)) {
+        update((prev) => ({
+          ...prev,
+          solved: prev.solved.includes(lesson.id)
+            ? prev.solved
+            : [...prev.solved, lesson.id],
+          activity: {
+            ...prev.activity,
+            [dayKey()]: (Number(prev.activity[dayKey()]) || 0) + 1,
+          },
+        }));
+      }
+    } else if (unlocked < tiers.length) {
+      // A check ran short — surface the next staged hint, exactly when stuck.
+      revealHint();
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <p className={styles.prompt}>{lesson.challenge.prompt}</p>
+
+      {!isJs && cs.available === null && (
+        <p className={styles.csNotice}>Checking for the local .NET runner…</p>
+      )}
+      {!isJs && cs.available === false && (
+        <p className={styles.csNotice}>
+          You can write and study this C# solution here. Running and checking C#
+          needs the local edition — a small program that compiles C# with .NET on
+          your computer. Your drafts travel with your progress, so pick up right
+          here once it&apos;s running.
+        </p>
+      )}
+
+      <Editor
+        value={code}
+        onChange={onCodeChange}
+        lang={lesson.lang}
+        ariaLabel={`${lesson.title} code editor`}
+      />
+
+      <div className={styles.runRow}>
+        <button
+          type="button"
+          className={styles.btnPrimary + " " + styles.btn}
+          onClick={check}
+          disabled={!canRun || running}
+        >
+          {running ? "Running…" : "Check solution"}
+        </button>
+        <button type="button" className={styles.btn} onClick={reset}>
+          Reset
+        </button>
+        {!isJs && cs.available === true && (
+          <span className={styles.runtimeLabel}>
+            Real .NET compiler{cs.sdk ? ` · ${cs.sdk}` : ""}
+          </span>
+        )}
+      </div>
+
+      {result && <RunOutput result={result} lang={lesson.lang} />}
+
+      <Hints
+        tiers={tiers}
+        unlocked={unlocked}
+        solution={lesson.challenge.solution}
+        onReveal={revealHint}
+      />
+    </div>
+  );
+}
+
+function RunOutput({ result, lang }: { result: RunResult; lang: string }) {
+  const guide = result.error ? explainError(result.error, lang as "js" | "cs") : null;
+  const total = result.checks.length;
+  const passed = result.checks.filter((c) => c.passed).length;
+
+  return (
+    <div className={styles.output}>
+      <div className={styles.outputHead}>Output &amp; test results</div>
+      {result.error && (
+        <div className={styles.runError}>
+          <strong>{guide ? guide.summary : "Something to investigate"}</strong>
+          {guide && <p style={{ margin: "0 0 0.4rem" }}>{guide.hint}</p>}
+          <pre>{result.error}</pre>
+        </div>
+      )}
+      {result.output && <pre className={styles.console}>{result.output}</pre>}
+      {total > 0 && (
+        <>
+          <div
+            className={`${styles.summary} ${passed === total ? styles.summaryPass : styles.summaryFail}`}
+          >
+            {passed} / {total} checks passed
+          </div>
+          {result.checks.map((c, i) => (
+            <div
+              key={i}
+              className={`${styles.check} ${c.passed ? styles.checkPass : styles.checkFail}`}
+            >
+              <span className={styles.checkMark} aria-hidden="true">
+                {c.passed ? "✓" : "×"}
+              </span>
+              <div>
+                <strong>{c.label}</strong>
+                {!c.passed && (
+                  <small>
+                    Expected <code>{formatValue(c.expected)}</code>
+                    <br />
+                    Received <code>{formatValue(c.actual)}</code>
+                    {typeMismatch(c.expected, c.actual) && (
+                      <>
+                        <br />
+                        The value is right, but the type is not: expected{" "}
+                        {withArticle(c.expected)}, received {withArticle(c.actual)}.
+                      </>
+                    )}
+                  </small>
+                )}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Hints({
+  tiers,
+  unlocked,
+  solution,
+  onReveal,
+}: {
+  tiers: HintTier[];
+  unlocked: number;
+  solution: string;
+  onReveal: () => void;
+}) {
+  const next = tiers[unlocked];
+  return (
+    <div className={styles.hints}>
+      {unlocked === 0 && (
+        <p className={styles.hintLead}>
+          Stuck? Reveal staged help one step at a time. Hints also surface on their
+          own when your checks keep coming up short.
+        </p>
+      )}
+      {tiers.slice(0, unlocked).map((tier, i) => (
+        <div key={i} className={styles.hint}>
+          <strong>{tier.title}</strong>
+          {tier.solution ? (
+            <pre className={styles.code} style={{ marginTop: "0.5rem" }}>
+              {solution}
+            </pre>
+          ) : (
+            <span>{tier.body}</span>
+          )}
+        </div>
+      ))}
+      {next && (
+        <button type="button" className={styles.btn} onClick={onReveal}>
+          {unlocked === 0
+            ? "Show a hint"
+            : next.solution
+              ? "Reveal the worked solution"
+              : "Show another hint"}
+        </button>
+      )}
+    </div>
+  );
+}

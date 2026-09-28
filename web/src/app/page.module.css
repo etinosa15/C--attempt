@@ -50,8 +50,8 @@
 }
 
 .primary {
-  background: #c8971f;
-  color: #14110b;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 .secondary {

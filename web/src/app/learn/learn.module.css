@@ -1,0 +1,197 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brandMark {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.nav {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: 0.5rem;
+}
+
+.navLink {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.navLink:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.sync {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.sync[data-status="error"] {
+  color: #d9534f;
+  opacity: 1;
+}
+
+.sync[data-status="synced"] {
+  color: color-mix(in srgb, var(--accent) 80%, currentColor);
+  opacity: 1;
+}
+
+.theme {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.theme:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.signIn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.account {
+  position: relative;
+}
+
+.accountBtn {
+  max-width: 12rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountBtn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  min-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: 0 12px 34px color-mix(in srgb, #000 22%, transparent);
+}
+
+.menu form {
+  display: contents;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menuItem:hover {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
+.menuDanger {
+  color: #d9534f;
+}
+
+.menuDanger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    display: none;
+  }
+  .accountBtn {
+    max-width: 8rem;
+  }
+}

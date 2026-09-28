@@ -1,0 +1,538 @@
+/* Lesson surface — the React re-shell of the vanilla studio's #lesson view
+   (public/app.js renderLesson). Same four-beat flow: understand → predict →
+   practice → reflect. Chrome reads the design tokens in tokens.css; the syntax
+   colours in code come from the global .tok-* rules there. */
+.back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.72;
+}
+.back:hover {
+  opacity: 1;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 46rem;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+.done {
+  color: var(--success);
+  font-weight: 700;
+  opacity: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15rem;
+  gap: 2.5rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .aside {
+    display: none;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.sectionHead span {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.8;
+}
+.sectionHead h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.3rem;
+}
+
+.prose h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+.prose p {
+  margin: 0 0 1.2rem;
+  line-height: 1.7;
+  opacity: 0.88;
+}
+/* Shared code block — worked example and revealed solutions. */
+.code {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, var(--bg) 60%, #000 6%);
+  overflow: auto;
+  font: 13px / 1.7 var(--mono);
+}
+.codeCaption {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.explanation {
+  margin: 0;
+  line-height: 1.7;
+  opacity: 0.88;
+}
+
+.callout {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  background: color-mix(in srgb, var(--warn) 9%, transparent);
+}
+.callout strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.callout p {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/* A panel wrapper reused by quiz / challenge / completion. */
+.panel {
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+/* Quiz */
+.quizQuestion {
+  margin: 0 0 1rem;
+  font-family: var(--display);
+  font-size: 1.1rem;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  cursor: pointer;
+}
+.choice:hover {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.choice input {
+  accent-color: var(--accent);
+}
+.choiceLetter {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.feedback {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+.feedbackOk {
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+.feedbackNo {
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+/* Buttons */
+.btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btnPrimary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* Challenge */
+.prompt {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.runRow {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.csNotice {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--link) 40%, transparent);
+  background: color-mix(in srgb, var(--link) 10%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+/* The live .NET runtime badge, shown beside the run buttons once the loopback
+   compiler answers — reassurance that C# checks run against a real compiler. */
+.runtimeLabel {
+  align-self: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.runtimeLabel::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--success);
+}
+/* Run output + test results */
+.output {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  overflow: hidden;
+}
+.outputHead {
+  padding: 0.5rem 0.85rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+.console {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font: 12.5px / 1.6 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.runError {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+.runError strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--danger);
+}
+.runError pre {
+  margin: 0.4rem 0 0;
+  font: 12px / 1.55 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+  opacity: 0.85;
+}
+.summary {
+  padding: 0.6rem 1rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.summaryPass {
+  color: var(--success);
+}
+.summaryFail {
+  color: var(--accent);
+}
+.check {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.checkMark {
+  font-weight: 700;
+  line-height: 1.5;
+}
+.checkPass .checkMark {
+  color: var(--success);
+}
+.checkFail .checkMark {
+  color: var(--danger);
+}
+.check strong {
+  font-size: 0.9rem;
+}
+.check small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+.check code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* Hints */
+.hints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.hintLead {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.72;
+  line-height: 1.5;
+}
+.hint {
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.hint strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+/* Reflect — notes + completion */
+.notes {
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  color: inherit;
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+.notes:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.notesCaption {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.6;
+}
+
+.completion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+.completion h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+.completion p {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.8;
+  max-width: 30rem;
+}
+
+/* Prev / next nav */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+.navLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-width: 48%;
+}
+.navLink small {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.navLink strong {
+  font-family: var(--display);
+  font-weight: 600;
+}
+.navLink:hover strong {
+  color: var(--accent);
+}
+.navNext {
+  text-align: right;
+  margin-left: auto;
+}
+/* Aside — table of contents + source link */
+.aside {
+  position: sticky;
+  top: 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.toc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.tocTitle {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+.tocItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.tocItem:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.tocItem span {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+.tocItem i {
+  margin-left: auto;
+  color: var(--success);
+  font-style: normal;
+}
+.source {
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+.source h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+.source p {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+.source a {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.88rem;
+}
+.source a:hover {
+  text-decoration: underline;
+}

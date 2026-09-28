@@ -1,18 +1,8 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
+/* Global stylesheet. The design foundation (tokens, fonts, base reset, aurora)
+   lives in tokens.css — imported first so every page reads the same tokens.
+   Keep app-wide, non-token rules below; per-component styles stay in CSS
+   Modules. See docs/phase-1-plan.md ("Design system port"). */
+@import "./tokens.css";
 
 html,
 body {
@@ -21,29 +11,21 @@ body {
 }
 
 body {
-  min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
+/* Visually-hidden but screen-reader-available. Used for form labels the design
+   conveys visually (quiz legends, editor labels). App-wide utility, so it lives
+   here rather than in a CSS Module. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
