@@ -84,3 +84,28 @@
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+/* Region banner: names the country/currency Paddle localized to, with the
+   USD-override toggle. Sits above the billing toggle, centered like it. */
+.regionNote {
+  margin: 0 auto 1.25rem;
+  max-width: 44rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.regionToggle {
+  font: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.regionToggle:hover {
+  opacity: 0.8;
+}

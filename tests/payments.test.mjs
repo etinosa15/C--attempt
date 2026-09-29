@@ -11,6 +11,7 @@ const { resolveSelection } = await import("../web/src/lib/payments/catalog.ts");
 const { verifyPaddleSignature, subscriptionUpsertFromEvent } = await import(
   "../web/src/lib/payments/paddle.ts"
 );
+const { pickRegionalPrices } = await import("../web/src/lib/payments/pricing-preview.ts");
 
 // --- catalog: only sellable combinations resolve --------------------------
 test("resolveSelection maps plans to their price env + kind", () => {
@@ -139,4 +140,90 @@ test("events without a user_id, or of unknown type, are not acted on", () => {
     subscriptionUpsertFromEvent({ event_type: "address.created", data: { custom_data: { user_id: "u" } } }),
     null,
   );
+});
+
+// --- region-aware pricing: map a PricePreview() result to display strings ---
+const PRICE_IDS = { proMonthly: "pri_m", proAnnual: "pri_a", lifetime: "pri_l" };
+
+function previewWith(pairs, extra = {}) {
+  return {
+    data: {
+      currencyCode: extra.currency ?? "EUR",
+      address: { countryCode: extra.country ?? "DE" },
+      details: {
+        lineItems: pairs.map(([id, total]) => ({
+          price: { id },
+          formattedTotals: { total },
+        })),
+      },
+    },
+  };
+}
+
+test("pickRegionalPrices reads Paddle's formatted totals for all three prices", () => {
+  const out = pickRegionalPrices(
+    previewWith([
+      ["pri_m", "€24.00"],
+      ["pri_a", "€179.00"],
+      ["pri_l", "€289.00"],
+    ]),
+    PRICE_IDS,
+  );
+  assert.deepEqual(out, {
+    country: "DE",
+    currency: "EUR",
+    proMonthly: "€24.00",
+    proAnnual: "€179.00",
+    lifetime: "€289.00",
+  });
+});
+
+test("pickRegionalPrices returns null unless all three prices resolve (no mixed currency)", () => {
+  // Missing the lifetime line → all-or-nothing bails out.
+  assert.equal(
+    pickRegionalPrices(
+      previewWith([
+        ["pri_m", "€24.00"],
+        ["pri_a", "€179.00"],
+      ]),
+      PRICE_IDS,
+    ),
+    null,
+  );
+  // A line item with no formatted total counts as unresolved.
+  assert.equal(
+    pickRegionalPrices(
+      previewWith([
+        ["pri_m", "€24.00"],
+        ["pri_a", "€179.00"],
+        ["pri_l", ""],
+      ]),
+      PRICE_IDS,
+    ),
+    null,
+  );
+});
+
+test("pickRegionalPrices tolerates a missing/empty response and null country", () => {
+  assert.equal(pickRegionalPrices({}, PRICE_IDS), null);
+  assert.equal(pickRegionalPrices({ data: { details: { lineItems: null } } }, PRICE_IDS), null);
+  const out = pickRegionalPrices(
+    {
+      data: {
+        currencyCode: "GBP",
+        address: null,
+        details: {
+          lineItems: [
+            { price: { id: "pri_m" }, formattedTotals: { total: "£19.00" } },
+            { price: { id: "pri_a" }, formattedTotals: { total: "£145.00" } },
+            { price: { id: "pri_l" }, formattedTotals: { total: "£239.00" } },
+          ],
+        },
+      },
+    },
+    PRICE_IDS,
+  );
+  assert.equal(out.country, null);
+  assert.equal(out.currency, "GBP");
+  assert.equal(out.proAnnual, "£145.00");
 });

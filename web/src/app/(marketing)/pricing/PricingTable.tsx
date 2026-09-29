@@ -13,6 +13,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Entitlement } from "@/lib/entitlements/types";
+import { loadPaddleJs } from "@/lib/payments/paddle-js";
+import {
+  pickRegionalPrices,
+  type PricePreviewResult,
+  type RegionalPrices,
+} from "@/lib/payments/pricing-preview";
 import marketing from "../marketing.module.css";
 import styles from "./pricing.module.css";
 
@@ -20,11 +26,23 @@ type Billing = "annual" | "monthly";
 
 // Approximate launch pricing (docs/monetization-plan.md D5). Annual is shown as its
 // monthly-equivalent with the yearly total as the note; monthly is the anchor above it.
+// These are the fallback USD strings; when Paddle is configured the pricing table
+// shows Paddle's own localized totals instead (see the regional-pricing effect).
 const PRICING = {
   proAnnual: { amount: "$15", unit: "/mo", note: "$180 billed yearly · save 40%" },
   proMonthly: { amount: "$25", unit: "/mo", note: "billed monthly" },
   lifetime: { amount: "$299", unit: "once", note: "one payment, yours forever" },
 };
+
+// Config the pricing page needs to ask Paddle for localized prices.
+type PaddleConfig =
+  | { configured: false }
+  | {
+      configured: true;
+      clientToken: string;
+      environment: "sandbox" | "production";
+      prices: { proMonthly: string; proAnnual: string; lifetime: string };
+    };
 
 type Feature = { label: string; soon?: boolean };
 
@@ -62,6 +80,15 @@ type Viewer = {
 
 /** A resolved call to action for a tier card. */
 type Cta = { label: string; href?: string; disabled?: boolean; hint?: string };
+
+/** Turn an ISO country code into a readable name ("DE" → "Germany"), code as fallback. */
+function regionName(code: string): string {
+  try {
+    return new Intl.DisplayNames(undefined, { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 function FeatureList({ features }: { features: Feature[] }) {
   return (
@@ -106,6 +133,12 @@ export function PricingTable() {
     trialDaysLeft: null,
   });
 
+  // Localized pricing from Paddle (null = not resolved → static USD strings). The
+  // toggle lets a visitor flip back to the standard USD anchors; both the fallback
+  // and this override render PRICING, so the UI has one honest "no regional" path.
+  const [regional, setRegional] = useState<RegionalPrices | null>(null);
+  const [showUsd, setShowUsd] = useState(false);
+
   // Read the entitlement once for CTA wording. 401 (signed out) is expected and
   // simply means "start the trial"; any error degrades to the signed-out CTAs.
   useEffect(() => {
@@ -134,7 +167,57 @@ export function PricingTable() {
     };
   }, []);
 
+  // Ask Paddle for localized, tax-correct totals for the visitor's region. Paddle is
+  // the merchant of record, so PricePreview (IP-geolocated) returns exactly what
+  // checkout will charge — no homegrown PPP table that could show a price we can't
+  // honor. Unconfigured/failed/partial → stays null and the page keeps static USD.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const cfgRes = await fetch("/api/paddle-config", { cache: "no-store" });
+        if (!cfgRes.ok) return;
+        const cfg = (await cfgRes.json()) as PaddleConfig;
+        if (!cfg.configured) return;
+
+        const paddle = await loadPaddleJs();
+        paddle.Environment?.set(cfg.environment);
+        paddle.Initialize({ token: cfg.clientToken });
+
+        const preview = (await paddle.PricePreview({
+          items: [
+            { priceId: cfg.prices.proMonthly, quantity: 1 },
+            { priceId: cfg.prices.proAnnual, quantity: 1 },
+            { priceId: cfg.prices.lifetime, quantity: 1 },
+          ],
+        })) as PricePreviewResult;
+
+        const prices = pickRegionalPrices(preview, cfg.prices);
+        if (alive && prices) setRegional(prices);
+      } catch {
+        // Any failure keeps the static USD pricing — never block the page on Paddle.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const isPro = viewer.signedIn && viewer.tier === "pro" && !viewer.inTrial;
+
+  // The region-aware values actually rendered. When Paddle resolved a region and the
+  // visitor hasn't asked for USD, show Paddle's own formatted totals (annual billed
+  // yearly, monthly per-month, lifetime once); otherwise the static USD anchors.
+  const useRegional = regional != null && !showUsd;
+  const proAnnual = useRegional
+    ? { amount: regional.proAnnual, unit: "/yr", note: "billed yearly · save 40%" }
+    : PRICING.proAnnual;
+  const proMonthly = useRegional
+    ? { amount: regional.proMonthly, unit: "/mo", note: "billed monthly" }
+    : PRICING.proMonthly;
+  const lifetimePrice = useRegional
+    ? { amount: regional.lifetime, unit: "once", note: "one payment, yours forever" }
+    : PRICING.lifetime;
 
   const trialHint =
     viewer.inTrial && viewer.trialDaysLeft != null
@@ -163,10 +246,27 @@ export function PricingTable() {
       ? { label: "You're on Pro", disabled: true }
       : { label: "Get lifetime", href: "/checkout?plan=lifetime" };
 
-  const pro = billing === "annual" ? PRICING.proAnnual : PRICING.proMonthly;
+  const pro = billing === "annual" ? proAnnual : proMonthly;
 
   return (
     <>
+      {regional && (
+        <p className={styles.regionNote}>
+          {regional.country
+            ? `Prices shown for ${regionName(regional.country)}${
+                regional.currency ? ` (${regional.currency})` : ""
+              }.`
+            : "Prices shown in your local currency."}{" "}
+          <button
+            type="button"
+            className={styles.regionToggle}
+            onClick={() => setShowUsd((v) => !v)}
+          >
+            {showUsd ? "Show local pricing" : "Show standard (USD) pricing"}
+          </button>
+        </p>
+      )}
+
       <div className={styles.toggle} role="group" aria-label="Billing period">
         <button
           type="button"
@@ -212,9 +312,9 @@ export function PricingTable() {
         <div className={marketing.tier}>
           <h2 className={marketing.tierName}>Lifetime</h2>
           <div>
-            <span className={marketing.tierPrice}>{PRICING.lifetime.amount}</span>
-            <span className={styles.unit}>{PRICING.lifetime.unit}</span>
-            <span className={marketing.tierPriceNote}>{PRICING.lifetime.note}</span>
+            <span className={marketing.tierPrice}>{lifetimePrice.amount}</span>
+            <span className={styles.unit}>{lifetimePrice.unit}</span>
+            <span className={marketing.tierPriceNote}>{lifetimePrice.note}</span>
           </div>
           <FeatureList features={LIFETIME_FEATURES} />
           <CtaButton cta={lifetimeCta} />

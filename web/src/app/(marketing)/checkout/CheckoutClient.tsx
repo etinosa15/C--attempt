@@ -12,6 +12,7 @@
 // marketing bundle stays free of it.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { loadPaddleJs } from "@/lib/payments/paddle-js";
 import styles from "../marketing.module.css";
 
 type Props = { plan?: string; billing?: string };
@@ -22,39 +23,6 @@ type CheckoutStart =
   | { configured: false }
   | { error: string }
   | { transactionId: string; clientToken: string; environment: "sandbox" | "production" };
-
-// Minimal shape of the global Paddle.js exposes once loaded.
-type PaddleGlobal = {
-  Environment?: { set: (env: string) => void };
-  Initialize: (opts: { token: string; eventCallback?: (e: { name?: string }) => void }) => void;
-  Checkout: { open: (opts: { transactionId: string }) => void };
-};
-declare global {
-  interface Window {
-    Paddle?: PaddleGlobal;
-  }
-}
-
-const PADDLE_JS = "https://cdn.paddle.com/paddle/v2/paddle.js";
-
-function loadPaddleJs(): Promise<PaddleGlobal> {
-  return new Promise((resolve, reject) => {
-    if (window.Paddle) return resolve(window.Paddle);
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${PADDLE_JS}"]`);
-    const onLoad = () => (window.Paddle ? resolve(window.Paddle) : reject(new Error("Paddle failed to load")));
-    if (existing) {
-      existing.addEventListener("load", onLoad, { once: true });
-      existing.addEventListener("error", () => reject(new Error("Paddle failed to load")), { once: true });
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = PADDLE_JS;
-    script.async = true;
-    script.addEventListener("load", onLoad, { once: true });
-    script.addEventListener("error", () => reject(new Error("Paddle failed to load")), { once: true });
-    document.head.appendChild(script);
-  });
-}
 
 export function CheckoutClient({ plan, billing }: Props) {
   const [status, setStatus] = useState<Status>("loading");
