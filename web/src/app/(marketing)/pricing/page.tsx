@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PricingTable } from "./PricingTable";
 import styles from "../marketing.module.css";
 
@@ -37,8 +38,11 @@ export default function Pricing() {
       <PricingTable />
 
       <p className={styles.trust}>
-        Pro comes with a 30-day money-back guarantee, and region-aware pricing is on
-        the way. Prefer to just start?{" "}
+        Pro comes with a{" "}
+        <Link href="/refund" className={styles.footerLink}>
+          30-day money-back guarantee
+        </Link>
+        , and region-aware pricing is on the way. Prefer to just start?{" "}
         <a href="/learn" className={styles.footerLink}>
           Jump into the lessons
         </a>

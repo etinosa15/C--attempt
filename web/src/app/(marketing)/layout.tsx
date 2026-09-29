@@ -76,6 +76,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link href="/terms" className={styles.footerLink}>
                 Terms
               </Link>
+              <Link href="/refund" className={styles.footerLink}>
+                Refunds
+              </Link>
             </div>
           </div>
         </div>
