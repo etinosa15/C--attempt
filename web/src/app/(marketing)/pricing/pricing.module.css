@@ -1,0 +1,86 @@
+/* Pricing-page extras that don't belong in the shared marketing sheet: the
+   billing-period toggle, the small price-unit/period bits, the "soon" marker on
+   not-yet-live Pro features, and the CTA hint line (trial countdown / no-card).
+   Everything else (tiers grid, tier cards, badges, buttons) comes from
+   marketing.module.css so the pricing surface stays visually of a piece. */
+
+.toggle {
+  display: inline-flex;
+  align-self: center;
+  margin: 0 auto 2.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.toggleOn,
+.toggleOff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+}
+.toggleOn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--glow-accent);
+}
+.toggleOff {
+  opacity: 0.75;
+}
+.toggleOff:hover {
+  opacity: 1;
+}
+
+.save {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 22%, transparent);
+  color: color-mix(in srgb, var(--success) 85%, currentColor);
+}
+.toggleOn .save {
+  background: color-mix(in srgb, var(--accent-ink) 22%, transparent);
+  color: var(--accent-ink);
+}
+
+/* Price line: the "/mo" or "once" unit sits next to the big number. */
+.unit {
+  margin-left: 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* "soon" pill on Pro features that aren't live yet (C# runner, AI tutor). */
+.soon {
+  margin-left: 0.5rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  vertical-align: middle;
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: color-mix(in srgb, var(--warn) 85%, currentColor);
+}
+
+/* CTA hint: trial countdown under "Upgrade", or "No card required". */
+.ctaHint {
+  margin: 0.55rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
