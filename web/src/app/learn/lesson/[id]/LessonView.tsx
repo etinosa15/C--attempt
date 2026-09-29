@@ -10,12 +10,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { isLessonLocked } from "@/lib/entitlements/gating";
 import {
   dayKey,
   highlight,
   certificateEarned,
 } from "@/lib/progress/core";
 import { tracks, moduleName, type Lesson } from "@/lib/curriculum";
+import { Paywall } from "@/components/Paywall";
 import { Quiz } from "./Quiz";
 import { Challenge } from "./Challenge";
 import styles from "./lesson.module.css";
@@ -23,7 +26,14 @@ import styles from "./lesson.module.css";
 const NOTE_DEBOUNCE_MS = 500;
 
 export function LessonView({ lesson }: { lesson: Lesson }) {
-  const { state, update } = useProgress();
+  const { state, update, signedIn } = useProgress();
+  const entitlement = useEntitlement();
+
+  // The reading (beat 01) is always open — good for learners deciding whether to
+  // go deeper, and for crawlers. The graded, interactive beats are the paid value:
+  // beyond the free floor they're replaced by a benefit-framed paywall. Trial and
+  // Pro learners never see this; the floor only appears once someone lapses to Free.
+  const locked = isLessonLocked(entitlement, lesson);
 
   const track = tracks[lesson.lang];
   const list = track.lessons;
@@ -93,6 +103,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
           <span>{track.short}</span>
           <span>{lesson.minutes} min</span>
           {done && <span className={styles.done}>✓ Completed</span>}
+          {locked && <span className={styles.preview}>Preview · Pro lesson</span>}
         </div>
       </header>
 
@@ -132,46 +143,61 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               <span>02</span>
               <h2>Pause. Predict. Then check.</h2>
             </div>
-            <Quiz lessonId={lesson.id} quiz={lesson.quiz} />
+            {locked ? (
+              <Paywall
+                signedIn={signedIn}
+                blurb={
+                  signedIn
+                    ? "You've read the concept — the quiz, coding challenge, and completion for this lesson are part of Pro. Upgrade to practise every lesson across both tracks."
+                    : "You've read the concept — start a free 7-day trial to take the quiz, run the coding challenge, and complete every lesson."
+                }
+              />
+            ) : (
+              <Quiz lessonId={lesson.id} quiz={lesson.quiz} />
+            )}
           </section>
 
-          <section className={styles.section} id="practice">
-            <div className={styles.sectionHead}>
-              <span>03</span>
-              <h2>Make the code yours</h2>
-            </div>
-            <Challenge lesson={lesson} />
-          </section>
+          {!locked && (
+            <>
+              <section className={styles.section} id="practice">
+                <div className={styles.sectionHead}>
+                  <span>03</span>
+                  <h2>Make the code yours</h2>
+                </div>
+                <Challenge lesson={lesson} />
+              </section>
 
-          <section className={styles.section} id="reflect">
-            <div className={styles.sectionHead}>
-              <span>04</span>
-              <h2>Explain it in your own words</h2>
-            </div>
-            <p className={styles.explanation}>{lesson.recall.question}</p>
-            <ReflectionNote lessonId={lesson.id} />
+              <section className={styles.section} id="reflect">
+                <div className={styles.sectionHead}>
+                  <span>04</span>
+                  <h2>Explain it in your own words</h2>
+                </div>
+                <p className={styles.explanation}>{lesson.recall.question}</p>
+                <ReflectionNote lessonId={lesson.id} />
 
-            <div className={`${styles.panel} ${styles.completion}`}>
-              <div>
-                <h3>{done ? "One more concept, made yours." : "Ready to make it stick?"}</h3>
-                <p>
-                  {done
-                    ? "Your review card is ready — revisit it to strengthen recall."
-                    : canComplete
-                      ? "You checked the concept and passed every code test. Add this to your review deck."
-                      : "Check the concept question and pass the coding challenge to complete this lesson."}
-                </p>
-              </div>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                onClick={complete}
-                disabled={!canComplete || done}
-              >
-                {done ? "Lesson complete ✓" : "Complete lesson"}
-              </button>
-            </div>
-          </section>
+                <div className={`${styles.panel} ${styles.completion}`}>
+                  <div>
+                    <h3>{done ? "One more concept, made yours." : "Ready to make it stick?"}</h3>
+                    <p>
+                      {done
+                        ? "Your review card is ready — revisit it to strengthen recall."
+                        : canComplete
+                          ? "You checked the concept and passed every code test. Add this to your review deck."
+                          : "Check the concept question and pass the coding challenge to complete this lesson."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={complete}
+                    disabled={!canComplete || done}
+                  >
+                    {done ? "Lesson complete ✓" : "Complete lesson"}
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
 
           <nav className={styles.nav} aria-label="Lesson navigation">
             {prev ? (
@@ -204,8 +230,12 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
             <div className={styles.tocTitle}>This session</div>
             <TocItem target="understand" label="Understand the concept" />
             <TocItem target="predict" label="Check your intuition" done={quizPassed} />
-            <TocItem target="practice" label="Write real code" done={challengeSolved} />
-            <TocItem target="reflect" label="Reflect & remember" />
+            {!locked && (
+              <>
+                <TocItem target="practice" label="Write real code" done={challengeSolved} />
+                <TocItem target="reflect" label="Reflect & remember" />
+              </>
+            )}
           </div>
           <div className={styles.source}>
             <h3>Go to the source</h3>

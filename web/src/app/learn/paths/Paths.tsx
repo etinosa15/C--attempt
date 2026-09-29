@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned, highlight } from "@/lib/progress/core";
 import { tracks, modules, bridges, type Lang } from "@/lib/curriculum";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { canEarnCertificate, isLessonLocked } from "@/lib/entitlements/gating";
 import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./paths.module.css";
 
@@ -28,9 +30,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
   const { state } = useProgress();
+  const entitlement = useEntitlement();
   const [filter, setFilter] = useState<PathFilter>(initialFilter);
   const [certLang, setCertLang] = useState<Lang | null>(null);
   const done = new Set(state.completed ?? []);
+  const certsUnlocked = canEarnCertificate(entitlement);
 
   return (
     <div className={styles.page}>
@@ -104,15 +108,20 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
                   <p className={styles.trackTag}>{track.tag.toLowerCase()}</p>
                 </div>
                 <span className={styles.trackPct}>{percent}% complete</span>
-                {earned && (
-                  <button
-                    type="button"
-                    className={styles.certBtn}
-                    onClick={() => setCertLang(lang)}
-                  >
-                    View certificate
-                  </button>
-                )}
+                {earned &&
+                  (certsUnlocked ? (
+                    <button
+                      type="button"
+                      className={styles.certBtn}
+                      onClick={() => setCertLang(lang)}
+                    >
+                      View certificate
+                    </button>
+                  ) : (
+                    <Link href="/pricing" className={styles.certBtn}>
+                      Unlock certificate (Pro)
+                    </Link>
+                  ))}
               </div>
 
               <div className={styles.moduleGrid}>
@@ -134,6 +143,7 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
                       </div>
                       {group.map((l) => {
                         const isDone = done.has(l.id);
+                        const locked = isLessonLocked(entitlement, l);
                         const order = track.lessons.indexOf(l) + 1;
                         return (
                           <Link
@@ -146,10 +156,12 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
                             </span>
                             <span className={styles.lessonBody}>
                               {l.title}
-                              <small>{l.minutes} min · Lesson + challenge</small>
+                              <small>
+                                {locked ? "Pro · preview the reading" : `${l.minutes} min · Lesson + challenge`}
+                              </small>
                             </span>
                             <span className={styles.chevron} aria-hidden="true">
-                              ›
+                              {locked ? "🔒" : "›"}
                             </span>
                           </Link>
                         );

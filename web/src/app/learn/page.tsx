@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { streak, certificateEarned } from "@/lib/progress/core";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { canEarnCertificate, isLessonLocked } from "@/lib/entitlements/gating";
 import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./overview.module.css";
 
@@ -12,7 +14,9 @@ const TRACK_ORDER: Lang[] = ["js", "cs"];
 
 export default function Overview() {
   const { state, ready } = useProgress();
+  const entitlement = useEntitlement();
   const [certLang, setCertLang] = useState<Lang | null>(null);
+  const certsUnlocked = canEarnCertificate(entitlement);
 
   const done = new Set(state.completed ?? []);
   const days = streak(state.activity ?? {});
@@ -51,6 +55,7 @@ export default function Overview() {
           const percent = total > 0 ? Math.round((complete / total) * 100) : 0;
           const next = track.lessons.find((l) => !done.has(l.id)) ?? track.lessons[0];
           const earned = certificateEarned(state.completed ?? [], track.lessons.map((l) => l.id));
+          const nextLocked = next ? isLessonLocked(entitlement, next) : false;
 
           return (
             <section key={lang} className={styles.track} style={{ ["--track" as string]: track.color }}>
@@ -73,16 +78,22 @@ export default function Overview() {
                 <div className={styles.ctaRow}>
                   <Link href={`/learn/lesson/${next.id}`} className={styles.trackCta}>
                     {complete === 0 ? "Start the track" : complete === total ? "Review lessons" : `Next: ${next.title}`}
+                    {nextLocked && <span className={styles.lock} aria-label="Pro lesson"> 🔒</span>}
                   </Link>
-                  {earned && (
-                    <button
-                      type="button"
-                      className={styles.certBtn}
-                      onClick={() => setCertLang(lang)}
-                    >
-                      View certificate
-                    </button>
-                  )}
+                  {earned &&
+                    (certsUnlocked ? (
+                      <button
+                        type="button"
+                        className={styles.certBtn}
+                        onClick={() => setCertLang(lang)}
+                      >
+                        View certificate
+                      </button>
+                    ) : (
+                      <Link href="/pricing" className={styles.certBtn}>
+                        Unlock certificate (Pro)
+                      </Link>
+                    ))}
                 </div>
               )}
             </section>

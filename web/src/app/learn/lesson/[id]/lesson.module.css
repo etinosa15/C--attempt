@@ -50,6 +50,15 @@
   font-weight: 700;
   opacity: 1;
 }
+.preview {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 15rem;

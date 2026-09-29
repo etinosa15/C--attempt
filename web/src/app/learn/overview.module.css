@@ -162,6 +162,7 @@
 }
 
 .certBtn {
+  display: inline-block;
   padding: 0.55rem 0.95rem;
   border-radius: 9px;
   border: 1px solid color-mix(in srgb, var(--track, var(--accent)) 45%, transparent);
@@ -171,9 +172,15 @@
   font-weight: 700;
   font-size: 0.88rem;
   cursor: pointer;
+  text-decoration: none;
 }
 .certBtn:hover {
   background: color-mix(in srgb, var(--track, var(--accent)) 12%, transparent);
+}
+
+.lock {
+  opacity: 0.85;
+  font-size: 0.9em;
 }
 
 .loading {

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getEntitlement } from "@/lib/entitlements/server";
+import { EntitlementProvider } from "@/lib/entitlements/EntitlementProvider";
 import { ProgressProvider } from "@/lib/progress/useProgress";
 import { TopBar } from "./TopBar";
 import styles from "./learn.module.css";
@@ -26,10 +27,12 @@ export default async function LearnLayout({
 
   return (
     <ProgressProvider signedIn={!!user}>
-      <div className={styles.shell}>
-        <TopBar email={user?.email ?? null} entitlement={entitlement} />
-        <main className={styles.content}>{children}</main>
-      </div>
+      <EntitlementProvider entitlement={entitlement}>
+        <div className={styles.shell}>
+          <TopBar email={user?.email ?? null} entitlement={entitlement} />
+          <main className={styles.content}>{children}</main>
+        </div>
+      </EntitlementProvider>
     </ProgressProvider>
   );
 }
