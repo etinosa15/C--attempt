@@ -184,3 +184,14 @@
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: color-mix(in srgb, var(--accent) 85%, currentColor);
 }
+
+/* A quiet, honest cancel link — present, never hidden, never shouting. */
+.quietLink {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  font-weight: 600;
+}
+.quietLink:hover {
+  color: var(--text);
+}

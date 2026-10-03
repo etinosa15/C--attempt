@@ -23,9 +23,11 @@ type PortalResponse =
 
 export function AccountActions({
   manageAvailable,
+  canCancel,
   nextAction,
 }: {
   manageAvailable: boolean;
+  canCancel: boolean;
   nextAction: NextAction;
 }) {
   const [busy, setBusy] = useState(false);
@@ -70,6 +72,13 @@ export function AccountActions({
       {note && (
         <p className={styles.muted} role="status" aria-live="polite">
           {note}
+        </p>
+      )}
+      {canCancel && (
+        <p className={styles.muted}>
+          <Link href="/learn/account/cancel" className={styles.quietLink}>
+            Cancel plan
+          </Link>
         </p>
       )}
     </div>

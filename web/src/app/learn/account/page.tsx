@@ -74,6 +74,7 @@ export default async function AccountPage() {
           )}
           <AccountActions
             manageAvailable={summary.manageBilling.available}
+            canCancel={summary.manageBilling.available && summary.state !== "cancelling"}
             nextAction={summary.nextAction}
           />
         </section>

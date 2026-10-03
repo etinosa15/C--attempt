@@ -253,3 +253,65 @@ export async function createCustomerPortalSession(
   };
   return json.data?.urls?.general?.overview ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Outbound API — subscription lifecycle for the cancellation save-flow (IMPURE).
+//
+// These are the saves a learner can take *instead of* cancelling, plus the cancel
+// itself. Paddle is the merchant of record, so it owns the real state change; we
+// only call its API and let the resulting webhook flip our subscriptions row (we
+// never write entitlement state directly here — the flow is: learner acts →
+// Paddle updates → signed webhook → our row). Each returns true on success.
+// ---------------------------------------------------------------------------
+
+async function postSubscription(
+  config: PaddleConfig,
+  subscriptionId: string,
+  path: string,
+  body?: Record<string, unknown>,
+): Promise<boolean> {
+  const res = await fetch(`${config.apiBase}/subscriptions/${subscriptionId}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  return res.ok;
+}
+
+/** Pause a subscription at the end of the current period (Paddle keeps the row). */
+export function pauseSubscription(config: PaddleConfig, subscriptionId: string): Promise<boolean> {
+  return postSubscription(config, subscriptionId, "/pause", { effective_from: "next_billing_period" });
+}
+
+/** Resume a paused subscription. */
+export function resumeSubscription(config: PaddleConfig, subscriptionId: string): Promise<boolean> {
+  return postSubscription(config, subscriptionId, "/resume");
+}
+
+/**
+ * Cancel a subscription at the end of the current billing period (the learner
+ * keeps Pro until the period ends — the honest, non-punitive default).
+ */
+export function cancelSubscription(config: PaddleConfig, subscriptionId: string): Promise<boolean> {
+  return postSubscription(config, subscriptionId, "/cancel", { effective_from: "next_billing_period" });
+}
+
+/** Apply a retention discount to a subscription (the "stay, here's X% off" save). */
+export async function applySubscriptionDiscount(
+  config: PaddleConfig,
+  subscriptionId: string,
+  discountId: string,
+): Promise<boolean> {
+  const res = await fetch(`${config.apiBase}/subscriptions/${subscriptionId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ discount_id: discountId }),
+  });
+  return res.ok;
+}
