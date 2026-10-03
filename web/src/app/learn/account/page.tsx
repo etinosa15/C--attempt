@@ -5,6 +5,7 @@ import { getEntitlement, getSubscriptionRow } from "@/lib/entitlements/server";
 import { summarizeBilling } from "@/lib/entitlements/billing-summary";
 import { AccountActions } from "./AccountActions";
 import { ReferralPanel } from "./ReferralPanel";
+import { StudentPanel } from "./StudentPanel";
 import styles from "./account.module.css";
 
 export const metadata: Metadata = {
@@ -80,6 +81,8 @@ export default async function AccountPage() {
         </section>
 
         <ReferralPanel />
+
+        <StudentPanel />
 
         <section className={styles.panel}>
           <h2>Your data</h2>

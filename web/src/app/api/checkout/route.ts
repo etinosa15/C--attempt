@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveSelection } from "@/lib/payments/catalog";
 import { getPaddleConfig, priceIdFor, createCheckoutTransaction } from "@/lib/payments/paddle";
 import { resolveFoundingDeal } from "@/lib/payments/founding-deal";
+import { getStudentStatus } from "@/lib/payments/student-server";
+import { pickCheckoutDiscount } from "@/lib/payments/student";
 
 export const runtime = "nodejs";
 
@@ -57,19 +59,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ configured: false });
   }
 
-  // If the client flagged the launch deal, re-resolve it server-side against the
-  // same env + the current time — never trust the flag alone. A live deal yields a
-  // discount id to apply; a passed/absent deadline yields nothing, so a stale
-  // ?deal=1 link after the deadline simply checks out at full price.
-  const discountId = deal
-    ? (resolveFoundingDeal(
-        {
-          discountId: process.env.PADDLE_LAUNCH_DISCOUNT_ID,
-          deadline: process.env.FOUNDING_DEADLINE,
-        },
-        new Date(),
-      )?.discountId ?? null)
-    : null;
+  // Resolve the ONE discount to apply — never stacked (plan guardrail: student +
+  // launch = negative margin). A verified student's discount (re-checked
+  // server-side from their own row) always wins over the time-boxed launch deal.
+  const studentDiscountId =
+    process.env.STUDENT_DISCOUNT_ID && (await getStudentStatus(supabase, user.id)).verified
+      ? process.env.STUDENT_DISCOUNT_ID
+      : null;
+
+  // The launch deal, re-resolved server-side against env + now (never trust the
+  // flag alone). A passed/absent deadline yields nothing, so a stale ?deal=1 link
+  // after the deadline simply checks out at full price.
+  const foundingDiscountId =
+    deal && !studentDiscountId
+      ? (resolveFoundingDeal(
+          {
+            discountId: process.env.PADDLE_LAUNCH_DISCOUNT_ID,
+            deadline: process.env.FOUNDING_DEADLINE,
+          },
+          new Date(),
+        )?.discountId ?? null)
+      : null;
+
+  const discountId = pickCheckoutDiscount({ studentDiscountId, foundingDiscountId });
 
   const result = await createCheckoutTransaction(
     config,
