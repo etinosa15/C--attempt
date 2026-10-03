@@ -198,12 +198,15 @@ export async function createCheckoutTransaction(
   priceId: string,
   userId: string,
   email: string | null,
+  discountId?: string | null,
 ): Promise<{ transactionId: string } | { error: string }> {
   const body: Record<string, unknown> = {
     items: [{ price_id: priceId, quantity: 1 }],
     custom_data: { user_id: userId },
   };
   if (email) body.customer = { email };
+  // A launch/founding discount, when one is live and the server has re-validated it.
+  if (discountId) body.discount_id = discountId;
 
   const res = await fetch(`${config.apiBase}/transactions`, {
     method: "POST",

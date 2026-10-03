@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 // (/api/webhooks/paddle) writing the subscriptions row via the service role —
 // nothing on this page grants access. When Paddle isn't configured in the
 // environment, the client degrades to an honest "almost here" placeholder.
-type Search = { plan?: string; billing?: string };
+type Search = { plan?: string; billing?: string; deal?: string };
 
 const PLAN_LABEL: Record<string, string> = {
   pro: "Forge Pro",
@@ -33,7 +33,7 @@ export default async function Checkout({
 }: {
   searchParams: Promise<Search>;
 }) {
-  const { plan, billing } = await searchParams;
+  const { plan, billing, deal } = await searchParams;
   const planName = (plan && PLAN_LABEL[plan]) || "Forge Pro";
   const cycle = plan !== "lifetime" && billing ? BILLING_LABEL[billing] : undefined;
 
@@ -51,7 +51,7 @@ export default async function Checkout({
         </p>
       </div>
 
-      <CheckoutClient plan={plan} billing={billing} />
+      <CheckoutClient plan={plan} billing={billing} deal={deal} />
     </section>
   );
 }

@@ -19,6 +19,11 @@ import {
   type PricePreviewResult,
   type RegionalPrices,
 } from "@/lib/payments/pricing-preview";
+import {
+  resolveFoundingDeal,
+  type FoundingDeal,
+  type FoundingDealConfig,
+} from "@/lib/payments/founding-deal";
 import marketing from "../marketing.module.css";
 import styles from "./pricing.module.css";
 
@@ -42,6 +47,7 @@ type PaddleConfig =
       clientToken: string;
       environment: "sandbox" | "production";
       prices: { proMonthly: string; proAnnual: string; lifetime: string };
+      foundingDeal?: FoundingDealConfig;
     };
 
 type Feature = { label: string; soon?: boolean };
@@ -139,6 +145,11 @@ export function PricingTable() {
   const [regional, setRegional] = useState<RegionalPrices | null>(null);
   const [showUsd, setShowUsd] = useState(false);
 
+  // A live launch/founding deal, resolved from Paddle config (null = none / expired).
+  // When set, the regional prices below are Paddle's *discounted* totals (we pass the
+  // discount into PricePreview), so the banner and the price cards always agree.
+  const [deal, setDeal] = useState<FoundingDeal | null>(null);
+
   // Read the entitlement once for CTA wording. 401 (signed out) is expected and
   // simply means "start the trial"; any error degrades to the signed-out CTAs.
   useEffect(() => {
@@ -180,6 +191,12 @@ export function PricingTable() {
         const cfg = (await cfgRes.json()) as PaddleConfig;
         if (!cfg.configured) return;
 
+        // A live launch deal (if any) discounts the previewed totals, so the cards
+        // show exactly what checkout will charge with the discount applied.
+        const activeDeal = cfg.foundingDeal
+          ? resolveFoundingDeal(cfg.foundingDeal, new Date())
+          : null;
+
         const paddle = await loadPaddleJs();
         paddle.Environment?.set(cfg.environment);
         paddle.Initialize({ token: cfg.clientToken });
@@ -190,10 +207,14 @@ export function PricingTable() {
             { priceId: cfg.prices.proAnnual, quantity: 1 },
             { priceId: cfg.prices.lifetime, quantity: 1 },
           ],
+          ...(activeDeal ? { discountId: activeDeal.discountId } : {}),
         })) as PricePreviewResult;
 
         const prices = pickRegionalPrices(preview, cfg.prices);
-        if (alive && prices) setRegional(prices);
+        if (alive && prices) {
+          setRegional(prices);
+          setDeal(activeDeal);
+        }
       } catch {
         // Any failure keeps the static USD pricing — never block the page on Paddle.
       }
@@ -219,6 +240,12 @@ export function PricingTable() {
     ? { amount: regional.lifetime, unit: "once", note: "one payment, yours forever" }
     : PRICING.lifetime;
 
+  // Only surface the launch deal when we're actually rendering the discounted
+  // (regional) totals — if the visitor flipped to standard USD, the cards no longer
+  // reflect the discount, so the banner and the ?deal=1 CTAs stand down with them.
+  const showDeal = deal != null && useRegional;
+  const dealParam = showDeal ? "&deal=1" : "";
+
   const trialHint =
     viewer.inTrial && viewer.trialDaysLeft != null
       ? viewer.trialDaysLeft <= 1
@@ -236,7 +263,7 @@ export function PricingTable() {
       ? { label: "Your current plan", disabled: true }
       : {
           label: "Upgrade to Pro",
-          href: `/checkout?plan=pro&billing=${billing}`,
+          href: `/checkout?plan=pro&billing=${billing}${dealParam}`,
           hint: trialHint,
         };
 
@@ -244,12 +271,22 @@ export function PricingTable() {
     ? { label: "Start free trial", href: "/signup" }
     : isPro
       ? { label: "You're on Pro", disabled: true }
-      : { label: "Get lifetime", href: "/checkout?plan=lifetime" };
+      : { label: "Get lifetime", href: `/checkout?plan=lifetime${dealParam}` };
 
   const pro = billing === "annual" ? proAnnual : proMonthly;
 
   return (
     <>
+      {showDeal && deal && (
+        <div className={styles.foundingBanner} role="status">
+          <span className={styles.foundingLabel}>{deal.label}</span>
+          <p className={styles.foundingHeadline}>{deal.headline}</p>
+          <p className={styles.foundingEnds}>
+            {deal.endsInDays <= 1 ? "Ends today" : `Ends in ${deal.endsInDays} days`}
+          </p>
+        </div>
+      )}
+
       {regional && (
         <p className={styles.regionNote}>
           {regional.country

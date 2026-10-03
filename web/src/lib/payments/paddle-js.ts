@@ -12,6 +12,7 @@ export type PaddleGlobal = {
   PricePreview: (req: {
     items: Array<{ priceId: string; quantity: number }>;
     address?: { countryCode: string };
+    discountId?: string;
   }) => Promise<unknown>;
 };
 

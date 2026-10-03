@@ -109,3 +109,44 @@
 .regionToggle:hover {
   opacity: 0.8;
 }
+
+/* Launch / founding-deal banner: a prominent-but-tasteful callout above the
+   pricing controls. Only shown when Paddle's discounted totals are live, so it
+   never promises a price the cards don't show. */
+.foundingBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 auto 1.75rem;
+  max-width: 40rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  box-shadow: var(--glow-accent);
+}
+.foundingLabel {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.foundingHeadline {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.foundingEnds {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}

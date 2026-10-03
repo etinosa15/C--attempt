@@ -15,7 +15,7 @@ import Link from "next/link";
 import { loadPaddleJs } from "@/lib/payments/paddle-js";
 import styles from "../marketing.module.css";
 
-type Props = { plan?: string; billing?: string };
+type Props = { plan?: string; billing?: string; deal?: string };
 
 type Status = "loading" | "placeholder" | "signedout" | "opening" | "completed" | "error";
 
@@ -24,7 +24,7 @@ type CheckoutStart =
   | { error: string }
   | { transactionId: string; clientToken: string; environment: "sandbox" | "production" };
 
-export function CheckoutClient({ plan, billing }: Props) {
+export function CheckoutClient({ plan, billing, deal }: Props) {
   const [status, setStatus] = useState<Status>("loading");
   const started = useRef(false);
 
@@ -38,7 +38,7 @@ export function CheckoutClient({ plan, billing }: Props) {
         res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, billing }),
+          body: JSON.stringify({ plan, billing, deal }),
         });
       } catch {
         setStatus("error");
@@ -77,7 +77,7 @@ export function CheckoutClient({ plan, billing }: Props) {
         setStatus("error");
       }
     })();
-  }, [plan, billing]);
+  }, [plan, billing, deal]);
 
   if (status === "loading" || status === "opening") {
     return (

@@ -23,12 +23,33 @@ export async function GET() {
     return NextResponse.json({ configured: false }, { headers: { "Cache-Control": "no-store" } });
   }
 
+  // Optional launch/founding deal: a Paddle discount applied for a limited time.
+  // The discount id isn't secret (it's applied at checkout and previewed by
+  // Paddle.js), so we hand it out here alongside its deadline and copy — the deal's
+  // business terms are env, not code, so they can be set or expired per deploy. We
+  // only include it when both the discount id and a deadline exist; the client
+  // re-checks the deadline (resolveFoundingDeal) so the deal switches itself off
+  // when the date passes, and the checkout route re-checks it server-side before
+  // actually applying the discount, so a stale link can't resurrect it.
+  const discountId = process.env.PADDLE_LAUNCH_DISCOUNT_ID;
+  const deadline = process.env.FOUNDING_DEADLINE;
+  const foundingDeal =
+    discountId && deadline
+      ? {
+          discountId,
+          deadline,
+          label: process.env.FOUNDING_LABEL ?? null,
+          headline: process.env.FOUNDING_HEADLINE ?? null,
+        }
+      : undefined;
+
   return NextResponse.json(
     {
       configured: true,
       clientToken,
       environment,
       prices: { proMonthly, proAnnual, lifetime },
+      ...(foundingDeal ? { foundingDeal } : {}),
     },
     { headers: { "Cache-Control": "no-store" } },
   );

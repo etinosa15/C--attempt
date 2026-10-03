@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveSelection } from "@/lib/payments/catalog";
 import { getPaddleConfig, priceIdFor, createCheckoutTransaction } from "@/lib/payments/paddle";
+import { resolveFoundingDeal } from "@/lib/payments/founding-deal";
 
 export const runtime = "nodejs";
 
@@ -35,10 +36,12 @@ export async function POST(request: Request) {
 
   let plan: string | undefined;
   let billing: string | undefined;
+  let deal: boolean | undefined;
   try {
-    const parsed = (await request.json()) as { plan?: string; billing?: string };
+    const parsed = (await request.json()) as { plan?: string; billing?: string; deal?: unknown };
     plan = parsed.plan;
     billing = parsed.billing;
+    deal = Boolean(parsed.deal);
   } catch {
     // fall through to the validation below with undefined fields
   }
@@ -54,7 +57,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ configured: false });
   }
 
-  const result = await createCheckoutTransaction(config, priceId, user.id, user.email ?? null);
+  // If the client flagged the launch deal, re-resolve it server-side against the
+  // same env + the current time — never trust the flag alone. A live deal yields a
+  // discount id to apply; a passed/absent deadline yields nothing, so a stale
+  // ?deal=1 link after the deadline simply checks out at full price.
+  const discountId = deal
+    ? (resolveFoundingDeal(
+        {
+          discountId: process.env.PADDLE_LAUNCH_DISCOUNT_ID,
+          deadline: process.env.FOUNDING_DEADLINE,
+        },
+        new Date(),
+      )?.discountId ?? null)
+    : null;
+
+  const result = await createCheckoutTransaction(
+    config,
+    priceId,
+    user.id,
+    user.email ?? null,
+    discountId,
+  );
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: 502 });
   }

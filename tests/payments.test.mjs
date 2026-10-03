@@ -12,6 +12,7 @@ const { verifyPaddleSignature, subscriptionUpsertFromEvent } = await import(
   "../web/src/lib/payments/paddle.ts"
 );
 const { pickRegionalPrices } = await import("../web/src/lib/payments/pricing-preview.ts");
+const { resolveFoundingDeal } = await import("../web/src/lib/payments/founding-deal.ts");
 
 // --- catalog: only sellable combinations resolve --------------------------
 test("resolveSelection maps plans to their price env + kind", () => {
@@ -226,4 +227,46 @@ test("pickRegionalPrices tolerates a missing/empty response and null country", (
   assert.equal(out.country, null);
   assert.equal(out.currency, "GBP");
   assert.equal(out.proAnnual, "£145.00");
+});
+
+// --- launch/founding deal: resolve raw env config into a live deal ----------
+test("resolveFoundingDeal yields a live deal with default copy and a day countdown", () => {
+  const now = new Date("2026-02-01T00:00:00Z");
+  const deal = resolveFoundingDeal({ discountId: "dsc_1", deadline: "2026-02-08T00:00:00Z" }, now);
+  assert.deepEqual(deal, {
+    discountId: "dsc_1",
+    deadline: "2026-02-08T00:00:00Z",
+    label: "Founding offer",
+    headline: "Limited-time launch pricing — lock it in before it ends.",
+    endsInDays: 7,
+  });
+});
+
+test("resolveFoundingDeal honors custom copy and rounds partial days up", () => {
+  const now = new Date("2026-02-01T00:00:00Z");
+  const deal = resolveFoundingDeal(
+    {
+      discountId: "dsc_1",
+      deadline: "2026-02-02T06:00:00Z", // 1.25 days out
+      label: "Launch week",
+      headline: "40% off for founding members.",
+    },
+    now,
+  );
+  assert.equal(deal.label, "Launch week");
+  assert.equal(deal.headline, "40% off for founding members.");
+  assert.equal(deal.endsInDays, 2);
+});
+
+test("resolveFoundingDeal is null without a discount id, deadline, or once expired", () => {
+  const now = new Date("2026-02-01T00:00:00Z");
+  assert.equal(resolveFoundingDeal(null, now), null);
+  assert.equal(resolveFoundingDeal({ deadline: "2026-02-08T00:00:00Z" }, now), null);
+  assert.equal(resolveFoundingDeal({ discountId: "dsc_1" }, now), null);
+  assert.equal(resolveFoundingDeal({ discountId: "dsc_1", deadline: "not-a-date" }, now), null);
+  // Deadline already passed -> no deal (a stale link checks out at full price).
+  assert.equal(
+    resolveFoundingDeal({ discountId: "dsc_1", deadline: "2026-01-01T00:00:00Z" }, now),
+    null,
+  );
 });
