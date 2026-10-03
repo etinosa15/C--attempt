@@ -28,3 +28,22 @@ export async function getEntitlement(
     .maybeSingle();
   return resolveEntitlement((data as SubscriptionRow | null) ?? null, now);
 }
+
+/**
+ * Fetch the raw subscriptions row for `userId`, or null when there is none. The
+ * entitlement resolver is what most of the app reads; this is for the few places
+ * that must show the learner the *stored* facts (the account dashboard's renewal
+ * date, a scheduled cancellation) rather than the computed access level. RLS
+ * self-read applies, so this can only ever return the caller's own row.
+ */
+export async function getSubscriptionRow(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<SubscriptionRow | null> {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select(COLUMNS)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as SubscriptionRow | null) ?? null;
+}

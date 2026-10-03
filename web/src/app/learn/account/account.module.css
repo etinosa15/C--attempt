@@ -1,0 +1,167 @@
+/* Account & billing dashboard. A single column of quiet panels matching the
+   Settings screen (same tokens, radius and rhythm), with a status chip that
+   recolors per lifecycle state. Tokens from tokens.css. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+.lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.panel h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+.panel > p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+/* The plan panel leads the grid and gets a subtle accent rim. */
+.planHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.detail {
+  font-weight: 600;
+}
+.badge {
+  flex: none;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  color: color-mix(in srgb, var(--muted) 90%, currentColor);
+}
+.badge[data-state="active"],
+.badge[data-state="lifetime"] {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: color-mix(in srgb, var(--success) 90%, currentColor);
+}
+.badge[data-state="trial"],
+.badge[data-state="trial_ending"] {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--accent) 90%, currentColor);
+}
+.badge[data-state="past_due"] {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: color-mix(in srgb, var(--danger) 90%, currentColor);
+}
+.badge[data-state="cancelling"] {
+  background: color-mix(in srgb, var(--warn) 20%, transparent);
+  color: color-mix(in srgb, var(--warn) 90%, currentColor);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.facts dt {
+  opacity: 0.7;
+}
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.btnPrimary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--glow-accent);
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+}
+.muted {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.65;
+}

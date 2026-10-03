@@ -17,6 +17,7 @@ const NAV = [
   { href: "/learn/playground", label: "Playground" },
   { href: "/learn/notebook", label: "Notebook" },
   { href: "/learn/settings", label: "Settings" },
+  { href: "/learn/account", label: "Account" },
 ];
 
 // A short, human sync label so the learner always knows their work is safe. This
@@ -146,6 +147,9 @@ export function TopBar({
             </button>
             {open && (
               <div className={styles.menu} role="menu">
+                <Link className={styles.menuItem} href="/learn/account" role="menuitem">
+                  Account &amp; billing
+                </Link>
                 <a className={styles.menuItem} href="/api/account/export" role="menuitem">
                   Export my data
                 </a>

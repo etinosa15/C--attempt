@@ -225,3 +225,31 @@ export async function createCheckoutTransaction(
   if (!id) return { error: "Paddle response missing transaction id" };
   return { transactionId: id };
 }
+
+// ---------------------------------------------------------------------------
+// Outbound API — open Paddle's hosted customer portal for a customer (IMPURE).
+// Paddle is the merchant of record, so the learner manages their payment method,
+// downloads invoices and cancels the subscription in Paddle's own portal — we
+// never build card-editing or a cancel flow that could silently break a real
+// subscription. This only mints the one-time portal URL; the client redirects to
+// it. Returns null when Paddle can't be reached or mints nothing, so the caller
+// degrades to its honest "manage billing isn't available yet" state.
+// ---------------------------------------------------------------------------
+export async function createCustomerPortalSession(
+  config: PaddleConfig,
+  customerId: string,
+): Promise<string | null> {
+  const res = await fetch(`${config.apiBase}/customers/${customerId}/portal-sessions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    data?: { urls?: { general?: { overview?: string } } };
+  };
+  return json.data?.urls?.general?.overview ?? null;
+}
