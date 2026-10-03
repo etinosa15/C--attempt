@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getEntitlement, getSubscriptionRow } from "@/lib/entitlements/server";
 import { summarizeBilling } from "@/lib/entitlements/billing-summary";
 import { AccountActions } from "./AccountActions";
+import { ReferralPanel } from "./ReferralPanel";
 import styles from "./account.module.css";
 
 export const metadata: Metadata = {
@@ -76,6 +77,8 @@ export default async function AccountPage() {
             nextAction={summary.nextAction}
           />
         </section>
+
+        <ReferralPanel />
 
         <section className={styles.panel}>
           <h2>Your data</h2>

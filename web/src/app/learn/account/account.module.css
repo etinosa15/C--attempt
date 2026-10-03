@@ -165,3 +165,22 @@
   line-height: 1.5;
   opacity: 0.65;
 }
+
+/* Referral panel: the share code + actions sit on one row. */
+.codeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.code {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.4rem 0.7rem;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, currentColor);
+}

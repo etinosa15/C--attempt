@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { adoptLocalProgress } from "@/lib/progress/sync-client";
+import { normalizeCode, isValidCode } from "@/lib/referrals/core";
 import styles from "../login/auth.module.css";
 
 export default function SignupPage() {
@@ -13,9 +14,19 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [refCode, setRefCode] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Capture ?ref=<code> from a friend's share link. Read here (client) rather than
+  // via useSearchParams so the page stays static; it rides along in signUp's
+  // metadata and the DB trigger records the attribution atomically at signup.
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("ref");
+    const code = normalizeCode(raw);
+    if (isValidCode(code)) setRefCode(code);
+  }, []);
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +40,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        data: { display_name: displayName || null },
+        data: { display_name: displayName || null, ref_code: refCode || null },
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
