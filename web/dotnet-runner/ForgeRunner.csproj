@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ForgeRunner — the in-browser C# runner (Phase 4). A .NET WebAssembly app that
+    compiles a submission with Roslyn and runs it, entirely client-side. Published
+    into web/public/dotnet/ and loaded on demand by web/src/lib/runner/dotnet-loader.ts.
+
+    PREREQUISITES: the .NET SDK plus the WASM workload:  dotnet workload install wasm-tools
+    BUILD/DEPLOY:  see ./README.md and ./build.ps1 / ./build.sh
+
+    STATUS: this project is committed as SOURCE and has NOT been built or verified
+    in a browser (the build toolchain + a browser were unavailable when it was
+    written). Treat the first successful `dotnet publish` + browser smoke test as
+    Phase 4, Unit 2. The parts most likely to need adjustment are marked
+    "VERIFY (Unit 2)" in Interop.cs.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ForgeRunner</AssemblyName>
+
+    <!-- Single-threaded is fine; threads complicate hosting and aren't needed. -->
+    <WasmEnableThreads>false</WasmEnableThreads>
+    <!-- Smaller + no locale data needed for the runner. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- CRITICAL for Roslyn-in-WASM: ship framework assemblies as real PE `.dll`
+         files, not WebCIL. Roslyn's MetadataReference cannot read WebCIL, so with
+         the default (true) the compiler can't load its references. -->
+    <WasmEnableWebcil>false</WasmEnableWebcil>
+
+    <!-- Don't trim: the submission can reference any BCL type, and Roslyn needs the
+         reference assemblies present to compile against them. -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The C# compiler, running in the browser. Pin to a version that matches the
+         target framework's language/BCL. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+  </ItemGroup>
+
+</Project>

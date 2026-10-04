@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# C# WASM runner (Phase 4): the published runtime bundle is tens of MB — built by
+# dotnet-runner/build.* into here, served statically, never committed. The marker
+# forge-runner.json is produced by the build too.
+/public/dotnet/
+# .NET build output for the runner project
+/dotnet-runner/bin/
+/dotnet-runner/obj/
+

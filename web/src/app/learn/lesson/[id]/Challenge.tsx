@@ -15,6 +15,9 @@ import { Editor } from "@/components/Editor";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useJsRunner } from "@/lib/runner/useJsRunner";
 import { useCsRunner } from "@/lib/runner/useCsRunner";
+import { useCsWasmRunner } from "@/lib/runner/useCsWasmRunner";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { canRunCsharp } from "@/lib/entitlements/gating";
 import {
   dayKey,
   hintTiers,
@@ -40,10 +43,17 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
   const isJs = lesson.lang === "js";
   const js = useJsRunner();
   const cs = useCsRunner();
-  const running = isJs ? js.running : cs.running;
-  // C# can only be checked when the loopback .NET runner answers (local edition).
-  // `cs.available` is null while probing, then true/false. JS is always runnable.
-  const canRun = isJs || cs.available === true;
+  const csWasm = useCsWasmRunner();
+  const entitlement = useEntitlement();
+
+  // C# runner precedence: the local edition's loopback .NET SDK when present (full
+  // compiler, grades server-side); otherwise, for a Pro learner on the hosted site,
+  // the in-browser .NET WASM runtime once it's deployed (grades client-side); else
+  // read-only. `cs.available`/`csWasm.available` are null while probing. JS always runs.
+  const useWasm =
+    !isJs && cs.available !== true && canRunCsharp(entitlement) && csWasm.available === true;
+  const running = isJs ? js.running : useWasm ? csWasm.running : cs.running;
+  const canRun = isJs || cs.available === true || useWasm;
 
   const [code, setCode] = useState(lesson.challenge.starter);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -91,12 +101,14 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
   async function check() {
     if (timerRef.current) clearTimeout(timerRef.current);
     persistDraft(code); // never lose the exact code that was run
-    // JS grades in the browser against the lesson's tests; C# sends only the code
-    // and lesson id, and the loopback program grades against its own copy of the
-    // tests (so a submission can't fake a pass). Both return the same RunResult.
+    // JS and the hosted C# WASM runner grade in the browser against the lesson's
+    // tests; the loopback C# runner sends only the code + lesson id and grades
+    // against its own copy of the tests. All three return the same RunResult.
     const r = isJs
       ? await js.run(code, lesson.challenge.tests)
-      : await cs.run(code, lesson.id);
+      : useWasm
+        ? await csWasm.run(code, lesson.challenge.tests)
+        : await cs.run(code, lesson.id);
     setResult(r);
     const allPassed =
       r.checks.length === lesson.challenge.tests.length &&
@@ -125,10 +137,10 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <p className={styles.prompt}>{lesson.challenge.prompt}</p>
 
-      {!isJs && cs.available === null && (
+      {!isJs && !useWasm && cs.available === null && (
         <p className={styles.csNotice}>Checking for the local .NET runner…</p>
       )}
-      {!isJs && cs.available === false && (
+      {!isJs && !useWasm && cs.available === false && csWasm.available !== null && (
         <p className={styles.csNotice}>
           You can write and study this C# solution here. Running and checking C#
           needs the local edition — a small program that compiles C# with .NET on
@@ -160,6 +172,9 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
           <span className={styles.runtimeLabel}>
             Real .NET compiler{cs.sdk ? ` · ${cs.sdk}` : ""}
           </span>
+        )}
+        {useWasm && (
+          <span className={styles.runtimeLabel}>Running C# in your browser · .NET</span>
         )}
       </div>
 
