@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { streak, certificateEarned } from "@/lib/progress/core";
+import { summarizeGamification } from "@/lib/progress/gamification";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { canEarnCertificate, isLessonLocked } from "@/lib/entitlements/gating";
@@ -21,6 +22,8 @@ export default function Overview() {
   const done = new Set(state.completed ?? []);
   const days = streak(state.activity ?? {});
   const resume = state.lastLesson ? lessonsById.get(state.lastLesson) : undefined;
+  const game = summarizeGamification(state, days);
+  const levelPct = Math.round(game.level.progress * 100);
 
   return (
     <div className={styles.page}>
@@ -46,6 +49,29 @@ export default function Overview() {
           </span>
         </Link>
       )}
+
+      <section className={styles.level} aria-label="Your level">
+        <div className={styles.levelHead}>
+          <span className={styles.levelName}>
+            Level <strong>{game.level.level}</strong> · {game.level.title}
+          </span>
+          <span className={styles.levelXp}>
+            {game.level.xpIntoLevel} / {game.level.xpForLevel} XP ·{" "}
+            {game.earnedCount}/{game.totalBadges} badges
+          </span>
+        </div>
+        <div
+          className={styles.levelBar}
+          role="progressbar"
+          aria-valuenow={levelPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progress to the next level"
+        >
+          <span className={styles.levelFill} style={{ width: `${levelPct}%` }} />
+        </div>
+      </section>
+
 
       <div className={styles.tracks}>
         {TRACK_ORDER.map((lang) => {
@@ -104,6 +130,29 @@ export default function Overview() {
       {certLang && (
         <CertificateDialog lang={certLang} onClose={() => setCertLang(null)} />
       )}
+
+      <section aria-label="Achievements">
+        <h2 className={styles.sectionLabel}>Achievements</h2>
+        <div className={styles.badges}>
+          {game.badges.map((b) => (
+            <div
+              key={b.id}
+              className={`${styles.badge} ${b.earned ? styles.badgeEarned : ""}`}
+            >
+              <span
+                className={`${styles.badgeMark} ${b.earned ? "" : styles.badgeLocked}`}
+                aria-hidden="true"
+              >
+                {b.earned ? "★" : "☆"}
+              </span>
+              <span>
+                <span className={styles.badgeTitle}>{b.title}</span>
+                <span className={styles.badgeDesc}>{b.description}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {!ready && <p className={styles.loading}>Loading your progress…</p>}
     </div>

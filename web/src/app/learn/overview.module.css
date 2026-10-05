@@ -188,3 +188,93 @@
   opacity: 0.6;
   font-size: 0.9rem;
 }
+
+/* Level + XP — universal retention surface (Phase 5). Reads progress the learner
+   already has; no paid gate. */
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.levelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.levelName {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.levelName strong {
+  color: var(--accent);
+}
+.levelXp {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+.levelBar {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  overflow: hidden;
+}
+.levelFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* Achievements grid. */
+.sectionLabel {
+  margin: 0 0 0.1rem;
+  font-family: var(--display);
+  font-size: 1.1rem;
+}
+.badges {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+.badge {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  background: color-mix(in srgb, currentColor 3%, transparent);
+}
+.badgeEarned {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.badgeMark {
+  font-size: 1.1rem;
+  line-height: 1.2;
+  color: var(--accent);
+}
+.badgeLocked {
+  opacity: 0.4;
+  color: inherit;
+}
+.badgeTitle {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.badgeDesc {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
