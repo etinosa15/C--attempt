@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
-import { streak, certificateEarned } from "@/lib/progress/core";
+import { certificateEarned } from "@/lib/progress/core";
 import { summarizeGamification } from "@/lib/progress/gamification";
+import { streakWithShield, STREAK_SHIELD_DAYS } from "@/lib/progress/streak-shield";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
-import { canEarnCertificate, isLessonLocked } from "@/lib/entitlements/gating";
+import { canEarnCertificate, canUseStreakShield, isLessonLocked } from "@/lib/entitlements/gating";
 import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./overview.module.css";
 
@@ -20,7 +21,11 @@ export default function Overview() {
   const certsUnlocked = canEarnCertificate(entitlement);
 
   const done = new Set(state.completed ?? []);
-  const days = streak(state.activity ?? {});
+  const activity = state.activity ?? {};
+  const shielded = canUseStreakShield(entitlement);
+  const days = streakWithShield(activity, shielded ? STREAK_SHIELD_DAYS : 0);
+  // A shield is actively bridging a gap when the protected streak beats the raw one.
+  const streakProtected = shielded && days > streakWithShield(activity, 0);
   const resume = state.lastLesson ? lessonsById.get(state.lastLesson) : undefined;
   const game = summarizeGamification(state, days);
   const levelPct = Math.round(game.level.progress * 100);
@@ -33,6 +38,11 @@ export default function Overview() {
           {days > 0 ? (
             <>
               <strong>{days}</strong> day{days === 1 ? "" : "s"} in a row
+              {streakProtected && (
+                <span className={styles.shield} title="A Pro streak shield kept your streak through a missed day">
+                  {" "}🛡 protected
+                </span>
+              )}
             </>
           ) : (
             "Start a streak today"

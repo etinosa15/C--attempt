@@ -81,3 +81,14 @@ export function canRunCsharp(
 ): boolean {
   return !!entitlement?.features.runCsharp;
 }
+
+/**
+ * Does this learner get the streak shield — their streak surviving a few missed
+ * days? A Pro retention perk; Free streaks break on the first missed day. The
+ * number of days forgiven lives with the (pure) streak logic, not here.
+ */
+export function canUseStreakShield(
+  entitlement: Entitlement | null | undefined,
+): boolean {
+  return !!entitlement?.features.streakShield;
+}

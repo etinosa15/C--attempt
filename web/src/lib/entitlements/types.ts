@@ -53,6 +53,8 @@ export interface FeatureSet {
   unlimitedLessons: boolean;
   /** Cross-device progress sync (vs local-only). */
   crossDeviceSync: boolean;
+  /** Streak shield: the streak survives a few missed days (a Pro retention perk). */
+  streakShield: boolean;
 }
 
 /** The effective, computed entitlement the app gates on. */

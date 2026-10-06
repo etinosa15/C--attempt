@@ -64,6 +64,7 @@ const PRO_FEATURES: Feature[] = [
   { label: "The entire JavaScript + C# curriculum" },
   { label: "Every lesson's quiz, challenge & completion" },
   { label: "Track certificates" },
+  { label: "Streak shield — keep your streak through a missed day" },
   { label: "Run C# in the browser", soon: true },
   { label: "AI tutor that nudges, not answers", soon: true },
 ];

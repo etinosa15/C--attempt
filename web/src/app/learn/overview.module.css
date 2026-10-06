@@ -29,6 +29,14 @@
   color: var(--accent);
 }
 
+/* Pro streak-shield indicator, shown only while a shield is bridging a gap. */
+.shield {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
 .resume {
   display: flex;
   flex-direction: column;

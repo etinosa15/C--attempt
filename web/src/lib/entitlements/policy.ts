@@ -24,6 +24,7 @@ export const PRO_FEATURES: FeatureSet = {
   certificates: true,
   unlimitedLessons: true,
   crossDeviceSync: true,
+  streakShield: true,
 };
 
 // The post-trial Free floor. Deliberately generous enough to retain (keep the
@@ -37,6 +38,7 @@ export const FREE_FEATURES: FeatureSet = {
   certificates: false,
   unlimitedLessons: false,
   crossDeviceSync: true,
+  streakShield: false,
 };
 
 function freeEntitlement(): Entitlement {
