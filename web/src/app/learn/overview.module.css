@@ -241,6 +241,12 @@
   background: var(--accent);
   transition: width 0.4s ease;
 }
+.levelNext {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Achievements grid. */
 .sectionLabel {
@@ -285,4 +291,38 @@
   font-size: 0.78rem;
   opacity: 0.75;
   line-height: 1.4;
+}
+.badgeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+/* Progress toward a locked, multi-step badge. */
+.badgeProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+.badgeProgressBar {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  overflow: hidden;
+}
+.badgeProgressFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 70%, currentColor);
+  transition: width 0.4s ease;
+}
+.badgeProgressLabel {
+  font-size: 0.68rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

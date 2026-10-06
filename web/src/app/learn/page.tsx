@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned } from "@/lib/progress/core";
-import { summarizeGamification } from "@/lib/progress/gamification";
+import { summarizeGamification, sortBadgesForDisplay } from "@/lib/progress/gamification";
 import { streakWithShield, STREAK_SHIELD_DAYS } from "@/lib/progress/streak-shield";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
@@ -80,6 +80,9 @@ export default function Overview() {
         >
           <span className={styles.levelFill} style={{ width: `${levelPct}%` }} />
         </div>
+        <p className={styles.levelNext}>
+          {game.level.xpToNext} XP to level {game.level.level + 1}
+        </p>
       </section>
 
 
@@ -144,7 +147,7 @@ export default function Overview() {
       <section aria-label="Achievements">
         <h2 className={styles.sectionLabel}>Achievements</h2>
         <div className={styles.badges}>
-          {game.badges.map((b) => (
+          {sortBadgesForDisplay(game.badges).map((b) => (
             <div
               key={b.id}
               className={`${styles.badge} ${b.earned ? styles.badgeEarned : ""}`}
@@ -155,9 +158,27 @@ export default function Overview() {
               >
                 {b.earned ? "★" : "☆"}
               </span>
-              <span>
+              <span className={styles.badgeBody}>
                 <span className={styles.badgeTitle}>{b.title}</span>
                 <span className={styles.badgeDesc}>{b.description}</span>
+                {!b.earned && b.progressLabel && (
+                  <span className={styles.badgeProgress}>
+                    <span
+                      className={styles.badgeProgressBar}
+                      role="progressbar"
+                      aria-valuenow={Math.round(b.progress * 100)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${b.title} progress`}
+                    >
+                      <span
+                        className={styles.badgeProgressFill}
+                        style={{ width: `${Math.round(b.progress * 100)}%` }}
+                      />
+                    </span>
+                    <span className={styles.badgeProgressLabel}>{b.progressLabel}</span>
+                  </span>
+                )}
               </span>
             </div>
           ))}
