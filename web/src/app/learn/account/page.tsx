@@ -6,6 +6,7 @@ import { summarizeBilling } from "@/lib/entitlements/billing-summary";
 import { AccountActions } from "./AccountActions";
 import { ReferralPanel } from "./ReferralPanel";
 import { StudentPanel } from "./StudentPanel";
+import { TeamPanel } from "./TeamPanel";
 import styles from "./account.module.css";
 
 export const metadata: Metadata = {
@@ -81,6 +82,8 @@ export default async function AccountPage() {
         </section>
 
         <ReferralPanel />
+
+        <TeamPanel />
 
         <StudentPanel />
 

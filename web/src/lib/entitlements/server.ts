@@ -6,6 +6,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveEntitlement } from "./policy";
+import { resolveTeamEntitlement, maxEntitlement, type TeamRow, type TeamMembership } from "./team-policy";
 import type { Entitlement, SubscriptionRow } from "./types";
 
 const COLUMNS =
@@ -15,6 +16,11 @@ const COLUMNS =
  * Fetch and resolve the entitlement for `userId`. A missing row resolves to the
  * Free floor (see resolveEntitlement) — so a read error or an un-seeded legacy
  * account degrades safe rather than throwing on a hot path.
+ *
+ * Teams (Phase 6): a learner who isn't already Pro from their own subscription may
+ * still inherit Pro through an active team seat. We only run that extra lookup when
+ * the own entitlement is NOT Pro (so trial/paid learners skip it), and any failure
+ * degrades to the own entitlement — so the team path can never downgrade anyone.
  */
 export async function getEntitlement(
   supabase: SupabaseClient,
@@ -26,7 +32,50 @@ export async function getEntitlement(
     .select(COLUMNS)
     .eq("user_id", userId)
     .maybeSingle();
-  return resolveEntitlement((data as SubscriptionRow | null) ?? null, now);
+  const own = resolveEntitlement((data as SubscriptionRow | null) ?? null, now);
+  if (own.tier === "pro") return own; // already max — skip the team query
+
+  try {
+    const team = await getTeamEntitlement(supabase, userId, now);
+    if (team) return maxEntitlement(own, team);
+  } catch {
+    // Teams tables absent (migration not applied) or a read error — keep `own`.
+  }
+  return own;
+}
+
+/**
+ * The entitlement a learner inherits from an active team seat, or null when they
+ * aren't on a live team. Reads only their own membership (RLS self-read) plus the
+ * team row (RLS allows members). Used by getEntitlement as a non-downgrading
+ * fallback; inert until a team exists for the learner.
+ */
+export async function getTeamEntitlement(
+  supabase: SupabaseClient,
+  userId: string,
+  now: Date = new Date(),
+): Promise<Entitlement | null> {
+  const { data: memberships } = await supabase
+    .from("team_members")
+    .select("team_id, status, role")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .limit(1);
+  const membership = memberships?.[0];
+  if (!membership) return null;
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("status, current_period_end")
+    .eq("id", membership.team_id)
+    .maybeSingle();
+  if (!team) return null;
+
+  return resolveTeamEntitlement(
+    team as TeamRow,
+    { status: membership.status as string, role: membership.role as string } as TeamMembership,
+    now,
+  );
 }
 
 /**
