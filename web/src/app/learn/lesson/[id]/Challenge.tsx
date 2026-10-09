@@ -11,13 +11,14 @@
 // fully editable and its solution is revealable, but Check is replaced by a note
 // pointing to the local edition. This mirrors the studio's hosted/local C# split.
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Editor } from "@/components/Editor";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useJsRunner } from "@/lib/runner/useJsRunner";
 import { useCsRunner } from "@/lib/runner/useCsRunner";
 import { useCsWasmRunner } from "@/lib/runner/useCsWasmRunner";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
-import { canRunCsharp } from "@/lib/entitlements/gating";
+import { canRunCsharp, canUseAiTutor } from "@/lib/entitlements/gating";
 import {
   dayKey,
   hintTiers,
@@ -57,6 +58,9 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
 
   const [code, setCode] = useState(lesson.challenge.starter);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [tutorHint, setTutorHint] = useState<string | null>(null);
+  const [tutorNote, setTutorNote] = useState<string | null>(null);
+  const [tutorBusy, setTutorBusy] = useState(false);
   const touched = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -98,9 +102,58 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
     }));
   }
 
+  // The hosted AI tutor (Pro, metered server-side). It coaches toward the first
+  // failing check and never writes the solution (enforced by the shared prompt on
+  // the server). Any non-200 degrades to a quiet note pointing at the always-free
+  // staged hints below — the tutor is only ever an upgrade over them.
+  async function askTutor() {
+    if (!result) return;
+    setTutorBusy(true);
+    setTutorNote(null);
+    setTutorHint(null);
+    const fail = result.checks.find((c) => !c.passed);
+    try {
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang: lesson.lang,
+          title: lesson.title,
+          prompt: lesson.challenge.prompt,
+          code,
+          error: result.error ?? null,
+          tier: unlocked,
+          passed: result.checks.filter((c) => c.passed).length,
+          total: result.checks.length,
+          firstFailing: fail ? { label: fail.label, expected: fail.expected } : null,
+        }),
+      });
+      if (res.status === 429) {
+        setTutorNote("You've used today's tutor hints — they refresh tomorrow. The staged hints below still work.");
+        return;
+      }
+      if (!res.ok) {
+        setTutorNote("The study buddy is unavailable right now. Try the staged hints below.");
+        return;
+      }
+      const data = (await res.json()) as { message?: string; configured?: boolean };
+      if (data.configured === false || !data.message) {
+        setTutorNote("The study buddy isn't live in this build yet — the staged hints below always work.");
+        return;
+      }
+      setTutorHint(data.message);
+    } catch {
+      setTutorNote("The study buddy is unavailable right now. Try the staged hints below.");
+    } finally {
+      setTutorBusy(false);
+    }
+  }
+
   async function check() {
     if (timerRef.current) clearTimeout(timerRef.current);
     persistDraft(code); // never lose the exact code that was run
+    setTutorHint(null); // a fresh run supersedes any previous buddy hint
+    setTutorNote(null);
     // JS and the hosted C# WASM runner grade in the browser against the lesson's
     // tests; the loopback C# runner sends only the code + lesson id and grades
     // against its own copy of the tests. All three return the same RunResult.
@@ -179,6 +232,37 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
       </div>
 
       {result && <RunOutput result={result} lang={lesson.lang} />}
+
+      {result && !result.ok && (
+        <div className={styles.tutor}>
+          {canUseAiTutor(entitlement) ? (
+            <>
+              <button
+                type="button"
+                className={styles.btn}
+                onClick={askTutor}
+                disabled={tutorBusy}
+              >
+                {tutorBusy ? "Thinking…" : "Ask the study buddy"}
+              </button>
+              {tutorHint && (
+                <p className={styles.tutorHint} role="status" aria-live="polite">
+                  {tutorHint}
+                </p>
+              )}
+              {tutorNote && <p className={styles.csNotice}>{tutorNote}</p>}
+            </>
+          ) : (
+            <p className={styles.csNotice}>
+              Stuck? The AI study buddy is a{" "}
+              <Link href="/pricing" className={styles.tutorLink}>
+                Pro
+              </Link>{" "}
+              feature — the staged hints below are always free.
+            </p>
+          )}
+        </div>
+      )}
 
       <Hints
         tiers={tiers}

@@ -92,3 +92,15 @@ export function canUseStreakShield(
 ): boolean {
   return !!entitlement?.features.streakShield;
 }
+
+/**
+ * May this learner use the hosted AI tutor? A Pro capability (the proxy also meters
+ * it per-user so the bill stays bounded). Free/lapsed learners keep the offline
+ * heuristic nudge — the tutor route 403s them and the UI falls back — so this gate
+ * only decides whether the *hosted* hint is offered.
+ */
+export function canUseAiTutor(
+  entitlement: Entitlement | null | undefined,
+): boolean {
+  return !!entitlement?.features.aiTutor;
+}

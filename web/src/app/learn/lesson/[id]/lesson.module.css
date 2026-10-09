@@ -272,6 +272,28 @@
   font-size: 0.9rem;
   line-height: 1.55;
 }
+
+/* The AI study-buddy affordance under a failing run (Pro). */
+.tutor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.tutorHint {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.tutorLink {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 /* The live .NET runtime badge, shown beside the run buttons once the loopback
    compiler answers — reassurance that C# checks run against a real compiler. */
 .runtimeLabel {
