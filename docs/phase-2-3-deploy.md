@@ -1,16 +1,20 @@
-# Phase 2–3 — Monetization go-live runbook
+# Phase 2–6 — Monetization go-live runbook
 
 > Companion to [monetization-plan.md](monetization-plan.md) and
 > [phase-0-deploy.md](phase-0-deploy.md). This is the exact, ordered procedure to
-> take the **code-complete Phase 2 (payments + entitlements + reverse trial)** and
-> **Phase 3 (discounts & growth)** work live. All of it is already built, tested
-> (`node --test tests/*.test.mjs`) and merged to `main`; **none of it does anything
-> until the steps below are done** — every surface degrades to an honest
-> "not configured / not live yet" state until its env + Paddle objects exist.
+> take the **code-complete** monetization work live: **Phase 2** (payments +
+> entitlements + reverse trial), **Phase 3** (discounts & growth), **Phase 5**
+> (leaderboard, streak shields, metered AI tutor) and the **Phase 6** Teams/Edu
+> foundation. All of it is already built, tested (`node --test tests/*.test.mjs`)
+> and merged to `main`; **none of it does anything until the steps below are
+> done** — every surface degrades to an honest "not configured / not live yet"
+> state until its env + Paddle objects + migrations exist.
 >
 > **Builds on Phase 0.** [phase-0-deploy.md](phase-0-deploy.md) already stood up
-> Supabase (Auth + Postgres + RLS, migration `0001`) and the Vercel app. This
-> runbook adds the billing layer on top; it does **not** re-do any of that.
+> Supabase (Auth + Postgres + RLS, migration `0001`) and the Vercel app, **and set
+> `SUPABASE_SERVICE_ROLE_KEY`** — which every server-authoritative write here
+> (webhook grants, XP recompute, tutor metering) relies on. This runbook adds the
+> billing + growth layers on top; it does **not** re-do any of that.
 
 ## What this turns on
 
@@ -25,10 +29,15 @@
 | Cancellation save-flow + dunning | `/learn/account/cancel`, `/api/billing/*` | **Steps 3, 4b** |
 | Referral program | migration `0003`, `/api/referrals` | **Step 1** (works immediately; rewards are still code-TODO, see note) |
 | Student verification + discount | migration `0004`, `/api/student`, `/api/webhooks/student` | **Steps 4c, 5, 6** |
+| Opt-in XP leaderboard | migration `0005`, `/api/leaderboard` | **Step 1** (works immediately — opt-in, service-role XP recompute) |
+| Streak shields (Pro perk) | already live from Phase 5 | nothing — pure entitlement + progress math, no table, no config |
+| Metered AI tutor (Pro perk) | migration `0006`, `/api/tutor` | **Step 1** + **Step 4d** (the Anthropic key) |
+| Teams / Edu seats + inherited Pro | migration `0007`, `/api/teams` | **Step 1** (foundation only — per-seat billing & invites are later units) |
 
 Each row is **independently activatable** — e.g. you can launch with just the
-reverse trial + paid checkout and add discounts/student later. Partial config is
-safe: an unset discount simply never applies.
+reverse trial + paid checkout and add discounts/student/tutor later. Partial config is
+safe: an unset discount simply never applies, and an unset `ANTHROPIC_API_KEY`
+leaves the tutor on its offline heuristic nudge.
 
 ## Prerequisites
 
@@ -43,7 +52,7 @@ safe: an unset discount simply never applies.
 
 ---
 
-## Step 1 — Apply the Phase 2/3 migrations
+## Step 1 — Apply the Phase 2–6 migrations
 
 Run these against the **same Supabase project** from Phase 0, in order, **after**
 `0001`. Each is idempotent (`if not exists`, `drop … if exists`).
@@ -57,6 +66,19 @@ Run these against the **same Supabase project** from Phase 0, in order, **after*
   signup from `raw_user_meta_data.ref_code`.
 - [`0004_phase3_student.sql`](../web/supabase/migrations/0004_phase3_student.sql)
   — `student_verifications` (RLS self-read; service-role grants).
+- [`0005_phase5_leaderboard.sql`](../web/supabase/migrations/0005_phase5_leaderboard.sql)
+  — `leaderboard_entries` (RLS SELECT only — own row always, anyone else's only
+  while `opted_in`; **no write policy**, so `xp`/`opted_in` can't be forged from the
+  client — the route recomputes XP via the service role).
+- [`0006_phase5_tutor_usage.sql`](../web/supabase/migrations/0006_phase5_tutor_usage.sql)
+  — `tutor_usage` (per-learner, per-UTC-day hint counter; RLS self-read, no write
+  policy) + `bump_tutor_usage()` (`SECURITY DEFINER`, atomic increment via the
+  service role). Metering only — the daily limit is env (Step 4d).
+- [`0007_phase6_teams.sql`](../web/supabase/migrations/0007_phase6_teams.sql)
+  — `teams` + `team_members` (RLS: self-read membership; a team readable by its
+  owner/active members via the `is_active_team_member()` `SECURITY DEFINER` check;
+  **no write policy** — all team/seat writes are service-role, tied to billing).
+  Inert until the billing unit creates a team.
 
 **SQL editor (simplest):** paste each file's full contents into **SQL Editor → New
 query → Run**, in order. **CLI:** `supabase db push`.
@@ -64,16 +86,21 @@ query → Run**, in order. **CLI:** `supabase db push`.
 > `handle_new_user` is re-declared (`create or replace`) by both `0002` and `0003`
 > — the **last one applied wins**, and `0003`'s version is the complete one (profile
 > + progress + subscription seed + referral attribution). So apply **`0003` after
-> `0002`**. Re-running `0002` later would drop the referral attribution until you
-> re-run `0003`; if in doubt, re-run `0003` last.
+> `0002`**. `0004`–`0007` don't touch `handle_new_user`, so their order relative to
+> it doesn't matter — but keep the numeric order anyway (`0007` references nothing
+> earlier, but running them in sequence is the tested path). Re-running `0002` later
+> would drop the referral attribution until you re-run `0003`; if in doubt, re-run
+> `0003` last.
 
 Verify in **Table Editor**: `subscriptions`, `referral_codes`, `referrals`,
-`student_verifications` all exist with RLS enabled. Sign up a throwaway account and
+`student_verifications`, `leaderboard_entries`, `tutor_usage`, `teams`,
+`team_members` all exist with RLS enabled. Sign up a throwaway account and
 confirm it gets a `subscriptions` row with `plan='trial'`, `status='trialing'`,
 `trial_ends_at ≈ now + 7 days`.
 
-**At this point the reverse trial and referral attribution already work** with zero
-Paddle config. Everything else needs Paddle.
+**At this point the reverse trial, referral attribution, opt-in leaderboard and
+streak shields already work** with zero Paddle config. The AI tutor needs its
+Anthropic key (Step 4d); everything paid needs Paddle.
 
 ---
 
@@ -156,6 +183,27 @@ pause + the honest downgrade, just not a price break.
 `STUDENT_DISCOUNT_ID`. Only applies to a learner whose `student_verifications` row
 is `verified` and unexpired (Step 5).
 
+**4d — AI tutor (Anthropic key).** Not a Paddle object — the metered Pro tutor needs
+a server-side Anthropic key. Set:
+- `ANTHROPIC_API_KEY` = your key (**secret**, server-only — it is read in
+  [`/api/tutor`](../web/src/app/api/tutor/route.ts) and **never** returned to the
+  browser). Unset → the tutor route returns `{ configured: false }` and the UI stays
+  on its offline heuristic nudge (no error shown to the learner).
+- `TUTOR_DAILY_LIMIT` (optional) = integer hints/learner/day; defaults to `20`. This
+  is the cost ceiling that keeps the Anthropic bill bounded and covered by the Pro
+  subscription. Set it to `0` (or any non-positive value) as a **kill-switch** —
+  the quota resolver denies every request, so you can disable the tutor instantly
+  without pulling the key.
+- `TUTOR_MODEL` (optional) = Anthropic model id; defaults to
+  `claude-haiku-4-5-20251001` (fast + cheap, right for short Socratic hints).
+
+The tutor is **Pro-gated and metered server-side** regardless of what the client
+claims: signed-out → 401, non-Pro → 403 (UI falls back to the offline nudge), quota
+exhausted → 429, and **only a successfully served hint costs budget** (a failed or
+offline hint is free). The prompt builder is the shared, tested
+[`tutor/prompt.mjs`](../../tutor/prompt.mjs) whose one job is "coach, never ship the
+worked solution."
+
 ---
 
 ## Step 5 — Student verification provider (optional)
@@ -177,7 +225,7 @@ Instead:
 
 Mapping the provider's user back to the Forge `user_id` is the bridge's job (e.g.
 pass the signed-in learner's id into the provider flow as metadata, or match on
-email). Until all three of `STUDENT_VERIFY_URL` + `STUDENT_DISCOUNT_ID` are set the
+email). Until both `STUDENT_VERIFY_URL` and `STUDENT_DISCOUNT_ID` are set the
 account panel shows nothing (honest hidden state).
 
 ---
@@ -204,13 +252,18 @@ everything you collected. Secrets must **never** be `NEXT_PUBLIC_`:
 | `STUDENT_DISCOUNT_ID` | no | Step 4c | student discount |
 | `STUDENT_VERIFY_URL` | no | Step 5 | student verify link |
 | `STUDENT_WEBHOOK_SECRET` | **secret** | Step 5 | authorize the student grant bridge |
+| `ANTHROPIC_API_KEY` | **secret** | Step 4d | hosted AI tutor (Pro perk) |
+| `TUTOR_DAILY_LIMIT` | no | Step 4d | hints/learner/day (default 20; `0` = kill-switch) |
+| `TUTOR_MODEL` | no | Step 4d | tutor model (default `claude-haiku-4-5-20251001`) |
 
 Redeploy (Vercel applies env changes on the next deploy). `web/.env.local` is for
 local dev only and is gitignored — the dashboard values are what prod reads.
 
 > **Minimum to sell:** `PADDLE_ENV`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
 > `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, and the three `PADDLE_PRICE_*`. Everything else
-> is additive and safe to leave unset.
+> is additive and safe to leave unset. The leaderboard and streak shields need
+> **nothing beyond their migrations**; the AI tutor needs only `ANTHROPIC_API_KEY`
+> on top (it is independent of Paddle entirely).
 
 ---
 
@@ -238,6 +291,18 @@ With `PADDLE_ENV=sandbox` and sandbox credentials, from the deployed app:
 8. **Student** (if configured): account → **Verify student status** → provider flow →
    bridge POSTs the grant → account shows "verified, applies at checkout" → checkout
    applies the student discount (and *not* the launch deal — single discount).
+9. **Leaderboard:** `/learn/leaderboard` → opt in with a display name → your row
+   appears ranked by XP; a second opted-in account appears too; opt out → you vanish
+   from the public board. Confirm the handle shown is never an email.
+10. **Streak shields** (Pro): with a one-day gap in activity, a Pro learner's streak
+    survives (up to the shield budget) where a Free learner's resets — no new config,
+    just confirm the Pro/Free difference.
+11. **AI tutor** (if `ANTHROPIC_API_KEY` set): on a failing lesson, a Pro learner's
+    **Ask the study buddy** returns a Socratic hint (not the solution) and the
+    remaining-hints count decrements; a Free learner sees the offline heuristic nudge
+    instead. Exhaust the daily limit → the UI reports hints refresh tomorrow (429).
+    Set `TUTOR_DAILY_LIMIT=0` and redeploy → every learner falls back to the offline
+    nudge (kill-switch), confirming no uncovered Anthropic spend.
 
 > Reward *granting* for referrals (turning an invite into an actual credit/discount)
 > is **not yet wired** — the `referrals` row records the attribution, but advancing
@@ -271,8 +336,12 @@ With `PADDLE_ENV=sandbox` and sandbox credentials, from the deployed app:
 - **Webhook/signature issue:** fix `PADDLE_WEBHOOK_SECRET`; Paddle retries failed
   deliveries, so grants self-heal once the secret matches. The handler returns 500
   on write failure *on purpose* so Paddle retries.
-- **Migration issue:** all three are idempotent with no destructive drops; fix and
-  re-run in the SQL editor (re-run `0003` last to keep the full `handle_new_user`).
+- **Migration issue:** all are idempotent with no destructive drops; fix and
+  re-run in the SQL editor (re-run `0003` last to keep the full `handle_new_user`;
+  `0004`–`0007` are independent of it).
+- **AI tutor misbehaving or too costly:** set `TUTOR_DAILY_LIMIT=0` (instant
+  kill-switch — every learner drops to the offline nudge) or unset `ANTHROPIC_API_KEY`
+  entirely; both are reversible on the next redeploy and lose no learner data.
 
 ---
 
@@ -300,6 +369,14 @@ only in the Vercel dashboard (and the student bridge, for `STUDENT_WEBHOOK_SECRE
 | `STUDENT_DISCOUNT_ID` | no | student discount | student panel hidden |
 | `STUDENT_VERIFY_URL` | no | provider verify flow URL | student panel hidden |
 | `STUDENT_WEBHOOK_SECRET` | **secret** | authorize student grants | student webhook 503s |
+| `ANTHROPIC_API_KEY` | **secret** | hosted AI-tutor completions | tutor route returns `{configured:false}`; UI stays on offline nudge |
+| `TUTOR_DAILY_LIMIT` | no | hints/learner/day cap | defaults to 20; `0`/negative disables the tutor (kill-switch) |
+| `TUTOR_MODEL` | no | tutor Anthropic model id | defaults to `claude-haiku-4-5-20251001` |
+
+> The leaderboard, streak shields and the Teams/Edu foundation need **no env** —
+> only their migrations (`0005`, `0007`) and the Phase 0 `SUPABASE_SERVICE_ROLE_KEY`
+> that already backs every service-role write. The AI tutor's `tutor_usage` metering
+> (`0006`) likewise needs only the migration; its only env is the Anthropic key above.
 
 ## Appendix — still code-TODO after this runbook
 
@@ -312,3 +389,23 @@ out so the runbook doesn't over-promise:
 - **Discount abuse caps beyond Paddle's own** (per-account caps, stacking audit) — the
   app enforces single-discount-at-checkout; anything finer is Paddle-side config +
   future code.
+- **Teams/Edu billing + invites.** The `teams`/`team_members` tables and the
+  seat/entitlement resolvers are live, but **buying/adjusting seats** (Paddle team
+  subscription), the **invite flow**, and the **cohort-progress dashboard** are
+  unbuilt later units — the plan gates them on "B2C proven," and the billing half
+  needs live Paddle. Until the billing unit creates a team (service-role), the tables
+  stay empty and the team entitlement wiring is a no-op.
+
+## Appendix — built but not yet runtime-verified
+
+Honest about what's merged-and-tested-as-code but **not** proven end-to-end against a
+live runtime (and surfaced in-app as "soon", never over-promised):
+
+- **C# WASM runner** (Phase 4). The in-browser Roslyn runner's TS harness is
+  unit-tested, but the .NET WASM runtime blob (`web/dotnet-runner/`) is committed as
+  **source, unbuilt** — building it and verifying a real in-browser compile is a
+  pending unit. See [`web/dotnet-runner/README.md`](../web/dotnet-runner/README.md).
+- **AI-tutor live call** (Phase 5). The route, Pro gate, quota, and prompt builder
+  are tested; the actual Anthropic round-trip hasn't been exercised against a real key
+  (none available in the build environment). Step 4d + the smoke test above are how
+  you verify it on first deploy.
