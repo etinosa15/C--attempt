@@ -35,21 +35,22 @@ type Billing = "annual" | "monthly";
 // When Paddle is the configured provider instead, its PricePreview overrides these
 // with auto-localized, tax-correct totals (see the regional-pricing effect).
 //
-// Defaults are placeholders — set NEXT_PUBLIC_PRICE_* in the environment to your
-// real prices before launch.
+// Defaults are the "Balanced" launch tier (affordable but quality-signaling):
+// ₦3,500/mo monthly · ₦2,000/mo billed yearly (₦24,000/yr) · ₦40,000 lifetime.
+// Override any of them with NEXT_PUBLIC_PRICE_* without a code change.
 const PRICING = {
   proAnnual: {
-    amount: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL ?? "₦4,000",
+    amount: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL ?? "₦2,000",
     unit: "/mo",
-    note: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL_NOTE ?? "billed yearly · save 33%",
+    note: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL_NOTE ?? "₦24,000 billed yearly · save 43%",
   },
   proMonthly: {
-    amount: process.env.NEXT_PUBLIC_PRICE_PRO_MONTHLY ?? "₦6,000",
+    amount: process.env.NEXT_PUBLIC_PRICE_PRO_MONTHLY ?? "₦3,500",
     unit: "/mo",
     note: "billed monthly",
   },
   lifetime: {
-    amount: process.env.NEXT_PUBLIC_PRICE_LIFETIME ?? "₦60,000",
+    amount: process.env.NEXT_PUBLIC_PRICE_LIFETIME ?? "₦40,000",
     unit: "once",
     note: "one payment, yours forever",
   },

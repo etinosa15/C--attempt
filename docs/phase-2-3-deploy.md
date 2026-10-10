@@ -99,12 +99,98 @@ confirm it gets a `subscriptions` row with `plan='trial'`, `status='trialing'`,
 `trial_ends_at ≈ now + 7 days`.
 
 **At this point the reverse trial, referral attribution, opt-in leaderboard and
-streak shields already work** with zero Paddle config. The AI tutor needs its
-Anthropic key (Step 4d); everything paid needs Paddle.
+streak shields already work** with zero payment config. The AI tutor needs its
+Anthropic key (Step 4d); everything paid needs a payment provider — choose one next.
+
+---
+
+## Payment provider — Paystack (Nigeria-first) or Paddle
+
+Forge supports two providers; the app uses **Paystack whenever `PAYSTACK_SECRET_KEY`
+is set**, otherwise falls back to **Paddle**. Pick the one that matches your market
+— they're an either/or at runtime:
+
+- **Paystack** — a Nigerian/African payment **gateway**. Best for selling mainly to
+  Nigerian learners: local cards, bank transfer, USSD, naira settlement. You are the
+  seller of record, so **you handle Nigerian VAT (7.5%)** yourself. This is the
+  default path → follow **Paystack setup** just below, then skip to Step 4d/Step 6.
+- **Paddle** — a global **merchant of record**. Best for selling internationally in
+  USD/EUR with tax handled for you → follow **Steps 2–8 (Paddle)** instead.
+
+Everything else here (migrations, AI tutor, teams) is provider-agnostic.
+
+### Paystack setup (recommended for Nigeria)
+
+1. **Create a Paystack account** at <https://dashboard.paystack.com>. **Test mode
+   works immediately** — no verification needed to integrate and test. Business KYC +
+   a Nigerian settlement bank account are only needed to receive real money (start
+   that early; it can take a few days).
+2. **API keys** (Settings → API Keys & Webhooks): the **Secret key** (`sk_test_…` /
+   `sk_live_…`) → `PAYSTACK_SECRET_KEY` (**secret**); the **Public key** (`pk_…`) →
+   `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`. Test vs live is decided purely by which key you
+   use — there's no separate environment flag.
+3. **Create the subscription Plans** (dashboard → Plans), amounts in NGN:
+   - **Pro Monthly** — interval **monthly** → copy its plan code (`PLN_…`) →
+     `PAYSTACK_PLAN_PRO_MONTHLY`.
+   - **Pro Annual** — interval **annually** → `PAYSTACK_PLAN_PRO_ANNUAL`.
+   Lifetime is **not** a plan — it's a one-time charge whose amount (in **kobo**,
+   naira ×100) lives in `PAYSTACK_AMOUNT_LIFETIME`.
+4. **Webhook** (Settings → API Keys & Webhooks → Webhook URL):
+   `https://<your-vercel-app>/api/webhooks/paystack`. Paystack signs each event with
+   **HMAC-SHA512** of the raw body using your secret key; the handler verifies it in
+   constant time and is the **only** thing that grants Pro.
+5. **Display prices** (naira marketing copy) via `NEXT_PUBLIC_PRICE_*` — set them to
+   match your plan amounts. The Balanced tier below is baked in as the default.
+
+#### Suggested launch pricing (Balanced tier)
+
+| Plan | Display env | Shows | Plan amount (kobo) |
+|------|-------------|-------|---------------------|
+| Monthly | `NEXT_PUBLIC_PRICE_PRO_MONTHLY` | ₦3,500/mo | `350000` |
+| Annual | `NEXT_PUBLIC_PRICE_PRO_ANNUAL` | ₦2,000/mo (₦24,000/yr) | `2400000` |
+| Lifetime | `PAYSTACK_AMOUNT_LIFETIME` | ₦40,000 once | `4000000` |
+
+> **Fee note:** Paystack charges local cards 1.5% + ₦100, the ₦100 **waived below
+> ₦2,500**, capped at ₦2,000. None of these hit the cap.
+
+#### Paystack environment variables
+
+| Variable | Public? | Needed for |
+|----------|---------|------------|
+| `PAYSTACK_SECRET_KEY` | **secret** | API calls + webhook signature; its presence selects Paystack |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | yes | client checkout (inline, optional) |
+| `PAYSTACK_PLAN_PRO_MONTHLY` | no | monthly subscription (plan code) |
+| `PAYSTACK_PLAN_PRO_ANNUAL` | no | annual subscription (plan code) |
+| `PAYSTACK_AMOUNT_LIFETIME` | no | lifetime one-time charge (kobo) |
+| `NEXT_PUBLIC_PRICE_PRO_MONTHLY` / `_PRO_ANNUAL` / `_PRO_ANNUAL_NOTE` / `_LIFETIME` | yes | naira price copy (Balanced-tier defaults baked in; optional) |
+
+> **Minimum to sell on Paystack:** `PAYSTACK_SECRET_KEY`, the two `PAYSTACK_PLAN_*`,
+> and `PAYSTACK_AMOUNT_LIFETIME`.
+
+#### Paystack smoke test (test mode)
+
+1. **Checkout:** `/pricing` → **Upgrade to Pro** → redirected to Paystack's hosted
+   page; pay with a [test card](https://paystack.com/docs/payments/test-payments)
+   (`4084 0840 8408 4081`, any future expiry, CVV `408`). You land back on
+   `/checkout?…&reference=…` with the confirmation.
+2. **Webhook grant:** within seconds the `subscriptions` row flips to `plan='pro'`,
+   `status='active'`, `provider='paystack'`; `/learn/account` reads **Forge Pro**.
+3. **Lifetime:** repeat via the Lifetime CTA → one-time charge, row has
+   `current_period_end=null` (never lapses).
+4. **Cancel:** account → **Cancel plan** → **Switch to Free** → the
+   `subscription.disable` webhook flips the row to `canceled`.
+
+> **Paystack caveats** (vs Paddle): no regional/PPP auto-pricing (you set naira
+> prices and handle Nigerian VAT); no "pause" or init-time retention discount in the
+> save-flow; the founding/student **discounts are Paddle-only** for now.
 
 ---
 
 ## Step 2 — Create the Paddle catalog (products + prices)
+
+> The Steps 2–8 below are the **Paddle** (international merchant-of-record) path. If
+> you set up Paystack above, skip to **Step 4d** (AI tutor) and **Step 6** (env) —
+> the `PADDLE_*` steps don't apply.
 
 In the Paddle dashboard (sandbox first), **Catalog → Products**. Create:
 
