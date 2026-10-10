@@ -29,15 +29,35 @@ import styles from "./pricing.module.css";
 
 type Billing = "annual" | "monthly";
 
-// Approximate launch pricing (docs/monetization-plan.md D5). Annual is shown as its
-// monthly-equivalent with the yearly total as the note; monthly is the anchor above it.
-// These are the fallback USD strings; when Paddle is configured the pricing table
-// shows Paddle's own localized totals instead (see the regional-pricing effect).
+// Displayed launch pricing. Nigeria-first: these are **naira** display strings,
+// read from public env so the numbers stay config (set them to match your Paystack
+// plan amounts — the plan's amount is what's actually charged; this is the copy).
+// When Paddle is the configured provider instead, its PricePreview overrides these
+// with auto-localized, tax-correct totals (see the regional-pricing effect).
+//
+// Defaults are placeholders — set NEXT_PUBLIC_PRICE_* in the environment to your
+// real prices before launch.
 const PRICING = {
-  proAnnual: { amount: "$15", unit: "/mo", note: "$180 billed yearly · save 40%" },
-  proMonthly: { amount: "$25", unit: "/mo", note: "billed monthly" },
-  lifetime: { amount: "$299", unit: "once", note: "one payment, yours forever" },
+  proAnnual: {
+    amount: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL ?? "₦4,000",
+    unit: "/mo",
+    note: process.env.NEXT_PUBLIC_PRICE_PRO_ANNUAL_NOTE ?? "billed yearly · save 33%",
+  },
+  proMonthly: {
+    amount: process.env.NEXT_PUBLIC_PRICE_PRO_MONTHLY ?? "₦6,000",
+    unit: "/mo",
+    note: "billed monthly",
+  },
+  lifetime: {
+    amount: process.env.NEXT_PUBLIC_PRICE_LIFETIME ?? "₦60,000",
+    unit: "once",
+    note: "one payment, yours forever",
+  },
 };
+
+/** The free tier's headline price (naira "free" is just 0 — kept configurable for
+ *  parity, but defaults to the universal "₦0"). */
+const FREE_PRICE = process.env.NEXT_PUBLIC_PRICE_FREE ?? "₦0";
 
 // Config the pricing page needs to ask Paddle for localized prices.
 type PaddleConfig =
@@ -328,7 +348,7 @@ export function PricingTable() {
         <div className={marketing.tier}>
           <h2 className={marketing.tierName}>Free</h2>
           <div>
-            <span className={marketing.tierPrice}>$0</span>
+            <span className={marketing.tierPrice}>{FREE_PRICE}</span>
             <span className={marketing.tierPriceNote}>the forever floor</span>
           </div>
           <FeatureList features={FREE_FEATURES} />

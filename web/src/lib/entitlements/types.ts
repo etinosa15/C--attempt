@@ -28,7 +28,7 @@ export interface SubscriptionRow {
   /** ISO timestamp; null while trialing/free. */
   current_period_end: string | null;
   cancel_at_period_end: boolean;
-  provider: "paddle" | "stripe" | null;
+  provider: "paddle" | "paystack" | "stripe" | null;
   provider_customer_id: string | null;
   provider_subscription_id: string | null;
   created_at: string;

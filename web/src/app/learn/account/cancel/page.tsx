@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionRow } from "@/lib/entitlements/server";
 import { planSaveOffers } from "@/lib/entitlements/save-offers";
+import { getPaystackConfig } from "@/lib/payments/paystack";
 import { CancelFlow } from "./CancelFlow";
 import styles from "../account.module.css";
 
@@ -26,9 +27,12 @@ export default async function CancelPage() {
   if (!user) redirect("/login");
 
   const row = await getSubscriptionRow(supabase, user.id);
+  // Paystack (gateway) has no pause and no init-time retention discount; Paddle
+  // (MoR) supports both. Only offer saves the active provider can actually honor.
+  const onPaystack = Boolean(getPaystackConfig());
   const offers = planSaveOffers(row, {
-    pauseSupported: true, // Paddle supports pausing; this is MoR-agnostic
-    retentionDiscountId: process.env.PADDLE_RETENTION_DISCOUNT_ID ?? null,
+    pauseSupported: !onPaystack,
+    retentionDiscountId: onPaystack ? null : (process.env.PADDLE_RETENTION_DISCOUNT_ID ?? null),
   });
 
   // Nothing to cancel (Free floor / lifetime / no provider subscription) — send

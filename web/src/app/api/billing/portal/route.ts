@@ -2,24 +2,21 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSubscriptionRow } from "@/lib/entitlements/server";
 import { getPaddleConfig, createCustomerPortalSession } from "@/lib/payments/paddle";
+import { getPaystackConfig, manageSubscriptionLink } from "@/lib/payments/paystack";
 
 export const runtime = "nodejs";
 
-// POST /api/billing/portal — mint a Paddle customer-portal URL for the signed-in
-// learner so they can manage their payment method, download invoices, or cancel.
+// POST /api/billing/portal — mint a hosted "manage billing" URL for the signed-in
+// learner so they can update their payment method (and, on Paddle, download
+// invoices / cancel).
 //
-// Paddle is the merchant of record, so the portal is Paddle's, not ours: we never
-// handle cards or implement a cancel that could silently break a real subscription.
-// We only resolve the trusted customer id from the learner's own subscriptions row
-// (RLS self-read; the learner can't point this at someone else's customer) and ask
-// Paddle for a one-time portal URL to redirect to.
+// Provider-aware. The learner's trusted ids come from their own subscriptions row
+// (RLS self-read; they can't point this at someone else's) — never from the
+// request. On Paddle (MoR) that's the customer portal; on Paystack it's the hosted
+// subscription-management page (keyed by the subscription code). We never handle
+// cards ourselves.
 //
-// Responses:
-//   200 { url }            — redirect the client harness to Paddle's portal.
-//   200 { configured:false } — Paddle isn't set up in this env yet.
-//   401 { error }          — signed out.
-//   404 { error }          — no provider subscription to manage (Free/trial only).
-//   502 { error }          — Paddle reachable but couldn't mint a portal session.
+// Responses: 200 {url} | 200 {configured:false} | 401 | 404 | 502.
 export async function POST() {
   const supabase = await createClient();
   const {
@@ -30,13 +27,29 @@ export async function POST() {
   }
 
   const row = await getSubscriptionRow(supabase, user.id);
+
+  // --- Paystack (preferred) ------------------------------------------------
+  const paystack = getPaystackConfig();
+  if (paystack) {
+    const subscriptionId = row?.provider_subscription_id ?? null;
+    if (!subscriptionId) {
+      // Lifetime / trial / Free: no recurring subscription to manage.
+      return NextResponse.json({ error: "No subscription to manage yet." }, { status: 404 });
+    }
+    const url = await manageSubscriptionLink(paystack, subscriptionId);
+    if (!url) {
+      return NextResponse.json(
+        { error: "Could not open the billing portal. Please try again." },
+        { status: 502 },
+      );
+    }
+    return NextResponse.json({ url }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  // --- Paddle (fallback) ---------------------------------------------------
   const customerId = row?.provider_customer_id ?? null;
   if (!customerId) {
-    // Nothing to manage — the learner is on the Free floor / trial with no MoR row.
-    return NextResponse.json(
-      { error: "No paid subscription to manage yet." },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "No paid subscription to manage yet." }, { status: 404 });
   }
 
   const config = getPaddleConfig();

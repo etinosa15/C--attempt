@@ -1,15 +1,16 @@
 "use client";
 
-// The interactive half of /checkout. It asks the server to start a Paddle
-// transaction for the chosen plan, then opens Paddle's hosted overlay. Paddle is
-// the merchant of record; entitlement is granted by the verified webhook, not
-// here — so on "completed" we just confirm and send the learner back to /learn,
-// where the server re-reads their (now Pro) entitlement.
+// The interactive half of /checkout. It asks the server to start a checkout for
+// the chosen plan, then either redirects to Paystack's hosted page (our Nigeria-
+// first gateway) or opens Paddle's overlay (the merchant-of-record fallback).
+// Entitlement is granted by the verified webhook, not here — so on return/completion
+// we just confirm and send the learner back to /learn, where the server re-reads
+// their (now Pro) entitlement.
 //
-// Degrades honestly: if payments aren't configured in this environment, or the
-// price isn't set, it shows the "almost here" placeholder; signed-out visitors
-// are pointed at sign-in. Paddle.js is loaded on demand from Paddle's CDN so the
-// marketing bundle stays free of it.
+// Paystack appends ?reference=…&trxref=… to the callback URL, so when we land back
+// here with that in the URL we show the confirmation instead of starting a second
+// transaction. Degrades honestly: unconfigured/price-unset -> "almost here"
+// placeholder; signed-out visitors are pointed at sign-in.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { loadPaddleJs } from "@/lib/payments/paddle-js";
@@ -17,12 +18,13 @@ import styles from "../marketing.module.css";
 
 type Props = { plan?: string; billing?: string; deal?: string };
 
-type Status = "loading" | "placeholder" | "signedout" | "opening" | "completed" | "error";
+type Status = "loading" | "placeholder" | "signedout" | "opening" | "redirecting" | "completed" | "error";
 
 type CheckoutStart =
   | { configured: false }
   | { error: string }
-  | { transactionId: string; clientToken: string; environment: "sandbox" | "production" };
+  | { provider: "paystack"; redirectUrl: string }
+  | { provider?: "paddle"; transactionId: string; clientToken: string; environment: "sandbox" | "production" };
 
 export function CheckoutClient({ plan, billing, deal }: Props) {
   const [status, setStatus] = useState<Status>("loading");
@@ -31,6 +33,14 @@ export function CheckoutClient({ plan, billing, deal }: Props) {
   useEffect(() => {
     if (started.current) return; // fire once (also tames React's dev double-invoke)
     started.current = true;
+
+    // Returning from Paystack's hosted page: it appends the transaction reference.
+    // Show the confirmation rather than starting a fresh checkout.
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("reference") || params.has("trxref")) {
+      setStatus("completed");
+      return;
+    }
 
     (async () => {
       let res: Response;
@@ -57,11 +67,19 @@ export function CheckoutClient({ plan, billing, deal }: Props) {
         setStatus("placeholder");
         return;
       }
+
+      // Paystack: hand off to its hosted checkout.
+      if ("redirectUrl" in data && data.redirectUrl) {
+        setStatus("redirecting");
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
+      // Paddle: open the hosted overlay.
       if (!("transactionId" in data)) {
         setStatus("error");
         return;
       }
-
       try {
         const paddle = await loadPaddleJs();
         paddle.Environment?.set(data.environment);
@@ -79,10 +97,14 @@ export function CheckoutClient({ plan, billing, deal }: Props) {
     })();
   }, [plan, billing, deal]);
 
-  if (status === "loading" || status === "opening") {
+  if (status === "loading" || status === "opening" || status === "redirecting") {
     return (
       <div className={styles.notice}>
-        {status === "loading" ? "Starting secure checkout…" : "Complete your purchase in the Paddle window."}
+        {status === "loading"
+          ? "Starting secure checkout…"
+          : status === "redirecting"
+            ? "Taking you to the secure payment page…"
+            : "Complete your purchase in the Paddle window."}
       </div>
     );
   }

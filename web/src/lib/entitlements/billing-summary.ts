@@ -19,8 +19,8 @@ import type { Entitlement, SubscriptionRow } from "./types";
 export type ManageBilling = {
   /** True when there's a real provider subscription to manage/cancel at all. */
   available: boolean;
-  /** Paddle (or another MoR) — names the portal we'd send them to. */
-  provider: "paddle" | "stripe" | null;
+  /** Paddle / Paystack (or another provider) — names the portal we'd send them to. */
+  provider: "paddle" | "paystack" | "stripe" | null;
 };
 
 /** Every lifecycle the dashboard renders distinctly. */

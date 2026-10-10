@@ -46,8 +46,8 @@ export default async function Checkout({
           {cycle ? ` — ${cycle}` : ""}
         </h1>
         <p className={styles.sectionLead}>
-          Secure checkout, handled by Paddle as our merchant of record — so tax
-          and receipts are correct wherever you are.
+          Secure checkout. Your payment is processed by our payment provider — we
+          never see or store your card details.
         </p>
       </div>
 
