@@ -59,6 +59,20 @@ test("nested structures recurse", () => {
   );
 });
 
+test("a cyclic input terminates (depth cap) instead of overflowing the stack", () => {
+  const a = { name: "x" };
+  a.self = a; // self-referential
+  const b = { name: "x" };
+  b.self = b;
+  // Must return a boolean quickly, not throw a RangeError. (Resolves not-equal
+  // once the depth cap is hit — the point is it terminates.)
+  let result;
+  assert.doesNotThrow(() => {
+    result = structuralEqual(a, b);
+  });
+  assert.equal(typeof result, "boolean");
+});
+
 test("cannot be fooled by a live JSON.stringify override", () => {
   const original = JSON.stringify;
   JSON.stringify = () => "same";

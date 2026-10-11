@@ -11,8 +11,14 @@
 const $isArray = Array.isArray;
 const $keys = Object.keys;
 const $hasOwn = Object.prototype.hasOwnProperty;
-function structuralEqual(a, b) {
+// Nesting ceiling: a learner can return a self-referential object here, so cap the
+// recursion depth — "too deep" resolves as not-equal instead of overflowing the
+// stack. (The 5s worker timeout is a backstop, but this fails fast and cleanly.)
+const $MAX_DEPTH = 100;
+function structuralEqual(a, b, depth) {
+  depth = depth || 0;
   if (a === b) return true;
+  if (depth > $MAX_DEPTH) return false;
   if (typeof a === "number" && typeof b === "number") return a !== a && b !== b;
   if (a === null || b === null || typeof a !== "object" || typeof b !== "object")
     return false;
@@ -21,7 +27,7 @@ function structuralEqual(a, b) {
   if (aArray) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++)
-      if (!structuralEqual(a[i], b[i])) return false;
+      if (!structuralEqual(a[i], b[i], depth + 1)) return false;
     return true;
   }
   const aKeys = $keys(a).filter((k) => a[k] !== undefined);
@@ -29,7 +35,7 @@ function structuralEqual(a, b) {
   if (aKeys.length !== bKeys.length) return false;
   for (const key of aKeys) {
     if (!$hasOwn.call(b, key)) return false;
-    if (!structuralEqual(a[key], b[key])) return false;
+    if (!structuralEqual(a[key], b[key], depth + 1)) return false;
   }
   return true;
 }

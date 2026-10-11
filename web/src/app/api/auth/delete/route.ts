@@ -29,17 +29,18 @@ export async function POST(request: Request) {
   if (!user)
     return withCors(request, NextResponse.json({ error: "Sign in first." }, { status: 401 }));
 
-  // RLS-scoped deletes of the learner's own rows. They also cascade from auth.users,
-  // but delete them explicitly so erasure still completes if that cascade is missing.
-  await supabase.from("progress").delete().eq("user_id", user.id);
-  await supabase.from("profiles").delete().eq("id", user.id);
-
-  // Delete the auth identity itself (requires the service role). Only this makes the
-  // account truly unrecoverable, so a failure here is a real failure — report it.
+  // Delete the auth identity itself FIRST (requires the service role). Only this makes
+  // the account truly unrecoverable, and auth.users cascades to progress/profiles — so
+  // doing it first means a failure leaves the account fully intact, never half-erased.
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error)
     return withCors(request, NextResponse.json({ error: "Could not delete the account identity." }, { status: 500 }));
+
+  // Belt-and-suspenders: clean the rows in case the cascade is missing. Via the admin
+  // client, since the caller's bearer session is now invalid.
+  await admin.from("progress").delete().eq("user_id", user.id);
+  await admin.from("profiles").delete().eq("id", user.id);
 
   // Best-effort cookie clear for the same-origin case; the studio's bearer session is
   // ended client-side and its JWT expires on its own.

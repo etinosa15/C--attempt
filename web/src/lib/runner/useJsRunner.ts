@@ -6,7 +6,7 @@
 // itself is the vanilla studio's repo-root runner-worker.js, reused verbatim: it
 // captures prototype refs before running untrusted code and compares results with
 // order-insensitive structural equality, so a submission can't fake a pass.
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChallengeTest, RunResult } from "@/lib/curriculum";
 
 interface WorkerResult {
@@ -27,6 +27,21 @@ const RUN_TIMEOUT_MS = 5000;
 
 export function useJsRunner() {
   const [running, setRunning] = useState(false);
+  // Track the in-flight worker/timer so we can tear them down if the component
+  // unmounts mid-run (otherwise the worker runs on until its timeout, and finish()
+  // would setState on an unmounted hook).
+  const activeWorker = useRef<Worker | null>(null);
+  const activeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+      if (activeTimer.current) clearTimeout(activeTimer.current);
+      activeWorker.current?.terminate();
+    },
+    [],
+  );
 
   const run = useCallback(
     (code: string, tests: ChallengeTest[]): Promise<RunResult> => {
@@ -41,7 +56,9 @@ export function useJsRunner() {
           settled = true;
           clearTimeout(timer);
           worker.terminate();
-          setRunning(false);
+          activeWorker.current = null;
+          activeTimer.current = null;
+          if (mounted.current) setRunning(false);
           resolve(result);
         };
         const timer = setTimeout(
@@ -55,6 +72,8 @@ export function useJsRunner() {
             }),
           RUN_TIMEOUT_MS,
         );
+        activeWorker.current = worker;
+        activeTimer.current = timer;
         worker.onmessage = ({ data }: MessageEvent<WorkerResult>) => {
           const output = (data.logs ?? []).join("\n");
           if (data.error) {

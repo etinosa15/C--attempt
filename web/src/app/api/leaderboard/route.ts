@@ -27,8 +27,12 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
 
-  // The public board (RLS returns only opted-in rows + the caller's own).
-  const { data: top } = await supabase
+  // Read the board with the service role so the table's RLS can stay self-read-only
+  // (migration 0008): that keeps other learners' auth user_ids un-enumerable from the
+  // browser anon key. The user_id never leaves the server — rankLeaderboard uses it
+  // only to flag the caller's own row and the response omits it.
+  const admin = createAdminClient();
+  const { data: top } = await admin
     .from("leaderboard_entries")
     .select("user_id, display_name, xp")
     .eq("opted_in", true)
@@ -37,7 +41,7 @@ export async function GET() {
 
   const entries = rankLeaderboard((top as LeaderboardRow[] | null) ?? [], user.id);
 
-  // The caller's own row (may be opted out, or absent).
+  // The caller's own row (RLS self-read is fine for their own row).
   const { data: mine } = await supabase
     .from("leaderboard_entries")
     .select("display_name, xp, opted_in")
@@ -47,7 +51,7 @@ export async function GET() {
   let me: { optedIn: boolean; xp: number; rank: number | null; displayName: string | null };
   if (mine?.opted_in) {
     // Exact rank even when outside the top slice: how many opted-in beat me, + 1.
-    const { count } = await supabase
+    const { count } = await admin
       .from("leaderboard_entries")
       .select("user_id", { count: "exact", head: true })
       .eq("opted_in", true)

@@ -19,6 +19,12 @@ test("sanitizeDisplayName strips control chars, collapses space, trims, caps len
   assert.equal(sanitizeDisplayName("x".repeat(100)).length, MAX_DISPLAY_NAME);
 });
 
+test("sanitizeDisplayName strips angle brackets so a name can't inject markup", () => {
+  assert.equal(sanitizeDisplayName("<script>evil</script>"), "scriptevil/script");
+  assert.equal(sanitizeDisplayName("Ada <b>Lovelace</b>"), "Ada bLovelace/b");
+  assert.equal(sanitizeDisplayName("<>"), "Anonymous"); // nothing usable left
+});
+
 test("rankLeaderboard sorts by XP desc with deterministic name tie-break", () => {
   const ranked = rankLeaderboard(
     [

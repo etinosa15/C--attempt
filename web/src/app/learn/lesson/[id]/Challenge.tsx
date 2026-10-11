@@ -71,6 +71,13 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
     setCode(state.drafts[lesson.id] ?? lesson.challenge.starter);
   }, [state.drafts, lesson.id, lesson.challenge.starter]);
 
+  // Flush-safe cleanup: cancel a pending draft-save debounce on unmount.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const persistDraft = (value: string) => {
     update((prev) => ({ ...prev, drafts: { ...prev.drafts, [lesson.id]: value } }));
   };
@@ -168,18 +175,20 @@ export function Challenge({ lesson }: { lesson: Lesson }) {
       r.checks.length > 0 &&
       r.checks.every((c) => c.passed);
     if (allPassed) {
-      if (!state.solved.includes(lesson.id)) {
-        update((prev) => ({
+      // Record the solve + today's activity exactly once. Both the dedupe and the
+      // activity bump read `prev.solved` (one source of truth), so two rapid passing
+      // runs that race before a re-render can't double-count the day's activity.
+      update((prev) => {
+        if (prev.solved.includes(lesson.id)) return prev;
+        return {
           ...prev,
-          solved: prev.solved.includes(lesson.id)
-            ? prev.solved
-            : [...prev.solved, lesson.id],
+          solved: [...prev.solved, lesson.id],
           activity: {
             ...prev.activity,
             [dayKey()]: (Number(prev.activity[dayKey()]) || 0) + 1,
           },
-        }));
-      }
+        };
+      });
     } else if (unlocked < tiers.length) {
       // A check ran short — surface the next staged hint, exactly when stuck.
       revealHint();

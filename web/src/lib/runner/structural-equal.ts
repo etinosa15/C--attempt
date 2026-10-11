@@ -10,8 +10,15 @@
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
-export function structuralEqual(a: unknown, b: unknown): boolean {
+// A generous ceiling on nesting. Lesson values are shallow JSON, so real inputs are
+// nowhere near this; the cap only exists so a (future, non-JSON) caller passing a
+// self-referential object can't blow the stack — it resolves "too deep" as not-equal
+// rather than recursing forever.
+const MAX_DEPTH = 100;
+
+export function structuralEqual(a: unknown, b: unknown, depth = 0): boolean {
   if (a === b) return true;
+  if (depth > MAX_DEPTH) return false;
   // NaN: never === itself, but the two values are structurally equal.
   if (typeof a === "number" && typeof b === "number") return a !== a && b !== b;
   if (a === null || b === null || typeof a !== "object" || typeof b !== "object")
@@ -25,7 +32,7 @@ export function structuralEqual(a: unknown, b: unknown): boolean {
     const aArr = a as unknown[];
     if (aArr.length !== bArr.length) return false;
     for (let i = 0; i < aArr.length; i++)
-      if (!structuralEqual(aArr[i], bArr[i])) return false;
+      if (!structuralEqual(aArr[i], bArr[i], depth + 1)) return false;
     return true;
   }
 
@@ -36,7 +43,7 @@ export function structuralEqual(a: unknown, b: unknown): boolean {
   if (aKeys.length !== bKeys.length) return false;
   for (const key of aKeys) {
     if (!hasOwn.call(bObj, key)) return false;
-    if (!structuralEqual(aObj[key], bObj[key])) return false;
+    if (!structuralEqual(aObj[key], bObj[key], depth + 1)) return false;
   }
   return true;
 }

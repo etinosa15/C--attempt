@@ -153,6 +153,14 @@ export function ProgressProvider({
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // Clear any pending debounced sync on unmount so it can't fire a setStatus on an
+  // unmounted provider (mainly matters during a sign-out teardown).
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const scheduleSync = useCallback(() => {
     if (!signedIn) return;
     setStatus("syncing");

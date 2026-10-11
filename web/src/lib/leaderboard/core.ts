@@ -11,14 +11,19 @@ export const MAX_DISPLAY_NAME = 24;
 
 /**
  * Make a learner-supplied display name safe for the board: strip control
- * characters, collapse runs of whitespace, trim, and cap the length. Falls back to
- * "Anonymous" when nothing usable remains — never empty, never an email leak (the
- * caller passes a chosen handle, not the email).
+ * characters AND angle brackets (so the value can never inject markup, regardless
+ * of where it's later rendered), collapse runs of whitespace, trim, and cap the
+ * length. Falls back to "Anonymous" when nothing usable remains — never empty,
+ * never an email leak (the caller passes a chosen handle, not the email).
  */
 export function sanitizeDisplayName(raw: string | null | undefined): string {
   if (!raw) return "Anonymous";
-  // eslint-disable-next-line no-control-regex
-  const cleaned = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  const cleaned = raw
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/[<>]/g, "") // defense-in-depth: no tag injection in any sink
+    .replace(/\s+/g, " ")
+    .trim();
   if (!cleaned) return "Anonymous";
   return cleaned.slice(0, MAX_DISPLAY_NAME);
 }

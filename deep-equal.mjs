@@ -16,8 +16,14 @@
 // browser or added to the build allow-list.
 const hasOwn = Object.prototype.hasOwnProperty;
 
-export function structuralEqual(a, b) {
+// A generous nesting ceiling. Real check values are shallow JSON; the cap only
+// stops a (future, non-JSON) self-referential input from recursing forever —
+// "too deep" resolves as not-equal rather than overflowing the stack.
+const MAX_DEPTH = 100;
+
+export function structuralEqual(a, b, depth = 0) {
   if (a === b) return true;
+  if (depth > MAX_DEPTH) return false;
   // NaN: never === itself, but the two values are structurally equal.
   if (typeof a === "number" && typeof b === "number") return a !== a && b !== b;
   if (a === null || b === null || typeof a !== "object" || typeof b !== "object")
@@ -29,7 +35,7 @@ export function structuralEqual(a, b) {
   if (aArray) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++)
-      if (!structuralEqual(a[i], b[i])) return false;
+      if (!structuralEqual(a[i], b[i], depth + 1)) return false;
     return true;
   }
 
@@ -39,7 +45,7 @@ export function structuralEqual(a, b) {
   if (aKeys.length !== bKeys.length) return false;
   for (const key of aKeys) {
     if (!hasOwn.call(b, key)) return false;
-    if (!structuralEqual(a[key], b[key])) return false;
+    if (!structuralEqual(a[key], b[key], depth + 1)) return false;
   }
   return true;
 }

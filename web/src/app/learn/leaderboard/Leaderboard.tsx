@@ -29,21 +29,22 @@ export function Leaderboard() {
   const [me, setMe] = useState<Me | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/leaderboard", { cache: "no-store" });
       if (!res.ok) {
-        setError(true);
+        setError("Couldn't load the leaderboard just now. Try again shortly.");
         return;
       }
       const data = (await res.json()) as { entries: Entry[]; me: Me };
       setEntries(data.entries);
       setMe(data.me);
       if (data.me.displayName) setName(data.me.displayName);
+      setError(null);
     } catch {
-      setError(true);
+      setError("Couldn't load the leaderboard just now. Try again shortly.");
     }
   }, []);
 
@@ -53,13 +54,20 @@ export function Leaderboard() {
 
   async function join() {
     setBusy(true);
+    setError(null);
     try {
-      await fetch("/api/leaderboard", {
+      const res = await fetch("/api/leaderboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName: name }),
       });
+      if (!res.ok) {
+        setError("Couldn't save that just now. Please try again.");
+        return;
+      }
       await load();
+    } catch {
+      setError("Something went wrong. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -67,9 +75,16 @@ export function Leaderboard() {
 
   async function leave() {
     setBusy(true);
+    setError(null);
     try {
-      await fetch("/api/leaderboard", { method: "DELETE" });
+      const res = await fetch("/api/leaderboard", { method: "DELETE" });
+      if (!res.ok) {
+        setError("Couldn't update the board just now. Please try again.");
+        return;
+      }
       await load();
+    } catch {
+      setError("Something went wrong. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -85,7 +100,7 @@ export function Leaderboard() {
         </p>
       </header>
 
-      {error && <p className={styles.note}>Couldn&apos;t load the leaderboard just now. Try again shortly.</p>}
+      {error && <p className={styles.note}>{error}</p>}
 
       {me && (
         <section className={styles.panel}>
