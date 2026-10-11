@@ -3,6 +3,7 @@ import { getEntitlement } from "@/lib/entitlements/server";
 import { EntitlementProvider } from "@/lib/entitlements/EntitlementProvider";
 import { ProgressProvider } from "@/lib/progress/useProgress";
 import { TopBar } from "./TopBar";
+import { Sidebar } from "./Sidebar";
 import styles from "./learn.module.css";
 
 // The learning surface shell. A server component so the session is read once, up
@@ -29,8 +30,11 @@ export default async function LearnLayout({
     <ProgressProvider signedIn={!!user}>
       <EntitlementProvider entitlement={entitlement}>
         <div className={styles.shell}>
-          <TopBar email={user?.email ?? null} entitlement={entitlement} />
-          <main className={styles.content}>{children}</main>
+          <Sidebar />
+          <div className={styles.main}>
+            <TopBar email={user?.email ?? null} entitlement={entitlement} />
+            <main className={styles.content}>{children}</main>
+          </div>
         </div>
       </EntitlementProvider>
     </ProgressProvider>
