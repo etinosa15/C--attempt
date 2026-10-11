@@ -87,6 +87,8 @@ export type PaystackEvent = {
   event?: string;
   data?: {
     status?: string;
+    /** Amount actually charged, in kobo. Signed by Paystack, so trustworthy. */
+    amount?: number;
     metadata?: { user_id?: string } | string | null;
     customer?: { customer_code?: string | null } | null;
     // On charge.success a subscription charge references a plan object; a one-time
@@ -137,8 +139,17 @@ function hasPlan(data: NonNullable<PaystackEvent["data"]>): boolean {
 /**
  * Translate a verified Paystack event into a subscriptions write, or null when the
  * event doesn't affect entitlement (or can't be attributed).
+ *
+ * `opts.lifetimeAmount` (kobo) is the configured Lifetime price. A one-time
+ * (no-plan) charge.success is only honored as Lifetime when its amount matches
+ * exactly — otherwise it is ignored. Without this guard a tiny self-initiated
+ * charge would grant perpetual Pro (bug audit H1). Plan charges are trusted
+ * because Paystack enforces the plan's own amount server-side.
  */
-export function subscriptionWriteFromEvent(event: PaystackEvent): SubscriptionWrite | null {
+export function subscriptionWriteFromEvent(
+  event: PaystackEvent,
+  opts: { lifetimeAmount?: number } = {},
+): SubscriptionWrite | null {
   const type = event.event;
   const data = event.data;
   if (!type || !data) return null;
@@ -146,9 +157,18 @@ export function subscriptionWriteFromEvent(event: PaystackEvent): SubscriptionWr
 
   switch (type) {
     case "charge.success": {
+      if (data.status && data.status !== "success") return null;
       const userId = metadataUserId(data);
       if (!userId) return null; // can't attribute without our stamped id
       const subscription = hasPlan(data);
+      if (!subscription) {
+        // One-time Lifetime: honor ONLY when the amount matches the configured
+        // Lifetime price exactly. Fail closed if unconfigured or mismatched.
+        const expected = opts.lifetimeAmount;
+        if (!expected || !Number.isFinite(expected) || data.amount !== expected) {
+          return null;
+        }
+      }
       return {
         by: "user",
         userId,

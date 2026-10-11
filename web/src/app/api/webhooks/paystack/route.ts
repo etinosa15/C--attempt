@@ -45,7 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bad payload." }, { status: 400 });
   }
 
-  const write = subscriptionWriteFromEvent(event);
+  // The Lifetime price guards the no-plan charge path (H1): a one-time charge only
+  // grants Lifetime when its amount matches exactly.
+  const lifetimeAmount = Number(process.env.PAYSTACK_AMOUNT_LIFETIME) || undefined;
+  const write = subscriptionWriteFromEvent(event, { lifetimeAmount });
   if (!write) {
     return NextResponse.json({ ok: true, ignored: true });
   }
