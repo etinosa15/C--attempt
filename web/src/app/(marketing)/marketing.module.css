@@ -18,10 +18,11 @@
   align-items: center;
   gap: 1rem;
   padding: 0.85rem 1.5rem;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-inset);
 }
 
 .brand {
@@ -97,12 +98,31 @@
   white-space: nowrap;
 }
 .btnPrimary {
+  position: relative;
   background: var(--accent);
   color: var(--accent-ink);
-  box-shadow: var(--glow-accent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent), var(--glass-inset);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+/* Liquid-glass specular rim (subtle) on the primary CTA. */
+.btnPrimary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), transparent 42%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .btnPrimary:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.btnPrimary:active {
+  transform: translateY(0);
 }
 .btnGhost {
   background: transparent;
@@ -261,14 +281,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 8px;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 12px;
   margin-bottom: 0.7rem;
   font-family: var(--display);
   font-weight: 700;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-size: 1.1rem;
+  background: var(--surface);
   color: var(--accent);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--neu-shadow);
 }
 .stepTitle {
   margin: 0 0 0.35rem;

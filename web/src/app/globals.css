@@ -29,3 +29,33 @@ body {
   white-space: nowrap;
   border: 0;
 }
+
+/* Shared keyboard focus ring. Element-level so it overrides stray `outline:none`
+   on bare elements and single-class selectors (e.g. the command-palette input),
+   while components with their own `.x:focus-visible` stay more specific and win.
+   Fixes the audit gap: nav links, palette rows, account menu, CTAs had none. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced-motion safety net: kill long/looping transitions and animations for
+   users who ask for less motion. Component opt-outs can re-enable a soft pulse. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
