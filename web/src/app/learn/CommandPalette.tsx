@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
 import { lessons, tracks, modules } from "@/lib/curriculum";
 import { applyThemePref, readThemePref, resolveTheme } from "@/lib/theme";
+import { Icon } from "@/components/Icon";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import styles from "./learn.module.css";
 
 type Command = {
@@ -254,7 +256,7 @@ export function CommandPalette() {
                       {done.has(lesson.id) && (
                         <span className={styles.paletteCheck} aria-label="Completed">
                           {" "}
-                          ✓
+                          <Icon icon={faCheck} />
                         </span>
                       )}
                     </strong>

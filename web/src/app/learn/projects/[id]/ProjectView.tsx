@@ -8,6 +8,8 @@
 // vanilla data-project-start handler does.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faArrowLeft, faArrowRight, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
 import { tracks } from "@/lib/curriculum";
@@ -84,7 +86,7 @@ export function ProjectView({ project: p }: { project: Project }) {
   return (
     <div className={styles.page}>
       <Link href="/learn/projects" className={styles.back}>
-        ← All projects
+        <Icon icon={faArrowLeft} /> All projects
       </Link>
 
       <header className={styles.head}>
@@ -170,7 +172,7 @@ export function ProjectView({ project: p }: { project: Project }) {
               className={`${styles.btn} ${styles.btnPrimary}`}
               onClick={startProject}
             >
-              Try a starting idea →
+              Try a starting idea <Icon icon={faArrowRight} />
             </button>
             <a
               className={styles.guideLink}
@@ -178,7 +180,7 @@ export function ProjectView({ project: p }: { project: Project }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Read the official guide ↗
+              Read the official guide <Icon icon={faArrowUpRightFromSquare} />
             </a>
           </div>
 

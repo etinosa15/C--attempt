@@ -7,6 +7,7 @@ import { useProgress } from "@/lib/progress/useProgress";
 import type { Entitlement } from "@/lib/entitlements/types";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
+import { BrandMark } from "@/components/Icon";
 import styles from "./learn.module.css";
 
 const NAV = [
@@ -118,7 +119,7 @@ export function TopBar({
   return (
     <header className={styles.topbar}>
       <Link href="/learn" className={styles.brand}>
-        <span className={styles.brandMark} aria-hidden="true" />
+        <BrandMark />
         Forge Code Academy
       </Link>
 

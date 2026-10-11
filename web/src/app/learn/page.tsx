@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned } from "@/lib/progress/core";
 import { summarizeGamification, sortBadgesForDisplay } from "@/lib/progress/gamification";
@@ -55,7 +57,7 @@ export default function Overview() {
           <span className={styles.resumeLabel}>Continue where you left off</span>
           <span className={styles.resumeTitle}>{resume.title}</span>
           <span className={styles.resumeCta} aria-hidden="true">
-            Resume →
+            Resume <Icon icon={faArrowRight} />
           </span>
         </Link>
       )}
