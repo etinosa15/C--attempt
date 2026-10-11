@@ -102,7 +102,7 @@ export default function Overview() {
           const nextLocked = next ? isLessonLocked(entitlement, next) : false;
 
           return (
-            <section key={lang} className={styles.track} style={{ ["--track" as string]: track.color }}>
+            <section key={lang} className={styles.track} style={{ ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}>
               <div className={styles.trackHead}>
                 <h2 className={styles.trackName}>{track.name}</h2>
                 <span className={styles.trackTag}>{track.tag}</span>

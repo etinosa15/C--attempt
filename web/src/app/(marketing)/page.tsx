@@ -79,7 +79,7 @@ export default function Landing() {
               <article
                 key={lang}
                 className={styles.trackCard}
-                style={{ ["--track" as string]: track.color }}
+                style={{ ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}
               >
                 <span className={styles.trackTag}>{track.tag}</span>
                 <h3 className={styles.trackName}>{track.name}</h3>

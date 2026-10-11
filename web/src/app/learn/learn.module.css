@@ -116,6 +116,66 @@
   text-decoration: none;
 }
 
+/* Mobile nav drawer (shown ≤640px via the media query below). */
+.navToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.navToggle:hover {
+  color: var(--accent);
+}
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  background: color-mix(in srgb, #000 45%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.drawer {
+  width: min(18rem, 82vw);
+  height: 100%;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -12px 0 40px color-mix(in srgb, #000 28%, transparent);
+  overflow-y: auto;
+}
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.drawerLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.75rem 0.8rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+.drawerLink:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
 .content {
   flex: 1;
   width: 100%;
@@ -198,6 +258,9 @@
 @media (max-width: 640px) {
   .nav {
     display: none;
+  }
+  .navToggle {
+    display: inline-flex;
   }
   .accountBtn {
     max-width: 8rem;
