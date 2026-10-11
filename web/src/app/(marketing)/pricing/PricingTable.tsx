@@ -333,7 +333,7 @@ export function PricingTable() {
           aria-pressed={billing === "annual"}
           onClick={() => setBilling("annual")}
         >
-          Annual <span className={styles.save}>save 40%</span>
+          Annual <span className={styles.save}>save 43%</span>
         </button>
         <button
           type="button"
