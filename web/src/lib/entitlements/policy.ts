@@ -66,12 +66,20 @@ export function resolveEntitlement(row: SubscriptionRow | null | undefined, now:
   if (!row) return freeEntitlement();
 
   switch (row.status) {
-    case "active":
-    case "past_due": {
-      // A paid subscription. `past_due` keeps access during the dunning grace
-      // period (the MoR retries the charge); a real cancellation arrives as
-      // `canceled`/`expired`. Defensively drop to free if the period has lapsed.
+    case "active": {
+      // Paid and current. A null period is the Lifetime case (a one-time charge
+      // that never renews) → grant. A set-but-lapsed period → expired.
       if (row.current_period_end && new Date(row.current_period_end).getTime() <= now.getTime()) {
+        return freeEntitlement();
+      }
+      return proEntitlement(false, null, null);
+    }
+
+    case "past_due": {
+      // Dunning grace during a retry — but ONLY while a KNOWN period is still in
+      // the future. A null or already-lapsed period must NOT grant indefinite Pro
+      // (else a stuck past_due row is permanent Pro). Bug audit H2.
+      if (!row.current_period_end || new Date(row.current_period_end).getTime() <= now.getTime()) {
         return freeEntitlement();
       }
       return proEntitlement(false, null, null);
