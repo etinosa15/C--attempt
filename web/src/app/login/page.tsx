@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { adoptLocalProgress } from "@/lib/progress/sync-client";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { PasswordField } from "./PasswordField";
+import { BrandMark } from "@/components/Icon";
+import { Spinner } from "@/components/loaders/Spinner";
 import styles from "./auth.module.css";
 
 export default function LoginPage() {
@@ -43,6 +45,9 @@ export default function LoginPage() {
   return (
     <main className={styles.wrap}>
       <form className={styles.card} onSubmit={signIn}>
+        <div className={styles.brand}>
+          <BrandMark size={24} /> Forge Code Academy
+        </div>
         <h1 className={styles.title}>Sign in</h1>
         <label className={styles.label}>
           Email
@@ -57,7 +62,13 @@ export default function LoginPage() {
         />
         {error && <p className={styles.error} role="alert">{error}</p>}
         <button className={styles.primary} type="submit" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? (
+            <>
+              <Spinner /> Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
         </button>
         <div className={styles.divider}>or continue with</div>
         <div className={styles.oauth}>
@@ -67,6 +78,9 @@ export default function LoginPage() {
         <p className={styles.links}>
           <Link href="/reset">Forgot password?</Link>
           <Link href="/signup">Create account</Link>
+        </p>
+        <p className={styles.secondary}>
+          <Link href="/learn">Try without an account</Link>
         </p>
       </form>
     </main>

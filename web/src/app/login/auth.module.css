@@ -1,20 +1,50 @@
 .wrap {
+  position: relative;
+  overflow: hidden;
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 2rem 1rem;
 }
 
+/* Warm focal glow behind the floating auth card. */
+.wrap::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(32rem, 92vw);
+  height: 26rem;
+  transform: translate(-50%, -72%);
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--accent) 20%, transparent), transparent 68%);
+  filter: blur(52px);
+  pointer-events: none;
+}
+
 .card {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 22rem;
+  max-width: 23rem;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  padding: 1.75rem;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  padding: 1.9rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 18px 44px color-mix(in srgb, #000 14%, transparent), var(--glass-inset);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.1rem;
 }
 
 .title {
@@ -31,43 +61,75 @@
 }
 
 .input {
-  padding: 0.6rem 0.7rem;
+  min-height: 48px;
+  padding: 0.7rem 0.8rem;
   border-radius: 9px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  background: transparent;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
   color: inherit;
   font: inherit;
 }
 
 .input:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .primary {
   margin-top: 0.25rem;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.7rem;
   border: none;
   border-radius: 9px;
   background: var(--accent);
   color: var(--accent-ink);
+  font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
-.primary:disabled { opacity: 0.6; cursor: default; }
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.primary:disabled { opacity: 0.7; cursor: default; }
+
+.secondary {
+  text-align: center;
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+}
+
+.secondary a {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.secondary a:hover {
+  color: var(--text);
+}
 
 .oauth { display: flex; gap: 0.6rem; }
 
 .oauthBtn {
   flex: 1;
+  min-height: 44px;
   padding: 0.55rem;
   border-radius: 9px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  background: transparent;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+.oauthBtn:hover {
+  background: color-mix(in srgb, currentColor 6%, transparent);
 }
 
 .error {

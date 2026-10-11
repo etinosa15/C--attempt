@@ -8,6 +8,9 @@ import { adoptLocalProgress } from "@/lib/progress/sync-client";
 import { normalizeCode, isValidCode } from "@/lib/referrals/core";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { PasswordField } from "../login/PasswordField";
+import { BrandMark, Icon } from "@/components/Icon";
+import { Spinner } from "@/components/loaders/Spinner";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import styles from "../login/auth.module.css";
 
 export default function SignupPage() {
@@ -75,6 +78,9 @@ export default function SignupPage() {
     return (
       <main className={styles.wrap}>
         <div className={styles.card}>
+          <div className={styles.brand}>
+            <BrandMark size={24} /> Forge Code Academy
+          </div>
           <h1 className={styles.title}>Check your email</h1>
           <p>We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.</p>
           <p className={styles.links}><Link href="/login">Back to sign in</Link></p>
@@ -85,6 +91,9 @@ export default function SignupPage() {
   return (
     <main className={styles.wrap}>
       <form className={styles.card} onSubmit={signUp}>
+        <div className={styles.brand}>
+          <BrandMark size={24} /> Forge Code Academy
+        </div>
         <h1 className={styles.title}>Create account</h1>
         <label className={styles.label}>
           Display name (optional)
@@ -111,14 +120,20 @@ export default function SignupPage() {
               </p>
             ) : (
               <p className={`${styles.hint} ${styles.hintOk}`} aria-live="polite">
-                ✓ Long enough
+                <Icon icon={faCheck} /> Long enough
               </p>
             )
           }
         />
         {error && <p className={styles.error} role="alert">{error}</p>}
         <button className={styles.primary} type="submit" disabled={busy}>
-          {busy ? "Creating…" : "Create account"}
+          {busy ? (
+            <>
+              <Spinner /> Creating…
+            </>
+          ) : (
+            "Create account"
+          )}
         </button>
         <div className={styles.divider}>or continue with</div>
         <div className={styles.oauth}>
@@ -128,6 +143,9 @@ export default function SignupPage() {
         <p className={styles.links}>
           <span>Already have an account?</span>
           <Link href="/login">Sign in</Link>
+        </p>
+        <p className={styles.secondary}>
+          <Link href="/learn">Try without an account</Link>
         </p>
       </form>
     </main>
