@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { tracks, type Lang } from "@/lib/curriculum";
+import { HeroPreview } from "./HeroPreview";
 import styles from "./marketing.module.css";
 
 export const metadata: Metadata = {
@@ -38,26 +39,28 @@ export default function Landing() {
   return (
     <>
       <section className={`${styles.container} ${styles.hero}`}>
-        <p className={styles.eyebrow}>JavaScript · C#</p>
-        <h1 className={styles.heroTitle}>
-          Learn to code by <span className="grad">building</span>, not watching
-        </h1>
-        <p className={styles.heroLead}>
-          Forge is a local-first studio for JavaScript and C#. Read one idea, predict
-          what the code does, then write and run it for real — and keep the skill with
-          spaced-repetition review.
-        </p>
-        <div className={styles.heroCtas}>
-          <Link href="/signup" className={styles.btnPrimary}>
-            Create a free account
-          </Link>
-          <Link href="/learn" className={styles.btnGhost}>
-            Try without an account
-          </Link>
+        <div className={styles.heroText}>
+          <p className={styles.eyebrow}>JavaScript · C#</p>
+          <h1 className={styles.heroTitle}>
+            Learn to code by <span className={styles.grad}>building</span>, not watching
+          </h1>
+          <p className={styles.heroLead}>
+            Forge is a local-first studio for JavaScript and C#. Read one idea, predict
+            what the code does, then write and run it for real.
+          </p>
+          <div className={styles.heroCtas}>
+            <Link href="/signup" className={styles.btnPrimary}>
+              Create a free account
+            </Link>
+            <Link href="/learn" className={styles.btnGhost}>
+              Try without an account
+            </Link>
+          </div>
+          <p className={styles.heroNote}>
+            No credit card. Progress saves on your device — signing in just adds sync.
+          </p>
         </div>
-        <p className={styles.heroNote}>
-          No credit card. Progress saves on your device — signing in just adds sync.
-        </p>
+        <HeroPreview />
       </section>
 
       <section id="tracks" className={`${styles.container} ${styles.section}`}>
@@ -76,7 +79,7 @@ export default function Landing() {
               <article
                 key={lang}
                 className={styles.trackCard}
-                style={{ ["--track" as string]: track.color }}
+                style={{ ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}
               >
                 <span className={styles.trackTag}>{track.tag}</span>
                 <h3 className={styles.trackName}>{track.name}</h3>

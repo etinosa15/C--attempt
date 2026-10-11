@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { adoptLocalProgress } from "@/lib/progress/sync-client";
 import { normalizeCode, isValidCode } from "@/lib/referrals/core";
+import { friendlyAuthError } from "@/lib/auth-errors";
+import { PasswordField } from "../login/PasswordField";
+import { BrandMark, Icon } from "@/components/Icon";
+import { Spinner } from "@/components/loaders/Spinner";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import styles from "../login/auth.module.css";
 
 export default function SignupPage() {
@@ -46,7 +51,7 @@ export default function SignupPage() {
     });
     if (error) {
       setBusy(false);
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
       return;
     }
     // When email confirmation is disabled, signUp returns a live session and the
@@ -62,10 +67,20 @@ export default function SignupPage() {
     setSent(true);
   }
 
+  async function oauth(provider: "github" | "google") {
+    setError("");
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
+    if (error) setError(friendlyAuthError(error.message));
+  }
+
   if (sent)
     return (
       <main className={styles.wrap}>
         <div className={styles.card}>
+          <div className={styles.brand}>
+            <BrandMark size={24} /> Forge Code Academy
+          </div>
           <h1 className={styles.title}>Check your email</h1>
           <p>We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.</p>
           <p className={styles.links}><Link href="/login">Back to sign in</Link></p>
@@ -76,6 +91,9 @@ export default function SignupPage() {
   return (
     <main className={styles.wrap}>
       <form className={styles.card} onSubmit={signUp}>
+        <div className={styles.brand}>
+          <BrandMark size={24} /> Forge Code Academy
+        </div>
         <h1 className={styles.title}>Create account</h1>
         <label className={styles.label}>
           Display name (optional)
@@ -87,16 +105,48 @@ export default function SignupPage() {
           <input className={styles.input} type="email" value={email} required
             onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
         </label>
-        <label className={styles.label}>
-          Password (min 10 characters)
-          <input className={styles.input} type="password" value={password} required minLength={10}
-            onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
-        </label>
-        {error && <p className={styles.error}>{error}</p>}
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          minLength={10}
+          hint={
+            password.length === 0 ? (
+              <p className={styles.hint}>At least 10 characters.</p>
+            ) : password.length < 10 ? (
+              <p className={styles.hint} aria-live="polite">
+                {10 - password.length} more character{10 - password.length === 1 ? "" : "s"} to go
+              </p>
+            ) : (
+              <p className={`${styles.hint} ${styles.hintOk}`} aria-live="polite">
+                <Icon icon={faCheck} /> Long enough
+              </p>
+            )
+          }
+        />
+        {error && <p className={styles.error} role="alert">{error}</p>}
         <button className={styles.primary} type="submit" disabled={busy}>
-          {busy ? "Creating…" : "Create account"}
+          {busy ? (
+            <>
+              <Spinner /> Creating…
+            </>
+          ) : (
+            "Create account"
+          )}
         </button>
-        <p className={styles.links}><Link href="/login">Already have an account?</Link></p>
+        <div className={styles.divider}>or continue with</div>
+        <div className={styles.oauth}>
+          <button type="button" className={styles.oauthBtn} onClick={() => oauth("github")}>GitHub</button>
+          <button type="button" className={styles.oauthBtn} onClick={() => oauth("google")}>Google</button>
+        </div>
+        <p className={styles.links}>
+          <span>Already have an account?</span>
+          <Link href="/login">Sign in</Link>
+        </p>
+        <p className={styles.secondary}>
+          <Link href="/learn">Try without an account</Link>
+        </p>
       </form>
     </main>
   );

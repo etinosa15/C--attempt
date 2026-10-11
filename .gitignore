@@ -11,3 +11,6 @@ data/
 .claude/
 # Generated at web build time by web/scripts/build-local-zip.mjs (web's prebuild).
 web/public/downloads/
+
+# UI audit screenshots (local only)
+.ui-audit/

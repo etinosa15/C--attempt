@@ -20,7 +20,7 @@
   margin-bottom: 2rem;
 }
 .eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.65;
@@ -58,6 +58,9 @@
   color: color-mix(in srgb, var(--accent) 85%, currentColor);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.vizSlot {
+  margin: 0 0 2rem;
 }
 .layout {
   display: grid;
@@ -127,7 +130,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   opacity: 0.6;
@@ -320,7 +323,7 @@
 .outputHead {
   padding: 0.5rem 0.85rem;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
@@ -476,7 +479,7 @@
   max-width: 48%;
 }
 .navLink small {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
@@ -510,7 +513,7 @@
   background: color-mix(in srgb, currentColor 4%, transparent);
 }
 .tocTitle {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.55;
@@ -536,7 +539,7 @@
 }
 .tocItem span {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   opacity: 0.6;
 }
 .tocItem i {

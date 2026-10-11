@@ -9,6 +9,10 @@
 // Opening a lesson records it as `lastLesson` so the Overview can offer "resume".
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faArrowLeft, faCheck, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { celebrate } from "@/lib/motion/confetti";
+import { getLessonViz } from "@/components/viz/registry";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { isLessonLocked } from "@/lib/entitlements/gating";
@@ -56,6 +60,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
   function complete() {
     if (!canComplete || done) return;
+    celebrate();
     update((prev) => {
       const completed = prev.completed.includes(lesson.id)
         ? prev.completed
@@ -85,11 +90,12 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
   }
 
   const example = highlight(lesson.example, lesson.lang);
+  const viz = getLessonViz(lesson.id);
 
   return (
     <div>
       <Link href={`/learn?track=${lesson.lang}`} className={styles.back}>
-        ← {track.name} learning path
+        <Icon icon={faArrowLeft} /> {track.name} learning path
       </Link>
 
       <header className={styles.head}>
@@ -102,10 +108,12 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
         <div className={styles.meta}>
           <span>{track.short}</span>
           <span>{lesson.minutes} min</span>
-          {done && <span className={styles.done}>✓ Completed</span>}
+          {done && <span className={styles.done}><Icon icon={faCheck} /> Completed</span>}
           {locked && <span className={styles.preview}>Preview · Pro lesson</span>}
         </div>
       </header>
+
+      {viz && <div className={styles.vizSlot}>{viz}</div>}
 
       <div className={styles.layout}>
         <article className={styles.content}>
@@ -192,7 +200,13 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                     onClick={complete}
                     disabled={!canComplete || done}
                   >
-                    {done ? "Lesson complete ✓" : "Complete lesson"}
+                    {done ? (
+                      <>
+                        Lesson complete <Icon icon={faCheck} />
+                      </>
+                    ) : (
+                      "Complete lesson"
+                    )}
                   </button>
                 </div>
               </section>
@@ -241,7 +255,8 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
             <h3>Go to the source</h3>
             <p>Explore the language reference when you want to go deeper.</p>
             <a href={lesson.docs} target="_blank" rel="noopener noreferrer">
-              {lesson.lang === "js" ? "MDN Web Docs" : "Microsoft Learn"} ↗
+              {lesson.lang === "js" ? "MDN Web Docs" : "Microsoft Learn"}{" "}
+              <Icon icon={faArrowUpRightFromSquare} />
             </a>
           </div>
         </aside>
@@ -269,7 +284,11 @@ function TocItem({
     >
       <span>{target === "understand" ? "01" : target === "predict" ? "02" : target === "practice" ? "03" : "04"}</span>
       {label}
-      {done && <i aria-label="done">✓</i>}
+      {done && (
+        <i aria-label="done">
+          <Icon icon={faCheck} />
+        </i>
+      )}
     </button>
   );
 }

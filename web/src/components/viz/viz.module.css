@@ -1,0 +1,266 @@
+/* Forge visualization system (Phase 4H). Flat surface cards — NEVER glass, per
+   the locked rule (these contain code). Reduced motion is handled in the hooks
+   (no autoplay); transitions below also fall under the global reduced-motion gate. */
+.tracer,
+.typeBox,
+.pipeline,
+.predict {
+  margin: 0;
+  padding: 1.1rem 1.2rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--neu-shadow);
+}
+.tracer:focus-visible,
+.pipeline:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.vizTitle {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0 0 0.7rem;
+}
+
+/* Code block (dark, fixed — like a terminal). */
+.code {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  background: #201d19;
+  color: #f3ece0;
+  border-radius: 10px;
+  padding: 0.7rem 0;
+  overflow: auto;
+}
+.line {
+  display: flex;
+  gap: 0.9rem;
+  padding: 0 1rem;
+  border-left: 3px solid transparent;
+}
+.lineActive {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+/* @@VIZ_APPEND@@ */
+.gutter {
+  color: #6f655b;
+  user-select: none;
+  min-width: 1.2rem;
+  text-align: right;
+}
+.lineText {
+  white-space: pre;
+}
+
+/* Narration + detail. */
+.caption {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+.note {
+  color: var(--muted);
+}
+
+/* Value snapshot chips. */
+.vars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.var {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  font-size: 0.82rem;
+}
+.var code {
+  font-family: var(--mono);
+  color: var(--accent);
+}
+.varVal {
+  font-family: var(--mono);
+}
+.varType {
+  color: var(--muted);
+  font-size: 0.75rem;
+  border-left: 1px solid var(--line-strong);
+  padding-left: 0.4rem;
+}
+
+/* Controls. */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.ctrlBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: inherit;
+  cursor: pointer;
+  box-shadow: var(--neu-shadow);
+}
+.ctrlBtn:hover:not(:disabled) {
+  color: var(--accent);
+}
+.ctrlBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+.ctrlBtn:active:not(:disabled) {
+  box-shadow: var(--neu-inset);
+}
+.stepCount {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0.2rem;
+}
+/* @@VIZ_APPEND2@@ */
+/* TypeBox — the type contract. */
+.contractDecl {
+  margin: 0 0 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  background: #201d19;
+  color: #f3ece0;
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+.attempts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.attempt {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--raised);
+}
+.attemptMark {
+  display: inline-flex;
+  width: 1.4rem;
+  height: 1.4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.attemptOk .attemptMark {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+}
+.attemptBad .attemptMark {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+}
+.attemptCode {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+.attemptReason {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Pipeline. */
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.stageItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.stage {
+  padding: 0.4rem 0.75rem;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.stageActive {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+.stageDone {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.stageArrow {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Predict-the-output reveal. */
+.revealBtn {
+  margin-top: 0.9rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.revealBtn:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.outLabel {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.outValue {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--accent);
+}
+

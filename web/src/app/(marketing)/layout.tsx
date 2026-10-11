@@ -5,6 +5,7 @@
 // not pass through here.
 import Link from "next/link";
 import { NavAuth } from "./NavAuth";
+import { BrandMark } from "@/components/Icon";
 import styles from "./marketing.module.css";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <div className={styles.shell}>
       <header className={styles.nav}>
         <Link href="/" className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true" />
+          <BrandMark />
           Forge Code Academy
         </Link>
         <nav className={styles.navLinks} aria-label="Primary">
@@ -35,7 +36,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <Link href="/" className={styles.brand}>
-              <span className={styles.brandMark} aria-hidden="true" />
+              <BrandMark />
               Forge Code Academy
             </Link>
             <p className={styles.footerTagline}>

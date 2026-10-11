@@ -7,6 +7,8 @@ import { useProgress } from "@/lib/progress/useProgress";
 import type { Entitlement } from "@/lib/entitlements/types";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
+import { BrandMark, Icon } from "@/components/Icon";
+import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import styles from "./learn.module.css";
 
 const NAV = [
@@ -81,8 +83,24 @@ export function TopBar({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Mobile nav drawer: close on Escape and lock body scroll while open.
+  useEffect(() => {
+    if (!navOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setNavOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [navOpen]);
 
   // Close the account menu on an outside click or Escape.
   useEffect(() => {
@@ -118,7 +136,7 @@ export function TopBar({
   return (
     <header className={styles.topbar}>
       <Link href="/learn" className={styles.brand}>
-        <span className={styles.brandMark} aria-hidden="true" />
+        <BrandMark />
         Forge Code Academy
       </Link>
 
@@ -131,6 +149,16 @@ export function TopBar({
       </nav>
 
       <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.navToggle}
+          aria-label="Menu"
+          aria-expanded={navOpen}
+          aria-controls="mobile-nav"
+          onClick={() => setNavOpen((v) => !v)}
+        >
+          <Icon icon={faBars} />
+        </button>
         <SyncBadge />
         {email && <PlanPill entitlement={entitlement} />}
         <CommandPalette />
@@ -177,6 +205,41 @@ export function TopBar({
           </Link>
         )}
       </div>
+
+      {navOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => setNavOpen(false)}>
+          <nav
+            id="mobile-nav"
+            className={styles.drawer}
+            aria-label="Primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.drawerHead}>
+              <span className={styles.brand}>
+                <BrandMark /> Forge
+              </span>
+              <button
+                type="button"
+                className={styles.navToggle}
+                aria-label="Close menu"
+                onClick={() => setNavOpen(false)}
+              >
+                <Icon icon={faXmark} />
+              </button>
+            </div>
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={styles.drawerLink}
+                onClick={() => setNavOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

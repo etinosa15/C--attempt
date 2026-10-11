@@ -18,10 +18,11 @@
   align-items: center;
   gap: 1rem;
   padding: 0.85rem 1.5rem;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-inset);
 }
 
 .brand {
@@ -97,12 +98,31 @@
   white-space: nowrap;
 }
 .btnPrimary {
+  position: relative;
   background: var(--accent);
   color: var(--accent-ink);
-  box-shadow: var(--glow-accent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent), var(--glass-inset);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+/* Liquid-glass specular rim (subtle) on the primary CTA. */
+.btnPrimary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), transparent 42%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .btnPrimary:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.btnPrimary:active {
+  transform: translateY(0);
 }
 .btnGhost {
   background: transparent;
@@ -162,12 +182,27 @@
 
 /* Hero ---------------------------------------------------------------------- */
 .hero {
-  text-align: center;
-  padding: clamp(3.5rem, 8vw, 6rem) 0 2.5rem;
+  padding: clamp(3rem, 7vw, 5.5rem) 0 2.5rem;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  align-items: center;
+}
+.heroText {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.2rem;
+  align-items: flex-start;
+  gap: 1.1rem;
+  text-align: left;
+}
+@media (max-width: 860px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .heroText {
+    align-items: center;
+    text-align: center;
+  }
 }
 .heroTitle {
   margin: 0;
@@ -201,6 +236,95 @@
   color: var(--muted);
 }
 
+/* Hero preview — glass "predict the output" card (the product visual). */
+.previewCard {
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
+  padding: 1.1rem;
+  text-align: left;
+}
+.pvHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.pvDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.pvHeadLabel {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.pvCode {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  background: #201d19;
+  color: #f3ece0;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  white-space: pre;
+  overflow: auto;
+}
+.pvKeyword {
+  color: #e7bea2;
+}
+.pvString {
+  color: #c5d5ae;
+}
+.pvComment {
+  color: #90837a;
+  font-style: italic;
+}
+.pvPredict {
+  margin-top: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  min-height: 2.3rem;
+}
+.pvOut {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  color: var(--muted);
+}
+.pvReveal {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.pvHint {
+  color: var(--muted);
+}
+.pvBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.pvBtn:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
 /* Tracks -------------------------------------------------------------------- */
 .tracks {
   display: grid;
@@ -219,7 +343,7 @@
 }
 .trackTag {
   align-self: flex-start;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 0.2rem 0.55rem;
@@ -261,14 +385,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 8px;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 12px;
   margin-bottom: 0.7rem;
   font-family: var(--display);
   font-weight: 700;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-size: 1.1rem;
+  background: var(--surface);
   color: var(--accent);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--neu-shadow);
 }
 .stepTitle {
   margin: 0 0 0.35rem;
@@ -377,7 +504,7 @@
   right: 1.2rem;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -572,7 +699,35 @@
 }
 
 @media (max-width: 380px) {
+  /* Keep a sign-in path on the smallest screens (just compact it) — don't strand
+     returning users. */
   .signIn {
-    display: none;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Scroll-driven entrance (progressive enhancement): cards fade up as they enter
+   the viewport, naturally staggered by position. Only where supported and only
+   if the user allows motion; everywhere else the cards are simply visible. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .step,
+    .feature,
+    .trackCard {
+      animation: fadeUp linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 38%;
+    }
   }
 }

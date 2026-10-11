@@ -107,7 +107,7 @@
 }
 
 .trackTag {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--track, var(--accent)) 18%, transparent);
@@ -239,7 +239,7 @@
   height: 100%;
   border-radius: 999px;
   background: var(--accent);
-  transition: width 0.4s ease;
+  transition: width var(--dur-slow) var(--ease-out);
 }
 .levelNext {
   margin: 0;
@@ -321,7 +321,7 @@
   transition: width 0.4s ease;
 }
 .badgeProgressLabel {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   opacity: 0.7;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
