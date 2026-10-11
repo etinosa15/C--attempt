@@ -11,7 +11,7 @@
   gap: 0.5rem;
 }
 .eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.6;
@@ -54,7 +54,7 @@
   font-size: 1.2rem;
 }
 .pill {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.05em;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
@@ -126,7 +126,7 @@
   background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 .card small {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   opacity: 0.6;
   font-weight: 700;

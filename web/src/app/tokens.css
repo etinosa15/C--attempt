@@ -53,21 +53,22 @@
 }
 
 :root {
-  /* Surfaces */
-  --bg: #e7ddca;
-  --surface: #f6f0e4;
-  --raised: #efe7d8;
-  --text: #262320;
-  --muted: #6b655c;
-  --line: #d8cebc;
+  /* Surfaces — warm off-white (light). Verified AA via scripts/contrast-check.mjs. */
+  --bg: #f6f3ee;
+  --surface: #fbf9f5;
+  --raised: #fdfcfa;
+  --text: #2a2420;
+  --muted: #6b6259;
+  --line: #e6e0d5;
+  --line-strong: #d3cbbe;
   /* Brand + status */
   --accent: #b4531e;
   --accent-hover: #c2703d;
   --accent-soft: #f4e7db;
   --accent-ink: #fff8f2;
   --link: #3f6b7d;
-  --success: #4f7a4c;
-  --danger: #b0432f;
+  --success: #3f6b3c;
+  --danger: #a33322;
   --warn: #8a5a12;
   /* Back-compat aliases so pre-existing CSS modules keep resolving */
   --background: var(--bg);
@@ -90,11 +91,19 @@
   --sans: "Satoshi", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
   --display: "Clash Display", "Satoshi", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", Consolas, "Cascadia Code", "Courier New", monospace;
+  --fs-0: 13px;
   --fs-1: 12px;
   --fs-2: 14px;
   --fs-3: 18px;
   --fs-4: 26px;
   --fs-5: 40px;
+  /* Motion (locked in docs/ui-polish-plan.md). Restrained; honor reduced-motion. */
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+  --dur-story: 700ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   /* Syntax highlight tokens — consumed by the global .tok-* rules below, which
      the core.js `highlight()` output targets (keyword/string/comment/number). */
   --tok-keyword: #b4531e;
@@ -103,10 +112,11 @@
   --tok-number: #9a6b16;
   /* @@APPEND2@@ */
   /* Glass, glow & ambient background — the visual signature. */
-  --glass-bg: rgba(250, 244, 235, 0.46);
-  --glass-blur: blur(18px) saturate(125%);
-  --glass-border: rgba(120, 90, 60, 0.2);
+  --glass-bg: rgba(253, 251, 247, 0.62);
+  --glass-blur: blur(14px) saturate(140%);
+  --glass-border: rgba(255, 255, 255, 0.5);
   --glass-highlight: rgba(255, 255, 255, 0.8);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --glass-shadow: 0 18px 44px rgba(60, 45, 30, 0.16);
   --glow-accent: 0 0 18px rgba(180, 83, 30, 0.26);
   --glow-accent-strong: 0 0 28px rgba(180, 83, 30, 0.4);
@@ -123,28 +133,31 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #14120f;
-  --surface: #1e1b16;
-  --raised: #26221b;
+  /* Flat dark brown (locked). Depth from tone steps + 1px hairlines, not glow. */
+  --bg: #15110d;
+  --surface: #1f1912;
+  --raised: #272119;
   --text: #ede8e0;
   --muted: #b8afa3;
-  --line: #2c271f;
-  --accent: #c2703d;
-  --accent-hover: #d9824a;
+  --line: rgba(255, 248, 240, 0.09);
+  --line-strong: rgba(255, 248, 240, 0.16);
+  --accent: #d1803f;
+  --accent-hover: #e0924f;
   --accent-soft: #2a2118;
-  --accent-ink: #14120f;
+  --accent-ink: #15110d;
   --link: #7fa6b8;
-  --success: #6e9e6b;
-  --danger: #c25b4d;
-  --warn: #d8b24a;
+  --success: #7fb97b;
+  --danger: #e08a7a;
+  --warn: #e0b45a;
   --yellow: #d8b24a;
   --tok-keyword: #e7bea2;
   --tok-string: #c5d5ae;
   --tok-comment: #90837a;
   --tok-number: #e8c38c;
-  --glass-bg: rgba(30, 27, 22, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(30, 22, 18, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   --glow-accent: 0 0 20px rgba(217, 130, 74, 0.35);
   --glow-accent-strong: 0 0 32px rgba(217, 130, 74, 0.5);
@@ -186,7 +199,15 @@ body {
 h1, h2, h3 {
   font-family: var(--display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  /* Clash Display's negative tracking collapses word gaps on multi-word
+     headings — reset to 0 and add a touch of word-spacing + balanced wrapping. */
+  letter-spacing: 0;
+  word-spacing: 0.06em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
 }
 a {
   color: inherit;
