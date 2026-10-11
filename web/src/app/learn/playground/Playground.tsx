@@ -12,6 +12,8 @@
 // iframe has sandbox="allow-scripts" WITHOUT allow-same-origin, so page code runs
 // from an opaque origin and cannot reach this origin's storage.
 import { Suspense, useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Editor } from "@/components/Editor";
@@ -183,7 +185,7 @@ function PlaygroundInner() {
           </div>
           <Link href="/learn/projects" className={styles.projectLink}>
             Ready for something bigger?
-            <strong>Pick a project →</strong>
+            <strong>Pick a project <Icon icon={faArrowRight} /></strong>
           </Link>
         </aside>
       </div>

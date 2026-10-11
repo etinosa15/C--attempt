@@ -12,6 +12,8 @@
 // pointing to the local edition. This mirrors the studio's hosted/local C# split.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Editor } from "@/components/Editor";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useJsRunner } from "@/lib/runner/useJsRunner";
@@ -312,7 +314,7 @@ function RunOutput({ result, lang }: { result: RunResult; lang: string }) {
               className={`${styles.check} ${c.passed ? styles.checkPass : styles.checkFail}`}
             >
               <span className={styles.checkMark} aria-hidden="true">
-                {c.passed ? "✓" : "×"}
+                {c.passed ? <Icon icon={faCheck} /> : <Icon icon={faXmark} />}
               </span>
               <div>
                 <strong>{c.label}</strong>

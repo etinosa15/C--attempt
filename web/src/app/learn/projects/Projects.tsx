@@ -6,6 +6,8 @@
 // checked anything off (progress lives in state.projectChecks, keyed by id).
 import { useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { useProgress } from "@/lib/progress/useProgress";
 import { projects } from "@/lib/curriculum";
 import type { Lang } from "@/lib/curriculum";
@@ -84,7 +86,7 @@ export function Projects() {
                       ? `${checks.length} / ${p.steps.length} milestones`
                       : "Open project brief"}
                   </span>
-                  <span aria-hidden="true">→</span>
+                  <span aria-hidden="true"><Icon icon={faArrowRight} /></span>
                 </div>
               </div>
             </Link>
