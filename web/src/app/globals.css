@@ -10,6 +10,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Keep anchor jumps + scrollIntoView clear of the sticky top bar (~52–64px).
+   Set on the scrollport so it covers lesson TOC jumps and playground tabs
+   without per-element scroll-margin. (Audit: no scroll-margin-top existed.) */
+html {
+  scroll-padding-top: 4.75rem;
+}
+
 body {
   display: flex;
   flex-direction: column;

@@ -9,15 +9,34 @@ import { formatTime, focusDuration } from "@/lib/progress/focus";
 import { useProgress } from "@/lib/progress/useProgress";
 import styles from "./FocusCard.module.css";
 
+// Mirrors FOCUS_SESSION_MS in public/core.js (25 min). Used only to draw the
+// session ring; all accounting still comes from the focus reducer.
+const SESSION_SECONDS = 25 * 60;
+const RING_R = 52;
+const RING_C = 2 * Math.PI * RING_R;
+
 export function FocusCard() {
   const { state } = useProgress();
   const { focus, buttonLabel, announcement, toggle, reset } = useFocus();
+  const sessionFraction = Math.max(0, Math.min(1, focus.remaining / SESSION_SECONDS));
 
   return (
     <div className={styles.card}>
       <div className={styles.eyebrow}>Focus session</div>
-      <div className={styles.clock} aria-live="off">
-        {formatTime(focus.remaining)}
+      <div className={styles.ringWrap}>
+        <svg className={styles.ring} viewBox="0 0 120 120" aria-hidden="true">
+          <circle className={styles.ringTrack} cx="60" cy="60" r={RING_R} />
+          <circle
+            className={styles.ringValue}
+            cx="60"
+            cy="60"
+            r={RING_R}
+            style={{ strokeDasharray: RING_C, strokeDashoffset: (1 - sessionFraction) * RING_C }}
+          />
+        </svg>
+        <div className={styles.clock} aria-live="off">
+          {formatTime(focus.remaining)}
+        </div>
       </div>
       <div className={styles.actions}>
         <button

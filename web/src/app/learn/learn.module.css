@@ -367,21 +367,13 @@
 }
 
 .paletteBadge[data-lang="js"] {
-  color: #67511b;
-  background: color-mix(in srgb, #f2c94c 30%, transparent);
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
 }
 
 .paletteBadge[data-lang="cs"] {
-  color: #6b3fa0;
-  background: color-mix(in srgb, #a06bd6 26%, transparent);
-}
-
-:global(html[data-theme="dark"]) .paletteBadge[data-lang="js"] {
-  color: #e8d79a;
-}
-
-:global(html[data-theme="dark"]) .paletteBadge[data-lang="cs"] {
-  color: #e0c8f5;
+  color: var(--link);
+  background: color-mix(in srgb, var(--link) 16%, transparent);
 }
 
 .paletteCheck {
