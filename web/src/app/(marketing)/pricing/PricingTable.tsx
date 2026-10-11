@@ -290,10 +290,10 @@ export function PricingTable() {
         };
 
   const lifetimeCta: Cta = !viewer.signedIn
-    ? { label: "Start free trial", href: "/signup" }
+    ? { label: "Get Lifetime", href: "/signup" }
     : isPro
       ? { label: "You're on Pro", disabled: true }
-      : { label: "Get lifetime", href: `/checkout?plan=lifetime${dealParam}` };
+      : { label: "Get Lifetime", href: `/checkout?plan=lifetime${dealParam}` };
 
   const pro = billing === "annual" ? proAnnual : proMonthly;
 
