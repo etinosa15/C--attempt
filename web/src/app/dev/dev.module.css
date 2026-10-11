@@ -1,0 +1,210 @@
+/* Dev sandbox chrome + shared showcase helpers (Phase 3, dev-only). */
+
+.wrap {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.brand {
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.nav a {
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.nav a:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.themeToggle {
+  margin-left: auto;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+}
+/* @@DEV_APPEND@@ */
+
+.lead {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 60ch;
+  margin: 0 0 2rem;
+}
+
+.secTitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 2.5rem 0 1rem;
+  font-weight: 700;
+}
+
+/* ---- palette ---- */
+.swatchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.swatch {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.swatchFill {
+  height: 68px;
+}
+
+.swatchMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.swatchMeta b {
+  font-size: 0.85rem;
+}
+
+.swatchMeta code {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.pairRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.pass {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* ---- fonts ---- */
+.specimen {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.specimen h1,
+.specimen h2,
+.specimen h3 {
+  margin: 0 0 0.3rem;
+}
+
+/* ---- loaders ---- */
+.loaderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.2rem;
+}
+
+.loaderCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.6rem 1rem 1.2rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  text-align: center;
+}
+
+.loaderCard h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.loaderCard p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.loaderCard.signature {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.btnRow {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btnLoad {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.btnLoadGhost {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .loaderCard { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
