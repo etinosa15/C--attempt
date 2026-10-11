@@ -31,7 +31,7 @@
 | # | Item | Status | Note |
 |---|---|---|---|
 | 11 | Server-side entitlements | OK | `resolveEntitlement` is pure + server-authoritative; the browser only receives capability booleans. Lesson content shipping in the client bundle is logged as an accepted-risk decision in `OWNER_TODO.md` (F). |
-| 12 | Paystack webhooks | OK/BATCH B | Signature verified (`verifyPaystackSignature`, HMAC-SHA512, timing-safe). **Batch B (do before go-live):** call `/transaction/verify` and check amount/plan before granting (H1); use upsert + idempotency (M3); handle out-of-order lifecycle events (M2). |
+| 12 | Paystack webhooks | OK/FIX | Signature verified (HMAC-SHA512, timing-safe). **H1 fixed:** a no-plan `charge.success` now grants Lifetime only when its (signed) amount equals the configured `PAYSTACK_AMOUNT_LIFETIME` — fail closed otherwise. Remaining before go-live (lower sev): upsert + idempotency (M3), out-of-order lifecycle handling (M2), discount parity (M1). |
 | 13 | IDOR | OK/TODO | RLS self-scoping verified across progress/notebook/projects/certificates/account. **TODO:** add explicit "user A can't read/write user B" tests. |
 | 14 | Leaderboard integrity | OK/TODO | Server-side XP, self-read-only RLS (migration `0008`), display-name sanitization (strips HTML) — Batch A. **TODO:** per-user opt-out. |
 
