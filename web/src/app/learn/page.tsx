@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { useCountUp } from "@/lib/motion/useCountUp";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned } from "@/lib/progress/core";
 import { summarizeGamification, sortBadgesForDisplay } from "@/lib/progress/gamification";
@@ -31,6 +32,8 @@ export default function Overview() {
   const resume = state.lastLesson ? lessonsById.get(state.lastLesson) : undefined;
   const game = summarizeGamification(state, days);
   const levelPct = Math.round(game.level.progress * 100);
+  const streakCount = useCountUp(days);
+  const xpCount = useCountUp(game.level.xpIntoLevel);
 
   return (
     <div className={styles.page}>
@@ -39,7 +42,7 @@ export default function Overview() {
         <p className={styles.streak} aria-live="polite">
           {days > 0 ? (
             <>
-              <strong>{days}</strong> day{days === 1 ? "" : "s"} in a row
+              <strong>{streakCount}</strong> day{days === 1 ? "" : "s"} in a row
               {streakProtected && (
                 <span className={styles.shield} title="A Pro streak shield kept your streak through a missed day">
                   {" "}🛡 protected
@@ -68,7 +71,7 @@ export default function Overview() {
             Level <strong>{game.level.level}</strong> · {game.level.title}
           </span>
           <span className={styles.levelXp}>
-            {game.level.xpIntoLevel} / {game.level.xpForLevel} XP ·{" "}
+            {xpCount} / {game.level.xpForLevel} XP ·{" "}
             {game.earnedCount}/{game.totalBadges} badges
           </span>
         </div>

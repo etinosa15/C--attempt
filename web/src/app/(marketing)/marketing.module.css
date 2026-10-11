@@ -703,3 +703,28 @@
     display: none;
   }
 }
+
+/* Scroll-driven entrance (progressive enhancement): cards fade up as they enter
+   the viewport, naturally staggered by position. Only where supported and only
+   if the user allows motion; everywhere else the cards are simply visible. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .step,
+    .feature,
+    .trackCard {
+      animation: fadeUp linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 38%;
+    }
+  }
+}

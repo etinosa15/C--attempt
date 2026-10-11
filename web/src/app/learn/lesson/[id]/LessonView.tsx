@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { faArrowLeft, faCheck, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { celebrate } from "@/lib/motion/confetti";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { isLessonLocked } from "@/lib/entitlements/gating";
@@ -58,6 +59,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
 
   function complete() {
     if (!canComplete || done) return;
+    celebrate();
     update((prev) => {
       const completed = prev.completed.includes(lesson.id)
         ? prev.completed
