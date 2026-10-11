@@ -72,7 +72,7 @@
 
 .error {
   margin: 0;
-  color: #d9534f;
+  color: var(--danger);
   font-size: 0.85rem;
 }
 
@@ -82,4 +82,79 @@
   gap: 1rem;
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
+}
+
+.links a {
+  color: var(--link);
+  font-weight: 600;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* Password field: input + show/hide "eye" toggle. */
+.pwWrap {
+  position: relative;
+  display: flex;
+}
+
+.pwInput {
+  width: 100%;
+  padding-right: 2.75rem; /* room for the eye toggle */
+}
+
+.pwToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 2.6rem;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 0 9px 9px 0;
+}
+
+.pwToggle:hover { color: var(--text); }
+
+.pwToggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Live password-length hint under the sign-up field. */
+.hint {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.hintOk { color: var(--success); }
+
+/* "or continue with" divider above the OAuth row. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.oauthBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
