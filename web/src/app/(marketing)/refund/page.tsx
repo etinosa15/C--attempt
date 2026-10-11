@@ -73,15 +73,12 @@ export default function Refund() {
           can re-subscribe at any time.
         </p>
 
-        <h2>Merchant of record</h2>
+        <h2>Payments</h2>
         <p>
-          Purchases and refunds are handled by Paddle, which is the merchant of record
-          for Forge Code Academy — it processes the payment, charges any applicable
-          tax, and issues your receipt. Paddle&rsquo;s own{" "}
-          <a href="https://www.paddle.com/legal/checkout-buyer-terms" rel="noopener">
-            buyer terms
-          </a>{" "}
-          also apply to your transaction.
+          Payments and refunds are processed securely by our payment provider — your
+          card details are entered on their secure checkout and never touch our
+          servers. When you upgrade, they handle the transaction and issue your
+          receipt; a refund is returned to the same payment method you used.
         </p>
 
         <h2>Questions</h2>

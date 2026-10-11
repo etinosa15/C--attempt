@@ -42,7 +42,7 @@ export default function Pricing() {
         <Link href="/refund" className={styles.footerLink}>
           30-day money-back guarantee
         </Link>
-        , and prices adapt to your region automatically. Prefer to just start?{" "}
+        . Prefer to just start?{" "}
         <a href="/learn" className={styles.footerLink}>
           Jump into the lessons
         </a>
