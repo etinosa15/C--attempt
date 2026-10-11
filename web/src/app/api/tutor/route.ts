@@ -3,7 +3,7 @@ import { resolveUser } from "@/lib/supabase/route-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEntitlement } from "@/lib/entitlements/server";
 import { canUseAiTutor } from "@/lib/entitlements/gating";
-import { resolveQuota, utcDayKey, TUTOR_DAILY_LIMIT } from "@/lib/tutor/quota";
+import { utcDayKey, TUTOR_DAILY_LIMIT } from "@/lib/tutor/quota";
 // Reuse the PURE, already-tested prompt builder (tutor/prompt.mjs) rather than
 // re-implementing it — it guarantees the one security-critical property (coach,
 // never ship the worked solution) in a single place the proxy also uses.
@@ -62,23 +62,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ configured: false }, { headers: { "Cache-Control": "no-store" } });
   }
 
-  // Per-user daily meter. Read today's count under the learner's own RLS identity,
-  // then decide with the pure resolver.
   const day = utcDayKey(new Date());
   const limit = dailyLimit();
-  const { data: usageRow } = await supabase
-    .from("tutor_usage")
-    .select("count")
-    .eq("user_id", user.id)
-    .eq("day", day)
-    .maybeSingle();
-  const quota = resolveQuota((usageRow?.count as number) ?? 0, limit);
-  if (!quota.allowed) {
-    return NextResponse.json(
-      { error: "You've used today's tutor hints. They refresh tomorrow.", remaining: 0 },
-      { status: 429, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const userId = user.id;
 
   let payload: unknown = null;
   try {
@@ -90,6 +76,38 @@ export async function POST(request: Request) {
   if (!body) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
+
+  // Reserve one hint ATOMICALLY before calling Anthropic (bug audit H3): the DB
+  // increments only if the learner is under the daily cap, so parallel requests
+  // can't blow the limit and the Anthropic bill stays bounded.
+  const admin = createAdminClient();
+  let reserved: number | null = null;
+  try {
+    const { data } = await admin.rpc("reserve_tutor_hint", { p_user: userId, p_day: day, p_limit: limit });
+    reserved = typeof data === "number" ? data : null;
+  } catch {
+    // Fail closed: if the reservation can't be made, don't spend Anthropic budget.
+    return NextResponse.json(
+      { error: "The tutor is unavailable right now." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  if (reserved === null) {
+    return NextResponse.json(
+      { error: "You've used today's tutor hints. They refresh tomorrow.", remaining: 0 },
+      { status: 429, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  const remaining = Math.max(0, limit - reserved);
+
+  // Any failure from here gives the reserved hint back (a failed hint is free).
+  const refund = async () => {
+    try {
+      await admin.rpc("release_tutor_hint", { p_user: userId, p_day: day });
+    } catch {
+      /* best effort — a metering hiccup shouldn't surface to the learner */
+    }
+  };
 
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), UPSTREAM_MS);
@@ -106,11 +124,13 @@ export async function POST(request: Request) {
       body: JSON.stringify(body),
     });
   } catch {
+    await refund();
     return NextResponse.json({ error: "The tutor is unavailable right now." }, { status: 502 });
   } finally {
     clearTimeout(deadline);
   }
   if (!upstream.ok) {
+    await refund();
     return NextResponse.json({ error: "The tutor is unavailable right now." }, { status: 502 });
   }
   let data: unknown = null;
@@ -121,19 +141,8 @@ export async function POST(request: Request) {
   }
   const message = extract(data);
   if (!message) {
+    await refund();
     return NextResponse.json({ error: "The tutor is unavailable right now." }, { status: 502 });
-  }
-
-  // Only a served hint costs budget — bump atomically via the service role.
-  let remaining = quota.remaining - 1;
-  try {
-    const { data: newCount } = await createAdminClient().rpc("bump_tutor_usage", {
-      p_user: user.id,
-      p_day: day,
-    });
-    if (typeof newCount === "number") remaining = Math.max(0, limit - newCount);
-  } catch {
-    // The hint was served; a metering hiccup shouldn't fail the response.
   }
 
   return NextResponse.json({ message, remaining }, { headers: { "Cache-Control": "no-store" } });
