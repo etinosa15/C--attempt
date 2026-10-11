@@ -95,6 +95,22 @@ test("past_due keeps Pro during the dunning grace period", () => {
   assert.equal(e.tier, "pro");
 });
 
+test("lifetime (active with no period) grants Pro indefinitely", () => {
+  const e = resolveEntitlement(
+    row({ plan: "pro", status: "active", current_period_end: null }),
+    NOW,
+  );
+  assert.equal(e.tier, "pro");
+});
+
+test("past_due with no period end does NOT grant Pro forever (bug audit H2)", () => {
+  const e = resolveEntitlement(
+    row({ plan: "pro", status: "past_due", current_period_end: null }),
+    NOW,
+  );
+  assert.equal(e.tier, "free");
+});
+
 test("canceled and expired both resolve to free", () => {
   for (const status of ["canceled", "expired"]) {
     assert.equal(resolveEntitlement(row({ status }), NOW).tier, "free");

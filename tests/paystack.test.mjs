@@ -47,15 +47,19 @@ test("targetFor maps selections to the right Paystack target env", () => {
 
 // --- event mapping ----------------------------------------------------------
 test("charge.success for a one-time Lifetime grants perpetual Pro, keyed by user", () => {
-  const w = subscriptionWriteFromEvent({
-    event: "charge.success",
-    data: {
-      status: "success",
-      metadata: { user_id: "u1" },
-      customer: { customer_code: "CUS_1" },
-      // no plan -> one-time
+  const w = subscriptionWriteFromEvent(
+    {
+      event: "charge.success",
+      data: {
+        status: "success",
+        amount: 4000000,
+        metadata: { user_id: "u1" },
+        customer: { customer_code: "CUS_1" },
+        // no plan -> one-time
+      },
     },
-  });
+    { lifetimeAmount: 4000000 },
+  );
   assert.equal(w.by, "user");
   assert.equal(w.userId, "u1");
   assert.equal(w.plan, "pro");
@@ -63,6 +67,28 @@ test("charge.success for a one-time Lifetime grants perpetual Pro, keyed by user
   assert.equal(w.current_period_end, null); // lifetime never lapses
   assert.equal(w.provider_subscription_id, null);
   assert.equal(w.provider_customer_id, "CUS_1");
+});
+
+test("charge.success with no plan and a wrong/absent amount does NOT grant Lifetime (H1)", () => {
+  // Underpaid one-time charge: must be ignored, not mapped to perpetual Pro.
+  assert.equal(
+    subscriptionWriteFromEvent(
+      {
+        event: "charge.success",
+        data: { status: "success", amount: 10000, metadata: { user_id: "u1" } },
+      },
+      { lifetimeAmount: 4000000 },
+    ),
+    null,
+  );
+  // Lifetime price unconfigured: fail closed.
+  assert.equal(
+    subscriptionWriteFromEvent({
+      event: "charge.success",
+      data: { status: "success", amount: 4000000, metadata: { user_id: "u1" } },
+    }),
+    null,
+  );
 });
 
 test("charge.success for a subscription carries the plan + sub code", () => {

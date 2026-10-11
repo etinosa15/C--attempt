@@ -7,6 +7,8 @@
 // the track hits 100%. All state is read from the shared ProgressProvider.
 import { useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned, highlight } from "@/lib/progress/core";
 import { tracks, modules, bridges, type Lang } from "@/lib/curriculum";
@@ -152,7 +154,7 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
                             className={`${styles.lesson} ${isDone ? styles.lessonDone : ""}`}
                           >
                             <span className={styles.lessonOrder}>
-                              {isDone ? "✓" : pad(order)}
+                              {isDone ? <Icon icon={faCheck} /> : pad(order)}
                             </span>
                             <span className={styles.lessonBody}>
                               {l.title}

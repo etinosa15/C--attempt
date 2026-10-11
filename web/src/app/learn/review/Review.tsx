@@ -13,6 +13,8 @@
 // included, so a learner can preview the whole deck before completing lessons.
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { useProgress } from "@/lib/progress/useProgress";
 import { dayKey, scheduleReview, type ReviewRating } from "@/lib/progress/core";
 import { lessons, moduleName, type Lesson } from "@/lib/curriculum";
@@ -144,7 +146,7 @@ export function Review() {
                         className={`${styles.btn} ${styles.btnPrimary}`}
                         onClick={() => setRevealed(true)}
                       >
-                        Reveal answer →
+                        Reveal answer <Icon icon={faArrowRight} />
                       </button>
                       <span className={styles.kbd}>Space to reveal</span>
                     </>
@@ -183,7 +185,7 @@ export function Review() {
                 </div>
               </article>
               <Link href={`/learn/lesson/${current.id}`} className={styles.source}>
-                Revisit: {current.title} →
+                Revisit: {current.title} <Icon icon={faArrowRight} />
               </Link>
             </>
           ) : (

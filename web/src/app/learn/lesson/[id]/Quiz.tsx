@@ -9,6 +9,8 @@ import { useState } from "react";
 import { useProgress } from "@/lib/progress/useProgress";
 import { dayKey } from "@/lib/progress/core";
 import type { Quiz as QuizData } from "@/lib/curriculum";
+import { Icon } from "@/components/Icon";
+import { faCheck, faQuestion } from "@fortawesome/free-solid-svg-icons";
 import styles from "./lesson.module.css";
 
 export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
@@ -68,7 +70,7 @@ export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
           className={`${styles.feedback} ${correct ? styles.feedbackOk : styles.feedbackNo}`}
           role="status"
         >
-          <span aria-hidden="true">{correct ? "✓" : "?"}</span>
+          <span aria-hidden="true">{correct ? <Icon icon={faCheck} /> : <Icon icon={faQuestion} />}</span>
           <p style={{ margin: 0 }}>
             <strong>{correct ? "That's it. " : "Not quite — trace the rule again. "}</strong>
             {quiz.why}

@@ -10,6 +10,8 @@
 // under "project-<id>" (matching the vanilla key scheme). The scratchpad lives
 // under notes.scratchpad. Anything else is shown as a plain "NOTE" with no link.
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { lessonsById, projects, tracks } from "@/lib/curriculum";
@@ -117,7 +119,7 @@ export function Notebook() {
                     <h3>{meta ? meta.title : id}</h3>
                     <p>{preview}</p>
                     {meta && (
-                      <span className={styles.cardCta}>Continue your thinking →</span>
+                      <span className={styles.cardCta}>Continue your thinking <Icon icon={faArrowRight} /></span>
                     )}
                   </>
                 );
