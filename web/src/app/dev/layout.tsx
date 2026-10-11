@@ -25,6 +25,7 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
           <Link href="/dev/palette">Palette</Link>
           <Link href="/dev/fonts">Fonts</Link>
           <Link href="/dev/loaders">Loaders</Link>
+          <Link href="/dev/viz">Viz</Link>
         </nav>
         <DevThemeToggle />
       </header>

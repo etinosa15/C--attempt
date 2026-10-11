@@ -59,6 +59,9 @@
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
+.vizSlot {
+  margin: 0 0 2rem;
+}
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 15rem;

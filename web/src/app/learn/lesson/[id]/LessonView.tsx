@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { faArrowLeft, faCheck, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { celebrate } from "@/lib/motion/confetti";
+import { getLessonViz } from "@/components/viz/registry";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { isLessonLocked } from "@/lib/entitlements/gating";
@@ -89,6 +90,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
   }
 
   const example = highlight(lesson.example, lesson.lang);
+  const viz = getLessonViz(lesson.id);
 
   return (
     <div>
@@ -110,6 +112,8 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
           {locked && <span className={styles.preview}>Preview · Pro lesson</span>}
         </div>
       </header>
+
+      {viz && <div className={styles.vizSlot}>{viz}</div>}
 
       <div className={styles.layout}>
         <article className={styles.content}>
