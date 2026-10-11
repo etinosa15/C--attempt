@@ -5,6 +5,10 @@
 > locked decisions, the remaining phases, how the separate `forge-fix-prompt.md`
 > work folds in, and the sequence. Branch: **`ui-polish`**. Checkpoints: stop for
 > owner approval after Phases 2 and 3; commit per sub-step in Phase 4.
+>
+> **Update 2026-10-11:** Phase 2 approved. Owner authorized running straight through
+> the remaining phases (3 → 4 → 5) without stopping at the Phase 3 gate, and asked for
+> a **responsiveness rework** added as the final implementation pass (now **4I**).
 
 ## Where we are
 - **Done & merged to `main`** (pre-polish): auth UX clarity — show/hide password, friendly errors, live length hint, OAuth parity, `role=alert`. (Overlaps `forge-fix-prompt.md` §1A/1B.)
@@ -39,10 +43,18 @@ Pages rendered only when `NODE_ENV !== 'production'`, else 404.
 - **4G Motion system:** the motion tokens above via `motion` (`motion/react`); XP/streak count-up, progress/timer animation, review-card flip, staggered 01–04 entrance, hover/press feedback, lesson-complete `canvas-confetti` (short). No looping motion by body text or editor.
 - **4H Visualizations (the main upgrade):** one reusable data-driven system (`CodeTracer`, `StepControls` with Space/arrow keys, `TypeBox`, `PipelineDiagram`; `TraceStep` shape per spec); narration in `aria-live`; reduced-motion → manual stepping only. Build first: (1) C# source→execution pipeline, (2) JS `+` two-jobs, (3) C# types-are-a-contract, (4) predict-the-output reveal. Then list other lessons that would benefit (no implementation).
 
+- **4I Responsiveness rework (final implementation pass):** the dedicated mobile/tablet pass, done last so it reworks the *finished* glass/motion UI, not the old one.
+  - **Real mobile nav:** drawer / overflow menu at `≤640px` exposing all 9 learn-nav items (fixes the vanished nav, audit issue), focus-trapped, `Esc` + backdrop-close, `aria-expanded`; keep a visible sign-in path at `≤380px` on marketing.
+  - **Every page at 390×844 (phone) and 768×1024 (tablet):** hero, pricing, overview, lesson, playground (editor + output stack vertically, tabs reachable), review, projects, notebook, leaderboard, account, auth. No horizontal scroll/overflow; multi-column grids collapse to one column in a sensible order.
+  - **Fluid type/space:** confirm `clamp()` headings don't overflow; min 12px labels hold; body measure stays readable; sidebar → bottom bar or drawer.
+  - **Touch:** tap targets ≥44px; `scroll-margin-top` correct under the sticky bar on small screens; mascot never overlaps content on narrow widths (ties into 4C).
+  - **Device:** `env(safe-area-inset-*)` for notched phones; test landscape; glass/blur budget still ≤4 per viewport on mobile (drop/soften blur where it costs frames).
+
 <!-- @@PLAN2@@ -->
 ## Phase 5 — verify
 - `/web-design-guidelines` again; `/seo-audit` on landing + auth only (meta, OG, headings, indexability; no paid data/MCP).
 - Re-screenshot every page both themes at 1440×900 and 390×844; diff against `.ui-audit/` baseline.
+- **Responsiveness sign-off (from 4I):** phone (390×844) + tablet (768×1024), both themes — mobile nav reachable, no horizontal overflow, tap targets ≥44px, playground tabs reachable, mascot never overlaps, safe-area respected.
 - Metrics: CLS < 0.1, LCP < 2.5s, no font layout shift, 60fps animations, bundle before/after, **≤4 backdrop-filter per viewport**, a contrast report for every token pair, keyboard nav + visible focus on all new controls.
 - Confirm `/dev/*` 404 in production and no dev overlays render (the **"N" dev badge** seen in dev must be gone in prod — verify `devIndicators` in `next.config.ts` and that Render/Vercel start with `next start`, not `next dev`).
 - Final report: per-phase changes, what remains, anything declined + why, and the `ui-polish` git log.
@@ -57,7 +69,7 @@ That separate prompt has 3 sections; much overlaps work already done. Suggested 
 ## Sequence & checkpoints
 1. **Phase 2** (this) → stop for approval.
 2. **Phase 3** (/dev palette, fonts, loaders) → stop for approval.
-3. **Phase 4** (4A→4H), commit per sub-step, lint/typecheck/build/tests each.
+3. **Phase 4** (4A→4I), commit per sub-step, lint/typecheck/build/tests each.
 4. **Phase 5** verify + final report.
 5. **forge-fix-prompt.md** track (UI bits already in P4; then OWNER_TODO + security pass).
 
