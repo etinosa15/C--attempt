@@ -147,8 +147,9 @@
   gap: 0.75rem;
   padding: 1rem 1.1rem;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
-  background: color-mix(in srgb, var(--warn) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .callout strong {
   display: block;
@@ -509,8 +510,9 @@
   gap: 0.2rem;
   padding: 1rem;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .tocTitle {
   font-size: 0.75rem;
@@ -550,7 +552,9 @@
 .source {
   padding: 1rem;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .source h3 {
   margin: 0 0 0.35rem;
