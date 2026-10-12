@@ -9,19 +9,9 @@ import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
 import { BrandMark, Icon } from "@/components/Icon";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { NAV } from "./nav-items";
+import { glassBlur } from "@/lib/glass";
 import styles from "./learn.module.css";
-
-const NAV = [
-  { href: "/learn", label: "Overview" },
-  { href: "/learn/paths", label: "Paths" },
-  { href: "/learn/review", label: "Review" },
-  { href: "/learn/projects", label: "Projects" },
-  { href: "/learn/playground", label: "Playground" },
-  { href: "/learn/leaderboard", label: "Leaderboard" },
-  { href: "/learn/notebook", label: "Notebook" },
-  { href: "/learn/settings", label: "Settings" },
-  { href: "/learn/account", label: "Account" },
-];
 
 // A short, human sync label so the learner always knows their work is safe. This
 // is where account actions live now — signing in/out, exporting and deleting are
@@ -134,31 +124,23 @@ export function TopBar({
   }
 
   return (
-    <header className={styles.topbar}>
-      <Link href="/learn" className={styles.brand}>
+    <header className={styles.topbar} style={glassBlur}>
+      <button
+        type="button"
+        className={styles.navToggle}
+        aria-label="Menu"
+        aria-expanded={navOpen}
+        aria-controls="mobile-nav"
+        onClick={() => setNavOpen((v) => !v)}
+      >
+        <Icon icon={faBars} />
+      </button>
+      <Link href="/learn" className={`${styles.brand} ${styles.brandTop}`}>
         <BrandMark />
         Forge Code Academy
       </Link>
 
-      <nav className={styles.nav}>
-        {NAV.map((item) => (
-          <Link key={item.href} href={item.href} className={styles.navLink}>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.navToggle}
-          aria-label="Menu"
-          aria-expanded={navOpen}
-          aria-controls="mobile-nav"
-          onClick={() => setNavOpen((v) => !v)}
-        >
-          <Icon icon={faBars} />
-        </button>
         <SyncBadge />
         {email && <PlanPill entitlement={entitlement} />}
         <CommandPalette />
@@ -175,7 +157,7 @@ export function TopBar({
               {email}
             </button>
             {open && (
-              <div className={styles.menu} role="menu">
+              <div className={styles.menu} role="menu" style={glassBlur}>
                 <Link className={styles.menuItem} href="/learn/account" role="menuitem">
                   Account &amp; billing
                 </Link>
@@ -234,6 +216,7 @@ export function TopBar({
                 className={styles.drawerLink}
                 onClick={() => setNavOpen(false)}
               >
+                <Icon icon={item.icon} />
                 {item.label}
               </Link>
             ))}

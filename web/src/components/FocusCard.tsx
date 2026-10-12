@@ -7,6 +7,7 @@
 import { useFocus } from "@/lib/progress/useFocus";
 import { formatTime, focusDuration } from "@/lib/progress/focus";
 import { useProgress } from "@/lib/progress/useProgress";
+import { glassBlur } from "@/lib/glass";
 import styles from "./FocusCard.module.css";
 
 // Mirrors FOCUS_SESSION_MS in public/core.js (25 min). Used only to draw the
@@ -21,7 +22,7 @@ export function FocusCard() {
   const sessionFraction = Math.max(0, Math.min(1, focus.remaining / SESSION_SECONDS));
 
   return (
-    <div className={styles.card}>
+    <div className={styles.card} style={glassBlur}>
       <div className={styles.eyebrow}>Focus session</div>
       <div className={styles.ringWrap}>
         <svg className={styles.ring} viewBox="0 0 120 120" aria-hidden="true">
