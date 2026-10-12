@@ -184,7 +184,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                 <p className={styles.explanation}>{lesson.recall.question}</p>
                 <ReflectionNote lessonId={lesson.id} />
 
-                <div className={`${styles.panel} ${styles.completion}`}>
+                <div className={`${styles.panel} ${styles.completion}`} style={glassBlur}>
                   <div>
                     <h3>{done ? "One more concept, made yours." : "Ready to make it stick?"}</h3>
                     <p>

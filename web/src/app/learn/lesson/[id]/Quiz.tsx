@@ -11,6 +11,7 @@ import { dayKey } from "@/lib/progress/core";
 import type { Quiz as QuizData } from "@/lib/curriculum";
 import { Icon } from "@/components/Icon";
 import { faCheck, faQuestion } from "@fortawesome/free-solid-svg-icons";
+import { glassBlur } from "@/lib/glass";
 import styles from "./lesson.module.css";
 
 export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
@@ -42,7 +43,7 @@ export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
   }
 
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} style={glassBlur}>
       <p className={styles.quizQuestion}>{quiz.question}</p>
       <form onSubmit={submit}>
         <fieldset className={styles.choices}>

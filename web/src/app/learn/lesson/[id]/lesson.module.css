@@ -165,8 +165,9 @@
 .panel {
   padding: 1.25rem;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 /* Quiz */
 .quizQuestion {
