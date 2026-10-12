@@ -13,6 +13,7 @@ import { Icon } from "@/components/Icon";
 import { faArrowLeft, faCheck, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { celebrate } from "@/lib/motion/confetti";
 import { getLessonViz } from "@/components/viz/registry";
+import { glassBlur } from "@/lib/glass";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { isLessonLocked } from "@/lib/entitlements/gating";
@@ -137,7 +138,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               </pre>
             </div>
             <p className={styles.explanation}>{lesson.explanation}</p>
-            <div className={styles.callout}>
+            <div className={styles.callout} style={glassBlur}>
               <span aria-hidden="true">⚡</span>
               <div>
                 <strong>Watch for this</strong>
@@ -183,7 +184,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
                 <p className={styles.explanation}>{lesson.recall.question}</p>
                 <ReflectionNote lessonId={lesson.id} />
 
-                <div className={`${styles.panel} ${styles.completion}`}>
+                <div className={`${styles.panel} ${styles.completion}`} style={glassBlur}>
                   <div>
                     <h3>{done ? "One more concept, made yours." : "Ready to make it stick?"}</h3>
                     <p>
@@ -240,7 +241,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
         </article>
 
         <aside className={styles.aside}>
-          <div className={styles.toc}>
+          <div className={styles.toc} style={glassBlur}>
             <div className={styles.tocTitle}>This session</div>
             <TocItem target="understand" label="Understand the concept" />
             <TocItem target="predict" label="Check your intuition" done={quizPassed} />
@@ -251,7 +252,7 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
               </>
             )}
           </div>
-          <div className={styles.source}>
+          <div className={styles.source} style={glassBlur}>
             <h3>Go to the source</h3>
             <p>Explore the language reference when you want to go deeper.</p>
             <a href={lesson.docs} target="_blank" rel="noopener noreferrer">
