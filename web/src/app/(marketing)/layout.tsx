@@ -6,12 +6,13 @@
 import Link from "next/link";
 import { NavAuth } from "./NavAuth";
 import { BrandMark } from "@/components/Icon";
+import { glassBlur } from "@/lib/glass";
 import styles from "./marketing.module.css";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.shell}>
-      <header className={styles.nav}>
+      <header className={styles.nav} style={glassBlur}>
         <Link href="/" className={styles.brand}>
           <BrandMark />
           Forge Code Academy

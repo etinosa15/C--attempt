@@ -10,6 +10,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { BrandMark, Icon } from "@/components/Icon";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { NAV } from "./nav-items";
+import { glassBlur } from "@/lib/glass";
 import styles from "./learn.module.css";
 
 // A short, human sync label so the learner always knows their work is safe. This
@@ -123,7 +124,7 @@ export function TopBar({
   }
 
   return (
-    <header className={styles.topbar}>
+    <header className={styles.topbar} style={glassBlur}>
       <button
         type="button"
         className={styles.navToggle}
@@ -156,7 +157,7 @@ export function TopBar({
               {email}
             </button>
             {open && (
-              <div className={styles.menu} role="menu">
+              <div className={styles.menu} role="menu" style={glassBlur}>
                 <Link className={styles.menuItem} href="/learn/account" role="menuitem">
                   Account &amp; billing
                 </Link>

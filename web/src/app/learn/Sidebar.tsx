@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { NAV } from "./nav-items";
 import { Icon, BrandMark } from "@/components/Icon";
 import { useProgress } from "@/lib/progress/useProgress";
+import { glassBlur } from "@/lib/glass";
 import styles from "./learn.module.css";
 
 function isActive(pathname: string, href: string): boolean {
@@ -20,7 +21,7 @@ export function Sidebar() {
   const goal = state?.goal ?? 30;
 
   return (
-    <aside className={styles.sidebar} aria-label="Primary">
+    <aside className={styles.sidebar} aria-label="Primary" style={glassBlur}>
       <Link href="/learn" className={styles.sidebarBrand}>
         <BrandMark size={26} />
         <span>Forge Code Academy</span>

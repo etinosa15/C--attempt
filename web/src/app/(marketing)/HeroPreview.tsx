@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { glassBlur } from "@/lib/glass";
 import styles from "./marketing.module.css";
 
 // The hero's product visual: a tiny "predict the output" card — the whole Forge
@@ -9,7 +10,7 @@ import styles from "./marketing.module.css";
 export function HeroPreview() {
   const [revealed, setRevealed] = useState(false);
   return (
-    <div className={styles.previewCard}>
+    <div className={styles.previewCard} style={glassBlur}>
       <div className={styles.pvHead}>
         <span className={styles.pvDot} />
         <span className={styles.pvDot} />
