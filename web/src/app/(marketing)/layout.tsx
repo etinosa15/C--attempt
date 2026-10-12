@@ -17,7 +17,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <BrandMark />
           Forge Code Academy
         </Link>
-        <nav className={styles.navLinks} aria-label="Primary" style={glassBlur}>
+        <nav className={styles.navLinks} aria-label="Primary">
           <Link href="/#tracks" className={styles.navLink}>
             Tracks
           </Link>
