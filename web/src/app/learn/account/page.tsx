@@ -32,7 +32,7 @@ export default async function AccountPage() {
     data: { user },
   } = await supabase.auth.getUser();
   // Account actions require an account; send signed-out visitors to sign in.
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/learn/account");
 
   const [entitlement, row] = await Promise.all([
     getEntitlement(supabase, user.id),

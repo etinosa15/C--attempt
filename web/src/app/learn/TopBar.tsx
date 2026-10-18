@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
 import type { Entitlement } from "@/lib/entitlements/types";
 import { CommandPalette } from "./CommandPalette";
@@ -72,6 +72,7 @@ export function TopBar({
   entitlement: Entitlement | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname() || "/learn";
   const [open, setOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -182,7 +183,7 @@ export function TopBar({
             )}
           </div>
         ) : (
-          <Link href="/login" className={styles.signIn}>
+          <Link href={`/login?next=${encodeURIComponent(pathname)}`} className={styles.signIn}>
             Sign in
           </Link>
         )}
