@@ -7,6 +7,7 @@ import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { useCountUp } from "@/lib/motion/useCountUp";
 import { useProgress } from "@/lib/progress/useProgress";
 import { certificateEarned } from "@/lib/progress/core";
+import { downloadProgress } from "@/lib/progress/backup";
 import { summarizeGamification, sortBadgesForDisplay } from "@/lib/progress/gamification";
 import { streakWithShield, STREAK_SHIELD_DAYS } from "@/lib/progress/streak-shield";
 import { tracks, lessonsById, type Lang } from "@/lib/curriculum";
@@ -108,6 +109,11 @@ export default function Overview() {
                 <span className={styles.trackTag}>{track.tag}</span>
               </div>
               <p className={styles.trackDesc}>{track.description}</p>
+              {lang === "cs" && (
+                <p className={styles.trackNote}>
+                  C# runs on your computer. <Link href="/local-setup">Set it up in a few minutes</Link>.
+                </p>
+              )}
 
               <div className={styles.progress}>
                 <div className={styles.bar} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
@@ -189,6 +195,13 @@ export default function Overview() {
           ))}
         </div>
       </section>
+
+      <p className={styles.backupRow}>
+        Your progress lives in this browser.{" "}
+        <button type="button" className={styles.backupBtn} onClick={() => downloadProgress(state)}>
+          Export a backup
+        </button>
+      </p>
 
       {!ready && <p className={styles.loading}>Loading your progress…</p>}
     </div>

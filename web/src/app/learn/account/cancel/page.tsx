@@ -24,7 +24,7 @@ export default async function CancelPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/learn/account/cancel");
 
   const row = await getSubscriptionRow(supabase, user.id);
   // Paystack (gateway) has no pause and no init-time retention discount; Paddle

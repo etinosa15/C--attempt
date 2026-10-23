@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AnalyticsProvider } from "@/lib/analytics/posthog";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 export const metadata: Metadata = {
   title: "Forge Code Academy",
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <span />
         </div>
         <AnalyticsProvider>{children}</AnalyticsProvider>
+        <OfflineBanner />
       </body>
     </html>
   );

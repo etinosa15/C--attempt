@@ -14,12 +14,18 @@ export function friendlyAuthError(raw: string | null | undefined): string {
     return "An account with this email already exists. Try signing in instead.";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Too many attempts in a row. Wait a minute, then try again.";
+  // Checked before the "invalid email" rule: "Email link is invalid or has expired"
+  // is about the link, not the address.
+  if (m.includes("session missing") || m.includes("expired") || m.includes("otp") || m.includes("token has"))
+    return "This link has expired or was already used. Request a new one and try again.";
   if (m.includes("invalid email") || (m.includes("email") && m.includes("invalid")))
     return "That email address doesn't look right — check for a typo.";
   if (m.includes("password") && (m.includes("should be") || m.includes("at least") || m.includes("weak")))
     return "That password doesn't meet the minimum — use at least 10 characters.";
   if (m.includes("failed to fetch") || m.includes("network") || m.includes("load failed"))
     return "Couldn't reach the server. Check your connection and try again.";
+  if (m.includes("same password") || m.includes("different from the old"))
+    return "Choose a password that's different from your current one.";
 
   // Fall back to the provider's own text (sentence-cased) rather than a blank.
   return (raw ?? "").trim() || "Something went wrong. Please try again.";

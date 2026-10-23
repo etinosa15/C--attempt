@@ -326,3 +326,26 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.trackNote {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+.trackNote a {
+  color: var(--link);
+}
+.backupRow {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.backupBtn {
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

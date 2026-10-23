@@ -6,7 +6,7 @@
 // the Phase 4F pass. The toggle is a real <button> with an aria-label + aria-pressed
 // so it's keyboard- and screen-reader-friendly; the eye icons are inline SVG (no
 // icon-library dependency yet).
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type Ref } from "react";
 import styles from "./auth.module.css";
 
 interface Props {
@@ -17,21 +17,33 @@ interface Props {
   minLength?: number;
   /** Optional live hint rendered under the field (e.g. the password-length meter). */
   hint?: ReactNode;
+  /** Lets the form move focus back here (e.g. after a failed sign-in). */
+  inputRef?: Ref<HTMLInputElement>;
 }
 
-export function PasswordField({ label, value, onChange, autoComplete, minLength, hint }: Props) {
+export function PasswordField({ label, value, onChange, autoComplete, minLength, hint, inputRef }: Props) {
   const [show, setShow] = useState(false);
+  const [capsOn, setCapsOn] = useState(false);
+  // Caps Lock state is only knowable from a keyboard event, so read it on every
+  // key press inside the field and clear it when focus leaves.
+  const readCaps = (e: React.KeyboardEvent<HTMLInputElement>) =>
+    setCapsOn(e.getModifierState("CapsLock"));
   return (
     <label className={styles.label}>
       {label}
       <div className={styles.pwWrap}>
         <input
+          ref={inputRef}
           className={`${styles.input} ${styles.pwInput}`}
           type={show ? "text" : "password"}
           value={value}
           required
           minLength={minLength}
+          maxLength={128}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={readCaps}
+          onKeyUp={readCaps}
+          onBlur={() => setCapsOn(false)}
           autoComplete={autoComplete}
         />
         <button
@@ -44,6 +56,11 @@ export function PasswordField({ label, value, onChange, autoComplete, minLength,
           {show ? <EyeOff /> : <Eye />}
         </button>
       </div>
+      {capsOn && (
+        <p className={styles.capsWarn} role="status">
+          Caps Lock is on.
+        </p>
+      )}
       {hint}
     </label>
   );

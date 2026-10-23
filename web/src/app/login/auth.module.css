@@ -198,6 +198,62 @@
 
 .hintOk { color: var(--success); }
 
+/* Caps Lock warning under the password field. */
+.capsWarn {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--warn);
+}
+
+/* "Did you mean …?" email typo suggestion. */
+.suggest {
+  margin: 0.1rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.suggestBtn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* Neutral info line (e.g. a returning-from-email notice). */
+.notice {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Small print under the submit button (consent). */
+.fine {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+.fine a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.body {
+  margin: 0;
+  line-height: 1.6;
+}
+
 /* "or continue with" divider above the OAuth row. */
 .divider {
   display: flex;

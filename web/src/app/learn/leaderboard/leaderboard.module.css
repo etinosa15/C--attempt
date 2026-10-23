@@ -166,3 +166,32 @@
     display: none;
   }
 }
+
+.retry {
+  margin-left: 0.35rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.skeleton {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.5rem 0;
+}
+.skeletonRow {
+  display: block;
+  height: 2.6rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+@keyframes skeletonPulse {
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeletonRow { animation: none; }
+}

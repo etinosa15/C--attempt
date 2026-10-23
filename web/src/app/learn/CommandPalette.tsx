@@ -5,7 +5,7 @@
 // a fuzzy search across all 40 lessons, driving navigation through the Next
 // router. Built on a native <dialog> (showModal) so the focus trap, backdrop and
 // Escape-to-close come for free; arrow keys move the highlight, Enter activates.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useProgress } from "@/lib/progress/useProgress";
 import { lessons, tracks, modules } from "@/lib/curriculum";
@@ -13,6 +13,8 @@ import { applyThemePref, readThemePref, resolveTheme } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { glassBlur } from "@/lib/glass";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { isLessonLocked } from "@/lib/entitlements/gating";
 import styles from "./learn.module.css";
 
 type Command = {
@@ -52,6 +54,8 @@ export function CommandPalette() {
   const router = useRouter();
   const { state } = useProgress();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const shortcut = useShortcutLabel();
+  const entitlement = useEntitlement();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -172,7 +176,7 @@ export function CommandPalette() {
           ⌕
         </span>
         <span className={styles.searchTriggerLabel}>Find a lesson</span>
-        <kbd className={styles.searchTriggerKbd}>Ctrl K</kbd>
+        <kbd className={styles.searchTriggerKbd}>{shortcut}</kbd>
       </button>
 
       <dialog
@@ -264,6 +268,7 @@ export function CommandPalette() {
                     </strong>
                     <small>
                       {modules[lesson.module]} · {lesson.minutes} min
+                      {isLessonLocked(entitlement, lesson) && " · Pro"}
                     </small>
                   </span>
                 </button>
@@ -278,5 +283,14 @@ export function CommandPalette() {
         </div>
       </dialog>
     </>
+  );
+}
+
+const noopSubscribe = () => () => {};
+function useShortcutLabel(): string {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K"),
+    () => "Ctrl K",
   );
 }

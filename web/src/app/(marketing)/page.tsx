@@ -35,6 +35,33 @@ const FEATURES = [
   { title: "Certificates of practice", desc: "Finish a track and generate a shareable certificate — a record of the work you actually did." },
 ];
 
+const FAQ = [
+  {
+    q: "Do I need an account?",
+    a: "No. You can start right away and your progress is saved in this browser. Create a free account when you want it to follow you to other devices.",
+  },
+  {
+    q: "Does it work without internet?",
+    a: "If your connection drops mid-lesson, you can keep working on the page you have open and your progress is saved on the device. Sync catches up when you are back online. You need a connection to load pages.",
+  },
+  {
+    q: "How do I run C# code?",
+    a: "JavaScript runs right in the browser. C# is compiled on your own computer by a small local helper, which takes a few minutes to set up. The Local setup page walks you through it.",
+  },
+  {
+    q: "What is the free trial?",
+    a: "New accounts get 7 days of Pro. After that you keep everything you finished and the first chapter of each track stays free.",
+  },
+  {
+    q: "Can I get a refund?",
+    a: "Yes. Pro comes with a 30-day money-back guarantee. The Refund policy page explains how to ask.",
+  },
+  {
+    q: "Do I get a certificate?",
+    a: "Finish every lesson in a track on Pro and you can view and print a certificate for it.",
+  },
+];
+
 export default function Landing() {
   return (
     <>
@@ -84,6 +111,11 @@ export default function Landing() {
                 <span className={styles.trackTag}>{track.tag}</span>
                 <h3 className={styles.trackName}>{track.name}</h3>
                 <p className={styles.trackDesc}>{track.description}</p>
+                {lang === "cs" && (
+                  <p className={styles.trackNote}>
+                    C# code runs on your computer. <Link href="/local-setup">See the quick setup</Link>.
+                  </p>
+                )}
                 <p className={styles.trackMeta}>{track.lessons.length} lessons</p>
               </article>
             );
@@ -125,6 +157,21 @@ export default function Landing() {
               </h3>
               <p className={styles.featureDesc}>{f.desc}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.container} ${styles.section}`}>
+        <div className={styles.sectionHead}>
+          <p className={styles.eyebrow}>Questions</p>
+          <h2 className={styles.sectionTitle}>Good to know</h2>
+        </div>
+        <div className={styles.faq}>
+          {FAQ.map((q) => (
+            <details key={q.q} className={styles.faqItem}>
+              <summary>{q.q}</summary>
+              <p>{q.a}</p>
+            </details>
           ))}
         </div>
       </section>

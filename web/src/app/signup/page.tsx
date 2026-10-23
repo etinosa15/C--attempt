@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { adoptLocalProgress } from "@/lib/progress/sync-client";
 import { normalizeCode, isValidCode } from "@/lib/referrals/core";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { normalizeEmail, suggestEmail, cleanDisplayName } from "@/lib/auth-helpers";
+import { useQueryParam } from "@/lib/useQueryParam";
 import { PasswordField } from "../login/PasswordField";
 import { BrandMark, Icon } from "@/components/Icon";
 import { Spinner } from "@/components/loaders/Spinner";
@@ -19,19 +21,15 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [refCode, setRefCode] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Capture ?ref=<code> from a friend's share link. Read here (client) rather than
-  // via useSearchParams so the page stays static; it rides along in signUp's
+  // Capture ?ref=<code> from a friend's share link. Read on the client (not via
+  // useSearchParams) so the page stays static; it rides along in signUp's
   // metadata and the DB trigger records the attribution atomically at signup.
-  useEffect(() => {
-    const raw = new URLSearchParams(window.location.search).get("ref");
-    const code = normalizeCode(raw);
-    if (isValidCode(code)) setRefCode(code);
-  }, []);
+  const rawRef = normalizeCode(useQueryParam("ref"));
+  const refCode = isValidCode(rawRef) ? rawRef : "";
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
@@ -42,10 +40,10 @@ export default function SignupPage() {
     setBusy(true);
     setError("");
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizeEmail(email),
       password,
       options: {
-        data: { display_name: displayName || null, ref_code: refCode || null },
+        data: { display_name: cleanDisplayName(displayName).trim() || null, ref_code: refCode || null },
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
@@ -78,32 +76,56 @@ export default function SignupPage() {
     return (
       <main className={styles.wrap}>
         <div className={styles.card}>
-          <div className={styles.brand}>
+          <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
             <BrandMark size={24} /> Forge Code Academy
-          </div>
+          </Link>
           <h1 className={styles.title}>Check your email</h1>
-          <p>We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.</p>
+          <p className={styles.body}>
+            We sent a confirmation link to <strong>{normalizeEmail(email)}</strong>. Open it to
+            finish creating your account. If it isn&apos;t there in a minute, check your spam folder.
+          </p>
           <p className={styles.links}><Link href="/login">Back to sign in</Link></p>
         </div>
       </main>
     );
 
+  const typoFix = suggestEmail(email);
+
   return (
     <main className={styles.wrap}>
       <form className={styles.card} onSubmit={signUp}>
-        <div className={styles.brand}>
+        <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
           <BrandMark size={24} /> Forge Code Academy
-        </div>
+        </Link>
         <h1 className={styles.title}>Create account</h1>
         <label className={styles.label}>
           Display name (optional)
-          <input className={styles.input} type="text" value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)} autoComplete="nickname" />
+          <input className={styles.input} type="text" value={displayName} maxLength={40}
+            onChange={(e) => setDisplayName(cleanDisplayName(e.target.value))} autoComplete="nickname" />
         </label>
         <label className={styles.label}>
           Email
-          <input className={styles.input} type="email" value={email} required
-            onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <input
+            className={styles.input}
+            type="email"
+            value={email}
+            required
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          {typoFix && (
+            <p className={styles.suggest} aria-live="polite">
+              Did you mean{" "}
+              <button type="button" className={styles.suggestBtn} onClick={() => setEmail(typoFix)}>
+                {typoFix}
+              </button>
+              ?
+            </p>
+          )}
         </label>
         <PasswordField
           label="Password"
@@ -135,6 +157,10 @@ export default function SignupPage() {
             "Create account"
           )}
         </button>
+        <p className={styles.fine}>
+          By creating an account you agree to the <Link href="/terms">Terms</Link> and{" "}
+          <Link href="/privacy">Privacy Policy</Link>.
+        </p>
         <div className={styles.divider}>or continue with</div>
         <div className={styles.oauth}>
           <button type="button" className={styles.oauthBtn} onClick={() => oauth("github")}>GitHub</button>

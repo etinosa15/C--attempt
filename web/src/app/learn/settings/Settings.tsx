@@ -75,10 +75,11 @@ export function Settings() {
       const imported = await readBackupFile(file);
       if (
         !window.confirm(
-          "Replace your current progress with this backup? Export your current progress first if you want to keep it.",
+          "Replace your current progress with this backup? A copy of your current progress will download first.",
         )
       )
         return;
+      downloadProgress(state, "forge-progress-before-import");
       update(() => imported as unknown as ForgeState);
       setMessage("Progress restored from your backup.");
     } catch (err) {
