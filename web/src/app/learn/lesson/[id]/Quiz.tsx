@@ -5,13 +5,14 @@
 // public/app.js — only a passing quiz is ever stored) and counts toward today's
 // activity. The explanation (`why`) is shown on every answer, right or wrong, so
 // a miss is still a teaching moment. Half of the lesson's completion gate.
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useProgress } from "@/lib/progress/useProgress";
 import { dayKey } from "@/lib/progress/core";
 import type { Quiz as QuizData } from "@/lib/curriculum";
 import { Icon } from "@/components/Icon";
 import { faCheck, faQuestion } from "@fortawesome/free-solid-svg-icons";
 import { glassBlur } from "@/lib/glass";
+import { seededShuffle } from "@/lib/shuffle";
 import styles from "./lesson.module.css";
 
 export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
@@ -21,6 +22,13 @@ export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
   // Once passed, the concept is settled — reflect that immediately on mount.
   const [answered, setAnswered] = useState(passed);
   const [correct, setCorrect] = useState(passed);
+  // Display order, seeded by the lesson id: the right answer isn't always "A", and
+  // the order is identical on server and client (no hydration mismatch). `choice`
+  // and `quiz.answer` stay original indices, so grading is untouched.
+  const order = useMemo(
+    () => seededShuffle(quiz.choices.map((_, i) => i), lessonId),
+    [quiz.choices, lessonId],
+  );
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +56,7 @@ export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
       <form onSubmit={submit}>
         <fieldset className={styles.choices}>
           <legend className="sr-only">Choose an answer</legend>
-          {quiz.choices.map((text, i) => (
+          {order.map((i, pos) => (
             <label key={i} className={styles.choice}>
               <input
                 type="radio"
@@ -57,8 +65,8 @@ export function Quiz({ lessonId, quiz }: { lessonId: string; quiz: QuizData }) {
                 checked={choice === i}
                 onChange={() => setChoice(i)}
               />
-              <span className={styles.choiceLetter}>{String.fromCharCode(65 + i)}</span>
-              <span>{text}</span>
+              <span className={styles.choiceLetter}>{String.fromCharCode(65 + pos)}</span>
+              <span>{quiz.choices[i]}</span>
             </label>
           ))}
         </fieldset>

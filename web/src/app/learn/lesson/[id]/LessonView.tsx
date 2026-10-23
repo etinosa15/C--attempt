@@ -14,6 +14,7 @@ import { faArrowLeft, faCheck, faArrowUpRightFromSquare } from "@fortawesome/fre
 import { celebrate } from "@/lib/motion/confetti";
 import { getLessonViz } from "@/components/viz/registry";
 import { glassBlur } from "@/lib/glass";
+import { CopyButton } from "@/components/CopyButton";
 import { useProgress } from "@/lib/progress/useProgress";
 import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { isLessonLocked } from "@/lib/entitlements/gating";
@@ -133,9 +134,12 @@ export function LessonView({ lesson }: { lesson: Lesson }) {
             </div>
             <div>
               <span className={styles.codeCaption}>{track.name} · worked example</span>
-              <pre className={styles.code}>
-                <code dangerouslySetInnerHTML={{ __html: example }} />
-              </pre>
+              <div className={styles.codeWrap}>
+                <pre className={styles.code}>
+                  <code dangerouslySetInnerHTML={{ __html: example }} />
+                </pre>
+                <CopyButton text={lesson.example} className={styles.copyBtn} />
+              </div>
             </div>
             <p className={styles.explanation}>{lesson.explanation}</p>
             <div className={styles.callout} style={glassBlur}>

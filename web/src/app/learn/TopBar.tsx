@@ -21,7 +21,7 @@ function SyncBadge() {
   const { signedIn, status } = useProgress();
   if (!signedIn) return <span className={styles.sync}>Saved on this device</span>;
   const label =
-    status === "syncing" ? "Syncing…" : status === "error" ? "Sync paused" : "Synced";
+    status === "syncing" ? "Syncing…" : status === "error" ? "Sync paused" : "Saved ✓";
   return (
     <span className={styles.sync} data-status={status}>
       {label}

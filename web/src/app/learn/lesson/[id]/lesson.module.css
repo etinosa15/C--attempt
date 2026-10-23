@@ -575,3 +575,24 @@
 .source a:hover {
   text-decoration: underline;
 }
+
+.codeWrap {
+  position: relative;
+}
+.copyBtn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--glass-bg);
+  color: inherit;
+  font: 0.75rem var(--mono);
+  cursor: pointer;
+  opacity: 0.8;
+}
+.copyBtn:hover,
+.copyBtn:focus-visible {
+  opacity: 1;
+}

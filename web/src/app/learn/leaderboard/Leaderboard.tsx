@@ -100,7 +100,14 @@ export function Leaderboard() {
         </p>
       </header>
 
-      {error && <p className={styles.note}>{error}</p>}
+      {error && (
+        <p className={styles.note} role="alert">
+          {error}{" "}
+          <button type="button" className={styles.retry} onClick={() => load()}>
+            Retry
+          </button>
+        </p>
+      )}
 
       {me && (
         <section className={styles.panel}>
@@ -173,7 +180,13 @@ export function Leaderboard() {
         entries && <p className={styles.empty}>No one&apos;s on the board yet. Be the first to opt in.</p>
       )}
 
-      {!entries && !error && <p className={styles.loading}>Loading the board…</p>}
+      {!entries && !error && (
+        <div className={styles.skeleton} aria-busy="true" aria-label="Loading the board">
+          {[0, 1, 2, 3, 4].map((n) => (
+            <span key={n} className={styles.skeletonRow} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
