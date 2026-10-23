@@ -13,6 +13,8 @@ import { applyThemePref, readThemePref, resolveTheme } from "@/lib/theme";
 import { Icon } from "@/components/Icon";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { glassBlur } from "@/lib/glass";
+import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
+import { isLessonLocked } from "@/lib/entitlements/gating";
 import styles from "./learn.module.css";
 
 type Command = {
@@ -53,6 +55,7 @@ export function CommandPalette() {
   const { state } = useProgress();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const shortcut = useShortcutLabel();
+  const entitlement = useEntitlement();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -265,6 +268,7 @@ export function CommandPalette() {
                     </strong>
                     <small>
                       {modules[lesson.module]} · {lesson.minutes} min
+                      {isLessonLocked(entitlement, lesson) && " · Pro"}
                     </small>
                   </span>
                 </button>
