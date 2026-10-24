@@ -7,6 +7,7 @@
 // own island so the dashboard stays a server component.
 import { useEffect, useState } from "react";
 import styles from "./account.module.css";
+import { glassBlur } from "@/lib/glass";
 
 type StudentData = {
   verified: boolean;
@@ -43,7 +44,7 @@ export function StudentPanel() {
     : null;
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} style={glassBlur}>
       <h2>Student discount</h2>
       {data.verified ? (
         <>

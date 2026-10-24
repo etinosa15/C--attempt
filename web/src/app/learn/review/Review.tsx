@@ -19,6 +19,7 @@ import { useProgress } from "@/lib/progress/useProgress";
 import { dayKey, scheduleReview, type ReviewRating } from "@/lib/progress/core";
 import { lessons, moduleName, type Lesson } from "@/lib/curriculum";
 import styles from "./review.module.css";
+import { glassBlur } from "@/lib/glass";
 
 // Space reveals the answer — the same keyboard affordance the vanilla deck has.
 const REVEAL_KEY = " ";
@@ -119,7 +120,7 @@ export function Review() {
         <section className={styles.main}>
           {current ? (
             <>
-              <article className={styles.card}>
+              <article className={styles.card} style={glassBlur}>
                 <div className={styles.cardTop}>
                   <span className={styles.badge} data-lang={current.lang}>
                     {current.lang === "js" ? "JavaScript" : "C#"}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { tracks, type Lang } from "@/lib/curriculum";
 import { HeroPreview } from "./HeroPreview";
 import styles from "./marketing.module.css";
+import { glassBlur } from "@/lib/glass";
 
 export const metadata: Metadata = {
   title: "Forge Code Academy — Learn JavaScript & C# by building",
@@ -106,7 +107,7 @@ export default function Landing() {
               <article
                 key={lang}
                 className={styles.trackCard}
-                style={{ ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}
+                style={{ ...glassBlur, ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}
               >
                 <span className={styles.trackTag}>{track.tag}</span>
                 <h3 className={styles.trackName}>{track.name}</h3>

@@ -9,12 +9,24 @@ export const runtime = "nodejs";
 // and auth.users cascades to progress/profiles), so a failure leaves the account
 // fully intact rather than half-erased. Then best-effort clean the rows in case the
 // cascade is missing, and clear the session cookie.
-export async function DELETE() {
+// Re-auth guard: the caller must type their email, and must have signed in within
+// REAUTH_WINDOW_MS, so a stolen or long-idle session cannot erase the account.
+const REAUTH_WINDOW_MS = 15 * 60 * 1000;
+
+export async function DELETE(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+
+  const body = (await request.json().catch(() => null)) as { confirmEmail?: unknown } | null;
+  const typed = typeof body?.confirmEmail === "string" ? body.confirmEmail.trim().toLowerCase() : "";
+  if (!user.email || typed !== user.email.toLowerCase())
+    return NextResponse.json({ error: "confirm" }, { status: 400 });
+  const lastSignIn = user.last_sign_in_at ? Date.parse(user.last_sign_in_at) : 0;
+  if (!(Date.now() - lastSignIn < REAUTH_WINDOW_MS))
+    return NextResponse.json({ error: "reauth" }, { status: 403 });
 
   // Delete the auth identity itself first (requires the service role). Nothing is
   // wiped until this succeeds, so an error here leaves a fully working account.

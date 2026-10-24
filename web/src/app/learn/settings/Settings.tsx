@@ -16,6 +16,7 @@ import { freshState } from "@/lib/progress/core";
 import { applyThemePref, readThemePref, type ThemePref } from "@/lib/theme";
 import type { ForgeState } from "@/lib/progress/state";
 import styles from "./settings.module.css";
+import { glassBlur } from "@/lib/glass";
 
 const THEMES: [ThemePref, string][] = [
   ["light", "Light"],
@@ -136,7 +137,7 @@ export function Settings() {
       )}
 
       <div className={styles.grid}>
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Appearance</h2>
           <p>
             Choose how Forge looks on this device. System follows your operating
@@ -161,7 +162,7 @@ export function Settings() {
           </p>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Set your daily intention</h2>
           <p>
             Choose a realistic amount of focused practice. Consistency matters more
@@ -206,7 +207,7 @@ export function Settings() {
           </p>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Your progress, portable</h2>
           <p>
             Back up completed lessons, quiz results, notes, code drafts, project
@@ -256,7 +257,7 @@ export function Settings() {
           </div>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Your local learning studio</h2>
           <dl className={styles.runtime}>
             <dt>JavaScript</dt>
@@ -274,7 +275,7 @@ export function Settings() {
           </p>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>A study rhythm that works</h2>
           <ol className={styles.rhythm}>
             <li>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { pwnedCount } from "@/lib/pwned";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-errors";
@@ -9,6 +10,7 @@ import { BrandMark, Icon } from "@/components/Icon";
 import { Spinner } from "@/components/loaders/Spinner";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import styles from "../login/auth.module.css";
+import { glassBlur } from "@/lib/glass";
 
 // Reached from the recovery email (which established a temporary session via
 // /auth/confirm). Setting a new password here completes the reset. An expired or
@@ -29,6 +31,11 @@ export default function UpdatePasswordPage() {
     }
     setBusy(true);
     setError("");
+    if ((await pwnedCount(password)) > 0) {
+      setBusy(false);
+      setError("This password has shown up in a known data breach. Please choose a different one.");
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) {
@@ -42,7 +49,7 @@ export default function UpdatePasswordPage() {
   if (done)
     return (
       <main className={styles.wrap}>
-        <div className={styles.card}>
+        <div className={styles.card} style={glassBlur}>
           <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
             <BrandMark size={24} /> Forge Code Academy
           </Link>
@@ -62,7 +69,7 @@ export default function UpdatePasswordPage() {
 
   return (
     <main className={styles.wrap}>
-      <form className={styles.card} onSubmit={update}>
+      <form className={styles.card} style={glassBlur} onSubmit={update}>
         <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
           <BrandMark size={24} /> Forge Code Academy
         </Link>

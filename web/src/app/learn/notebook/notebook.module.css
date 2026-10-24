@@ -73,8 +73,9 @@
   top: 5rem;
   padding: 1.4rem;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .hint {
   margin: 0 0 0.85rem;
@@ -113,10 +114,11 @@
   gap: 0.35rem;
   padding: 1.1rem 1.2rem;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
   color: inherit;
   text-decoration: none;
+  box-shadow: var(--glass-inset);
 }
 .card[data-static="true"] {
   cursor: default;

@@ -16,6 +16,7 @@ import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { canEarnCertificate, isLessonLocked } from "@/lib/entitlements/gating";
 import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./paths.module.css";
+import { glassBlur } from "@/lib/glass";
 
 export type PathFilter = "all" | "js" | "cs" | "compare";
 
@@ -67,7 +68,7 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
       {filter === "compare" ? (
         <div className={styles.bridgeGrid}>
           {bridges.map((b) => (
-            <article key={b.title} className={styles.bridge}>
+            <article key={b.title} className={styles.bridge} style={glassBlur}>
               <h2 className={styles.bridgeTitle}>{b.title}</h2>
               <div className={styles.comparison}>
                 <figure className={styles.codeFig}>
@@ -102,7 +103,7 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
             <section
               key={lang}
               className={styles.track}
-              style={{ ["--track" as string]: track.color }}
+              style={{ ...glassBlur, ["--track" as string]: track.color }}
             >
               <div className={styles.trackHead}>
                 <div className={styles.trackId}>
@@ -132,7 +133,7 @@ export function Paths({ initialFilter }: { initialFilter: PathFilter }) {
                   if (group.length === 0) return null;
                   const minutes = group.reduce((s, l) => s + l.minutes, 0);
                   return (
-                    <div key={module} className={styles.module}>
+                    <div key={module} className={styles.module} style={glassBlur}>
                       <div className={styles.moduleHead}>
                         <span className={styles.moduleIndex}>{pad(i + 1)}</span>
                         <div>

@@ -111,14 +111,28 @@ export function TopBar({
   }, [open]);
 
   async function deleteAccount() {
-    if (!window.confirm("Delete your account and all progress? This cannot be undone."))
-      return;
+    const typed = window.prompt(
+      "Delete your account and all progress? This cannot be undone.\n\nType your email address to confirm.",
+    );
+    if (!typed) return;
     setBusy(true);
-    const res = await fetch("/api/account", { method: "DELETE" });
+    const res = await fetch("/api/account", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmEmail: typed }),
+    });
     setBusy(false);
     if (res.ok) {
       router.push("/login");
       router.refresh();
+      return;
+    }
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (data.error === "confirm") {
+      window.alert("That email does not match your account. Nothing was deleted.");
+    } else if (data.error === "reauth") {
+      window.alert("For your safety, please sign in again, then delete your account within 15 minutes.");
+      router.push("/login?next=/learn/account");
     } else {
       window.alert("Could not delete the account. Please try again.");
     }

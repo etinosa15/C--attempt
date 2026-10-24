@@ -12,6 +12,7 @@ import { useProgress } from "@/lib/progress/useProgress";
 import { projects } from "@/lib/curriculum";
 import type { Lang } from "@/lib/curriculum";
 import styles from "./projects.module.css";
+import { glassBlur } from "@/lib/glass";
 
 type Filter = "all" | Lang;
 
@@ -61,10 +62,10 @@ export function Projects() {
           const index = projects.indexOf(p);
           const checks = state.projectChecks[p.id] ?? [];
           return (
-            <Link key={p.id} href={`/learn/projects/${p.id}`} className={styles.card}>
+            <Link key={p.id} href={`/learn/projects/${p.id}`} className={styles.card} style={glassBlur}>
               <div className={styles.art} data-art={index % 3}>
                 <span className={styles.artCode}>{ART_CODE[index] ?? ""}</span>
-                <span className={styles.level}>{p.level}</span>
+                <span className={styles.level} style={glassBlur}>{p.level}</span>
               </div>
               <div className={styles.body}>
                 <div className={styles.meta}>

@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SaveOffer } from "@/lib/entitlements/save-offers";
 import styles from "../account.module.css";
+import { glassBlur } from "@/lib/glass";
 
 type Action = "pause" | "resume" | "cancel" | "discount";
 
@@ -61,7 +62,7 @@ export function CancelFlow({ offers }: { offers: SaveOffer[] }) {
 
   if (done) {
     return (
-      <section className={styles.panel} data-state="cancelling">
+      <section className={styles.panel} style={glassBlur} data-state="cancelling">
         <p className={styles.detail}>{DONE_NOTE[done]}</p>
         <div className={styles.actions}>
           <a className={`${styles.btn} ${styles.btnPrimary}`} href="/learn/account">
@@ -78,7 +79,7 @@ export function CancelFlow({ offers }: { offers: SaveOffer[] }) {
   return (
     <div className={styles.grid}>
       {offers.map((offer) => (
-        <section key={offer.id} className={styles.panel}>
+        <section key={offer.id} className={styles.panel} style={glassBlur}>
           <h2>{offer.title}</h2>
           <p>{offer.detail}</p>
           <div className={styles.actions}>

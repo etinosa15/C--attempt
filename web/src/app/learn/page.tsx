@@ -15,6 +15,7 @@ import { useEntitlement } from "@/lib/entitlements/EntitlementProvider";
 import { canEarnCertificate, canUseStreakShield, isLessonLocked } from "@/lib/entitlements/gating";
 import { CertificateDialog } from "@/components/CertificateDialog";
 import styles from "./overview.module.css";
+import { glassBlur } from "@/lib/glass";
 
 const TRACK_ORDER: Lang[] = ["js", "cs"];
 
@@ -66,7 +67,7 @@ export default function Overview() {
         </Link>
       )}
 
-      <section className={styles.level} aria-label="Your level">
+      <section className={styles.level} style={glassBlur} aria-label="Your level">
         <div className={styles.levelHead}>
           <span className={styles.levelName}>
             Level <strong>{game.level.level}</strong> · {game.level.title}
@@ -103,7 +104,7 @@ export default function Overview() {
           const nextLocked = next ? isLessonLocked(entitlement, next) : false;
 
           return (
-            <section key={lang} className={styles.track} style={{ ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}>
+            <section key={lang} className={styles.track} style={{ ...glassBlur, ["--track" as string]: lang === "js" ? "var(--warn)" : "var(--link)" }}>
               <div className={styles.trackHead}>
                 <h2 className={styles.trackName}>{track.name}</h2>
                 <span className={styles.trackTag}>{track.tag}</span>

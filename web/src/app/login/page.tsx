@@ -12,6 +12,7 @@ import { PasswordField } from "./PasswordField";
 import { BrandMark } from "@/components/Icon";
 import { Spinner } from "@/components/loaders/Spinner";
 import styles from "./auth.module.css";
+import { glassBlur } from "@/lib/glass";
 
 // Messages for the ?error= codes the auth callback routes redirect back with.
 const RETURN_ERRORS: Record<string, string> = {
@@ -65,7 +66,7 @@ export default function LoginPage() {
 
   return (
     <main className={styles.wrap}>
-      <form className={styles.card} onSubmit={signIn}>
+      <form className={styles.card} style={glassBlur} onSubmit={signIn}>
         <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
           <BrandMark size={24} /> Forge Code Academy
         </Link>

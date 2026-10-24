@@ -35,7 +35,8 @@
   padding: 1.25rem;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .youAre {
   margin: 0;
@@ -109,8 +110,9 @@
   gap: 0.8rem;
   padding: 0.7rem 0.9rem;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-  background: color-mix(in srgb, currentColor 3%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .rowMe {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);

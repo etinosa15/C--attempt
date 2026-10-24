@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useProgress } from "@/lib/progress/useProgress";
 import { lessonsById, projects, tracks } from "@/lib/curriculum";
 import styles from "./notebook.module.css";
+import { glassBlur } from "@/lib/glass";
 
 const SCRATCH_DEBOUNCE_MS = 500;
 const PREVIEW_CHARS = 240;
@@ -84,7 +85,7 @@ export function Notebook() {
       </header>
 
       <div className={styles.layout}>
-        <section className={styles.scratchPanel}>
+        <section className={styles.scratchPanel} style={glassBlur}>
           <div className={styles.sectionTitle}>
             <h2>Your scratchpad</h2>
             <span className={styles.pill}>Autosaved</span>
@@ -124,11 +125,11 @@ export function Notebook() {
                   </>
                 );
                 return meta ? (
-                  <Link key={id} href={meta.href} className={styles.card}>
+                  <Link key={id} href={meta.href} className={styles.card} style={glassBlur}>
                     {card}
                   </Link>
                 ) : (
-                  <div key={id} className={styles.card} data-static="true">
+                  <div key={id} className={styles.card} style={glassBlur} data-static="true">
                     {card}
                   </div>
                 );

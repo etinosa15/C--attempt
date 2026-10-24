@@ -44,8 +44,9 @@
   gap: 0.7rem;
   padding: 1.5rem;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-inset);
 }
 .panel h2 {
   margin: 0;

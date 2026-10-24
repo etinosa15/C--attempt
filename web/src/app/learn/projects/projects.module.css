@@ -36,10 +36,11 @@
   gap: 0.3rem;
   padding: 0.3rem;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
   align-self: flex-start;
   flex-wrap: wrap;
+  box-shadow: var(--glass-inset);
 }
 .tab {
   padding: 0.45rem 0.85rem;
@@ -71,12 +72,13 @@
   display: flex;
   flex-direction: column;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 3%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
   overflow: hidden;
   color: inherit;
   text-decoration: none;
   transition: border-color 0.15s, transform 0.15s;
+  box-shadow: var(--glass-inset);
 }
 .card:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);

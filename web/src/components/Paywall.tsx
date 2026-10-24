@@ -9,6 +9,7 @@
 // rest of the surface holds.
 import Link from "next/link";
 import styles from "./Paywall.module.css";
+import { glassBlur } from "@/lib/glass";
 
 const DEFAULT_BENEFITS = [
   "Every lesson's quiz and coding challenge",
@@ -39,7 +40,7 @@ export function Paywall({
   const ctaHref = signedIn ? "/pricing" : "/signup";
 
   return (
-    <div className={styles.card} role="note">
+    <div className={styles.card} style={glassBlur} role="note">
       <span className={styles.badge}>Pro</span>
       <h3 className={styles.title}>{heading}</h3>
       <p className={styles.blurb}>{body}</p>

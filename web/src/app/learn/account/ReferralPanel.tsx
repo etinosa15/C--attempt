@@ -7,6 +7,7 @@
 // who never opens this panel never triggers the mint.
 import { useEffect, useState } from "react";
 import styles from "./account.module.css";
+import { glassBlur } from "@/lib/glass";
 
 type ReferralData = { code: string; link: string; invited: number; converted: number };
 
@@ -51,7 +52,7 @@ export function ReferralPanel() {
   }
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} style={glassBlur}>
       <h2>Invite a friend</h2>
       <p>
         Share your link. When a friend signs up through it, the referral is

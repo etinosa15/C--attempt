@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { pwnedCount } from "@/lib/pwned";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +15,7 @@ import { BrandMark, Icon } from "@/components/Icon";
 import { Spinner } from "@/components/loaders/Spinner";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import styles from "../login/auth.module.css";
+import { glassBlur } from "@/lib/glass";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -39,6 +41,11 @@ export default function SignupPage() {
     }
     setBusy(true);
     setError("");
+    if ((await pwnedCount(password)) > 0) {
+      setBusy(false);
+      setError("This password has shown up in a known data breach. Please choose a different one.");
+      return;
+    }
     const { data, error } = await supabase.auth.signUp({
       email: normalizeEmail(email),
       password,
@@ -75,7 +82,7 @@ export default function SignupPage() {
   if (sent)
     return (
       <main className={styles.wrap}>
-        <div className={styles.card}>
+        <div className={styles.card} style={glassBlur}>
           <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
             <BrandMark size={24} /> Forge Code Academy
           </Link>
@@ -93,7 +100,7 @@ export default function SignupPage() {
 
   return (
     <main className={styles.wrap}>
-      <form className={styles.card} onSubmit={signUp}>
+      <form className={styles.card} style={glassBlur} onSubmit={signUp}>
         <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
           <BrandMark size={24} /> Forge Code Academy
         </Link>

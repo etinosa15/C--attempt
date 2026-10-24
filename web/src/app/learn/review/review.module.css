@@ -29,9 +29,10 @@
   gap: 0.3rem;
   padding: 0.3rem;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
   align-self: flex-start;
+  box-shadow: var(--glass-inset);
 }
 .tab {
   padding: 0.45rem 0.85rem;
@@ -82,9 +83,10 @@
   gap: 1.5rem;
   padding: 1.5rem;
   border-radius: 18px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
   min-height: 20rem;
+  box-shadow: var(--glass-inset);
 }
 .cardTop {
   display: flex;

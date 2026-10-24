@@ -17,14 +17,14 @@
 |---|---|---|---|
 | 1 | Account enumeration vs helpful errors | OK | `friendlyAuthError` returns a generic "email or password is incorrect"; signup shows the neutral "check your email" screen. Reset uses Supabase's neutral response. |
 | 2 | Rate limiting & lockout | TODO/OWNER | Supabase GoTrue applies baseline auth rate limits; no app-level per-IP/per-account throttle or Turnstile yet. Add if abuse appears (OWNER: bot-protection choice). |
-| 3 | Password storage & policy | OK/TODO | Hashing is managed by Supabase (bcrypt). 10-char minimum enforced client+server. **TODO:** breached-password k-anonymity check (HIBP range API). |
+| 3 | Password storage & policy | OK/FIX | Hashing is managed by Supabase (bcrypt). 10-char minimum enforced client+server. **FIX:** signup and new-password reject passwords found in Have I Been Pwned (k-anonymity range API: only a 5-char SHA-1 prefix leaves the browser; fails open on network error) via `lib/pwned.ts`. |
 | 4 | Reset tokens | OK | Managed by Supabase GoTrue: random, single-use, short expiry, hashed, session-invalidating; change-notification email is a Supabase template (confirm enabled). |
 | 5 | Sessions & cookies | OK | `@supabase/ssr` sets HttpOnly + Secure + SameSite cookies; auth tokens are never in `localStorage` (memory `professional-ux-standard`/port design). |
 | 6 | CSRF | OK | SameSite cookies + same-origin API; state-changing routes are POST with the session. No cross-site form posts. |
 | 7 | OAuth state/PKCE | OK/OWNER | Supabase handles `state` + PKCE. **OWNER:** trim OAuth redirect URIs to the one canonical domain (remove old Render/preview URLs). |
-| 8 | Open redirects | N/A | No `next`/`returnTo` param is honored today (login always routes to `/`). If "return to where you were" is added later, validate same-origin relative paths only. |
+| 8 | Open redirects | FIX | Login now returns to `?next=`; every `next` (login, OAuth `redirectTo`, `/auth/callback`, `/auth/confirm`) goes through `safeNextPath` (same-origin relative paths only; rejects `//`, `/\`, control chars). Covered by `tests/auth-helpers.test.mjs`. |
 | 9 | Email verification before sensitive actions | OK | Email confirmation is ON for signup. |
-| 10 | Account deletion & export (NDPA) | OK/TODO | `/api/account` DELETE (deletes auth identity first — Batch A/L4) and `/api/account/export` exist. **TODO:** require re-auth for delete; cancel the subscription on delete once payments are live. |
+| 10 | Account deletion & export (NDPA) | OK/FIX | `/api/account` DELETE now requires the typed account email and a sign-in within the last 15 minutes (else 403 `reauth`; the UI sends the learner to sign in again). Export at `/api/account/export`. **TODO:** cancel the subscription on delete once payments are live; the legacy `/api/auth/delete` adapter has no re-auth and should be removed when the Render studio is retired. |
 <!-- @@SEC_APPEND@@ -->
 
 ## Authorization & payments
@@ -32,8 +32,8 @@
 |---|---|---|---|
 | 11 | Server-side entitlements | OK | `resolveEntitlement` is pure + server-authoritative; the browser only receives capability booleans. Lesson content shipping in the client bundle is logged as an accepted-risk decision in `OWNER_TODO.md` (F). |
 | 12 | Paystack webhooks | OK/FIX | Signature verified (HMAC-SHA512, timing-safe). **H1 fixed:** a no-plan `charge.success` now grants Lifetime only when its (signed) amount equals the configured `PAYSTACK_AMOUNT_LIFETIME` — fail closed otherwise. Remaining before go-live (lower sev): upsert + idempotency (M3), out-of-order lifecycle handling (M2), discount parity (M1). |
-| 13 | IDOR | OK/TODO | RLS self-scoping verified across progress/notebook/projects/certificates/account. **TODO:** add explicit "user A can't read/write user B" tests. |
-| 14 | Leaderboard integrity | OK/TODO | Server-side XP, self-read-only RLS (migration `0008`), display-name sanitization (strips HTML) — Batch A. **TODO:** per-user opt-out. |
+| 13 | IDOR | OK/FIX | RLS self-scoping verified. **FIX:** `tests/hardening.test.mjs` asserts every API route holding the service-role client authenticates the caller (or verifies a webhook signature), admin deletes key on `user.id`, and every migrated table enables RLS. Live two-user DB tests remain a nice-to-have. |
+| 14 | Leaderboard integrity | OK | Server-side XP, self-read-only RLS (migration `0008`), display-name sanitization (strips HTML). Opt-in only, with a "Leave the board" opt-out. |
 
 ## Input handling & the code runner
 | # | Item | Status | Note |
@@ -47,15 +47,15 @@
 ## Platform hardening
 | # | Item | Status | Note |
 |---|---|---|---|
-| 20 | Security headers | FIX/TODO | The **Next app had none** — added `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY`, COOP in `web/next.config.ts`. **TODO:** a tuned `Content-Security-Policy` (Next's inline bootstrap + Supabase/Paystack/PostHog origins need care) — left out to avoid breaking the app; add with testing. The static studio already ships a full CSP via `render.yaml`. |
+| 20 | Security headers | FIX | HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP, and now a `Content-Security-Policy` built from env in `web/next.config.ts` (`object-src none`, `base-uri self`, `form-action self`, `frame-ancestors self`; connect limited to self + Supabase + PostHog + HIBP + Paddle). `X-Frame-Options` is `SAMEORIGIN` so the playground's same-origin preview iframe works. Accepted looseness: script `unsafe-inline` (theme boot + Next bootstrap) and `unsafe-eval` (the JS runner worker uses AsyncFunction). Nonce-based CSP is a future step. |
 | 21 | Secrets & config | OK | `.env*` gitignored; only `NEXT_PUBLIC_*` values are public; Next disables client source maps in prod by default. Spot-check the built bundle before go-live. |
 | 22 | API responses | OK | Next hides stack traces in production; unknown API routes return 404. |
 | 23 | Dependencies | TODO/OWNER | `npm audit`: **8 pre-existing high-severity** advisories in transitive deps (`next`, `braces`, `sharp`, `source-map-js`) — none introduced by the UI deps. Lockfile committed. **OWNER:** enable Dependabot; schedule the `next` bump (breaking). |
 | 24 | Preview & duplicate deploys | OWNER | Render studio vs Vercel app both live — pick one canonical, `noindex`/protect previews, decommission/redirect Render (`OWNER_TODO.md` C). |
 | 25 | Email SPF/DKIM/DMARC | OWNER | DNS records on the sending domain (`OWNER_TODO.md` E). |
 | 26 | Logging & monitoring | OWNER | Choose error monitoring + failed-login/webhook alerts; publish `security.txt` (`OWNER_TODO.md` E/F). |
-| 27 | Third-party scripts | TODO/OWNER | PostHog analytics (`posthog-js`) is the only external script; list it in Privacy, load conditionally, add SRI where feasible. |
+| 27 | Third-party scripts | FIX/OWNER | PostHog (`posthog-js`, bundled, not a CDN script) initialises only with a key and now skips when Do Not Track or Global Privacy Control is on. **OWNER:** list it in the Privacy policy. |
 
 ## Deliverable tests (easy-to-break rules)
-Present today: generic login error, reset-response parity (Supabase), import-schema + prototype-pollution validation, XSS escaping (display-name sanitization), code-runner timeout — covered by the existing suite (296 tests). **Still to add:** explicit IDOR cross-user tests and `returnTo` redirect validation (only once that feature is added).
+Present today: generic login error, reset-response parity (Supabase), import-schema + prototype-pollution validation, XSS escaping (display-name sanitization), code-runner timeout — covered by the suite (312 tests), plus `returnTo` validation and the IDOR/RLS guards in `tests/hardening.test.mjs`.
 

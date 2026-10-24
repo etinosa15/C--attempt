@@ -7,6 +7,7 @@
 // render path.
 import { useEffect, useState } from "react";
 import styles from "./account.module.css";
+import { glassBlur } from "@/lib/glass";
 
 interface SeatUsage {
   total: number;
@@ -40,7 +41,7 @@ export function TeamPanel() {
   if (!team) return null;
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} style={glassBlur}>
       <h2>Team</h2>
       <p>
         You&apos;re on <strong>{team.name}</strong> as {team.role}. Your Pro access

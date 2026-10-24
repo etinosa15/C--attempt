@@ -9,6 +9,7 @@ import { useQueryParam } from "@/lib/useQueryParam";
 import { BrandMark } from "@/components/Icon";
 import { Spinner } from "@/components/loaders/Spinner";
 import styles from "../login/auth.module.css";
+import { glassBlur } from "@/lib/glass";
 
 const RESEND_SECONDS = 60;
 
@@ -54,7 +55,7 @@ export default function ResetPage() {
   if (sent)
     return (
       <main className={styles.wrap}>
-        <div className={styles.card}>
+        <div className={styles.card} style={glassBlur}>
           <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
             <BrandMark size={24} /> Forge Code Academy
           </Link>
@@ -91,7 +92,7 @@ export default function ResetPage() {
 
   return (
     <main className={styles.wrap}>
-      <form className={styles.card} onSubmit={onSubmit}>
+      <form className={styles.card} style={glassBlur} onSubmit={onSubmit}>
         <Link href="/" className={styles.brand} aria-label="Forge Code Academy home">
           <BrandMark size={24} /> Forge Code Academy
         </Link>

@@ -8,6 +8,7 @@ import { ReferralPanel } from "./ReferralPanel";
 import { StudentPanel } from "./StudentPanel";
 import { TeamPanel } from "./TeamPanel";
 import styles from "./account.module.css";
+import { glassBlur } from "@/lib/glass";
 
 export const metadata: Metadata = {
   title: "Your account — Forge Code Academy",
@@ -60,7 +61,7 @@ export default async function AccountPage() {
       </header>
 
       <div className={styles.grid}>
-        <section className={styles.panel} data-state={summary.state}>
+        <section className={styles.panel} style={glassBlur} data-state={summary.state}>
           <div className={styles.planHead}>
             <h2>{summary.planLabel}</h2>
             <span className={styles.badge} data-state={summary.state}>
@@ -87,7 +88,7 @@ export default async function AccountPage() {
 
         <StudentPanel />
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Your data</h2>
           <p>
             Export everything Forge holds about you — progress, notes, code drafts
@@ -104,7 +105,7 @@ export default async function AccountPage() {
           </p>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           <h2>Local-first, by design</h2>
           <p>
             Your learning works offline and stays on this device. Signing in adds

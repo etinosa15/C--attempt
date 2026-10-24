@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MAX_DISPLAY_NAME } from "@/lib/leaderboard/core";
 import styles from "./leaderboard.module.css";
+import { glassBlur } from "@/lib/glass";
 
 interface Entry {
   rank: number;
@@ -110,7 +111,7 @@ export function Leaderboard() {
       )}
 
       {me && (
-        <section className={styles.panel}>
+        <section className={styles.panel} style={glassBlur}>
           {me.optedIn ? (
             <>
               <p className={styles.youAre}>
