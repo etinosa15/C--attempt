@@ -150,3 +150,29 @@
   letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--accent) 85%, currentColor);
 }
+
+.later {
+  max-width: 40rem;
+  margin: 2.5rem auto 0;
+  padding: 1.2rem 1.4rem;
+  border-radius: 14px;
+  border: 1px dashed var(--line-strong);
+  text-align: center;
+}
+.laterTitle {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.laterNote {
+  margin: 0.35rem 0 0.7rem;
+  font-size: 0.88rem;
+  opacity: 0.75;
+}
+.laterList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+}

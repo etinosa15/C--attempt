@@ -66,6 +66,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <Link href="/about" className={styles.footerLink}>
                 About
               </Link>
+              <a href="mailto:forgecodeacademy.help@gmail.com" className={styles.footerLink}>
+                Contact support
+              </a>
               <Link href="/login" className={styles.footerLink}>
                 Sign in
               </Link>

@@ -30,8 +30,9 @@ export default function Pricing() {
         <p className={styles.eyebrow}>Pricing</p>
         <h1 className={styles.sectionTitle}>Start free. Go Pro when you&apos;re ready.</h1>
         <p className={styles.sectionLead}>
-          Every new account gets 7 days of Pro — the whole curriculum, unlocked, no
-          card required. After that, keep going on the Free floor or upgrade any time.
+          Forge is free today while paid plans get ready, so the prices below are a
+          preview. When plans go live, every new account gets 7 days of Pro with no card
+          required, then keeps the Free floor or upgrades any time.
         </p>
       </div>
 

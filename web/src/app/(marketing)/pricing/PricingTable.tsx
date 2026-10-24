@@ -78,7 +78,7 @@ const FREE_FEATURES: Feature[] = [
   { label: "Run JavaScript in the browser" },
   { label: "Spaced-repetition review" },
   { label: "Streaks and daily goals" },
-  { label: "Local-first, offline-ready · syncs when you sign in" },
+  { label: "Saved on your device · syncs when you sign in" },
 ];
 
 const PRO_FEATURES: Feature[] = [
@@ -86,14 +86,12 @@ const PRO_FEATURES: Feature[] = [
   { label: "Every lesson's quiz, challenge & completion" },
   { label: "Track certificates" },
   { label: "Streak shield — keep your streak through a missed day" },
-  { label: "Run C# in the browser", soon: true },
-  { label: "AI tutor that nudges, not answers", soon: true },
 ];
 
 const LIFETIME_FEATURES: Feature[] = [
   { label: "Everything in Pro" },
   { label: "One payment — no subscription" },
-  { label: "Every future track and feature" },
+  { label: "All current tracks, plus any new lessons added to them" },
   { label: "Back an independent, no-nonsense learning tool" },
 ];
 
@@ -378,6 +376,17 @@ export function PricingTable() {
           <FeatureList features={LIFETIME_FEATURES} />
           <CtaButton cta={lifetimeCta} />
         </div>
+      </div>
+
+      <div className={styles.later}>
+        <h2 className={styles.laterTitle}>Coming later</h2>
+        <p className={styles.laterNote}>
+          Ideas we are working toward. They are not part of any plan you can buy today.
+        </p>
+        <ul className={styles.laterList}>
+          <li>Run C# right in the browser</li>
+          <li>An AI tutor that nudges instead of handing you answers</li>
+        </ul>
       </div>
     </>
   );

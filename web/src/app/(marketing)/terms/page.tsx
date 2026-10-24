@@ -91,8 +91,8 @@ export default function Terms() {
         <p>
           These terms sit alongside the{" "}
           <Link href="/privacy">Privacy &amp; storage</Link> page, which explains
-          where your data lives. For anything else, see the project&rsquo;s
-          repository.
+          where your data lives. For anything else, email{" "}
+          <a href="mailto:forgecodeacademy.help@gmail.com">forgecodeacademy.help@gmail.com</a>.
         </p>
       </article>
     </section>

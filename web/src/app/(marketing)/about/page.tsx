@@ -58,9 +58,9 @@ export default function About() {
 
         <h2>Where it's going</h2>
         <p className="dim">
-          Forge is free to use today. Paid plans are in the works — running C# in the
-          browser, an AI tutor that nudges rather than hands you answers, and more —
-          but the core promise won't change: learn by building, keep what you learn,
+          Forge is free to use today, and paid plans are coming. Later we hope to add
+          running C# in the browser and an AI tutor that nudges rather than hands you
+          answers. Those are plans, not promises, and the core idea won't change: learn by building, keep what you learn,
           and own your progress. See the{" "}
           <Link href="/pricing" className={styles.footerLink}>
             pricing preview

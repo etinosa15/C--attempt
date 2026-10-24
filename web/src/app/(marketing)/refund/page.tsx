@@ -38,9 +38,10 @@ export default function Refund() {
 
         <h2>How to request a refund</h2>
         <p>
-          Reply to your purchase receipt, or reach out through the project&rsquo;s
-          repository, with the email address you used at checkout. We&rsquo;ll
-          authorize the refund with Paddle, our payment provider. Refunds return to
+          Reply to your purchase receipt, or email{" "}
+          <a href="mailto:forgecodeacademy.help@gmail.com">forgecodeacademy.help@gmail.com</a>, with the email address you used at
+          checkout. We&rsquo;ll authorize the refund with Paystack, our payment
+          provider. Refunds return to
           your original payment method; how quickly it appears is up to your bank or
           card provider, usually a few business days.
         </p>
